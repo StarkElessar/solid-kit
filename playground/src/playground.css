@@ -130,3 +130,21 @@ h2 {
 .swatch[data-swatch="subtle"] {
     color: var(--s-kit-color-text);
 }
+
+.nav {
+    display: flex;
+    gap: 16px;
+    padding: 12px 24px 0;
+}
+
+.nav a[aria-current="page"] {
+    font-weight: 600;
+    color: var(--s-kit-color-text);
+}
+
+.control-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    align-items: center;
+}

@@ -3,6 +3,7 @@ import { createEffect, createSignal, For, type JSX, onMount } from 'solid-js';
 
 import { DerivedSwatches } from './derived-swatches';
 import { PALETTE_NAMES, type PaletteName, PALETTES } from './palettes';
+import { pick } from './pick';
 import { type CheckResult, runThemeChecks } from './theme-checks';
 
 type Theme = 'system' | 'light' | 'dark';
@@ -10,10 +11,6 @@ type Size = 'default' | 'sm' | 'md' | 'lg';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 const SIZES: readonly Size[] = ['default', 'sm', 'md', 'lg'];
-
-function pick<T extends string>(options: readonly T[], value: string, fallback: T): T {
-	return options.find((option) => option === value) ?? fallback;
-}
 
 export function ThemesPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
