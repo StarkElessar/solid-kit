@@ -2,6 +2,7 @@ import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runButtonChecks } from './button-checks';
@@ -9,11 +10,13 @@ import { ROWS, type RowSpec } from './control-rows';
 import { DEMO_CONTROLS } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
+import { DemoToggleGroups } from './demo-toggle-groups';
 import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
 import { pick } from './pick';
 import { runRowChecks } from './row-checks';
 import type { CheckResult } from './theme-checks';
+import { runToggleGroupChecks } from './toggle-group-checks';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -39,7 +42,11 @@ function renderFocusControls(): JSX.Element[] {
 		<ButtonGroup aria-label='Группа'>
 			<Button variant='plain' data-focus-name='group-first'>Один</Button>
 			<Button variant='plain' data-focus-name='group-second'>Два</Button>
-		</ButtonGroup>
+		</ButtonGroup>,
+		<ToggleGroup.Root aria-label='Переключатели' mode='multi' defaultValue={['one']}>
+			<ToggleGroup.Item value='one' data-focus-name='toggle-selected'>Один</ToggleGroup.Item>
+			<ToggleGroup.Item value='two' data-focus-name='toggle-plain'>Два</ToggleGroup.Item>
+		</ToggleGroup.Root>
 	];
 }
 
@@ -50,7 +57,13 @@ export function ControlsRowPage(): JSX.Element {
 
 	const runChecks = (): void => {
 		if (page) {
-			setResults([...runRowChecks(page), ...runButtonChecks(page), ...runInputChecks(page), ...runFieldChecks(page)]);
+			setResults([
+				...runRowChecks(page),
+				...runButtonChecks(page),
+				...runInputChecks(page),
+				...runFieldChecks(page),
+				...runToggleGroupChecks(page)
+			]);
 		}
 	};
 
@@ -108,6 +121,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>Field: подпись, подсказка и ошибка вокруг поля</h2>
 				<DemoFields/>
+			</section>
+
+			<section>
+				<h2>ToggleGroup: щелчок меняет значение, выбранный сегмент отличается заливкой и цветом текста</h2>
+				<DemoToggleGroups/>
 			</section>
 
 			<section>

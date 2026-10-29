@@ -2,6 +2,7 @@ import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import type { JSX } from 'solid-js';
 
 import type { ControlSize } from './control-rows';
@@ -51,6 +52,16 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 				<Button variant='plain'>Неделя</Button>
 				<Button variant='plain'>Месяц</Button>
 			</ButtonGroup>
+		)
+	},
+	{
+		id: 'toggle-group',
+		render: (size) => (
+			<ToggleGroup.Root data-row-control='toggle-group' data-row-group aria-label='Режим' defaultValue='week' size={size}>
+				<ToggleGroup.Item value='day'>День</ToggleGroup.Item>
+				<ToggleGroup.Item value='week'>Неделя</ToggleGroup.Item>
+				<ToggleGroup.Item value='month'>Месяц</ToggleGroup.Item>
+			</ToggleGroup.Root>
 		)
 	}
 ];
