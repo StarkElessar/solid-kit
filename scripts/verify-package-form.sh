@@ -110,6 +110,17 @@ grep -lq -- '--s-kit-toggle-group-selected-bg' dist/assets/*.css && ok "ToggleGr
 grep -lq -- '--s-kit-checkbox-radius' dist/assets/*.css && ok "Checkbox styles are in the built CSS" || fail "Checkbox styles are missing from the built CSS"
 grep -lq -- '--s-kit-radio-size' dist/assets/*.css && ok "RadioGroup styles are in the built CSS" || fail "RadioGroup styles are missing from the built CSS"
 grep -lq -- '--s-kit-switch-width' dist/assets/*.css && ok "Switch styles are in the built CSS" || fail "Switch styles are missing from the built CSS"
+grep -lq -- '--s-kit-tabs-indicator-width' dist/assets/*.css && ok "Tabs styles are in the built CSS" || fail "Tabs styles are missing from the built CSS"
+# composes: основа должна стоять раньше правил Tabs, иначе block-size и border-radius основы перекроют правила вкладки
+node -e '
+const fs = require("node:fs");
+const dir = "dist/assets";
+const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
+const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
+const tabs = css.indexOf("--s-kit-tabs-radius");
+console.log("control base at", base, "tabs rules at", tabs);
+process.exit(base >= 0 && tabs > base ? 0 : 1);
+' && ok "control base comes before Tabs rules in the built CSS" || fail "control base is missing or comes after Tabs rules in the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 

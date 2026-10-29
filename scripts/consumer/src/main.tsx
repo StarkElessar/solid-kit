@@ -10,6 +10,7 @@ import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
+import { Tabs } from '@stark/solid-kit/tabs';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createContext, useContext } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -49,6 +50,12 @@ render(
 			</ButtonGroup>
 			<Checkbox defaultChecked>Согласен</Checkbox>
 			<Switch defaultChecked>Уведомления</Switch>
+			<Tabs.Root defaultValue="a">
+				<Tabs.List aria-label="Разделы">
+					<Tabs.Tab value="a">Раздел</Tabs.Tab>
+				</Tabs.List>
+				<Tabs.Panel value="a">Содержимое</Tabs.Panel>
+			</Tabs.Root>
 			<RadioGroup.Root aria-label="Тариф" defaultValue="basic">
 				<RadioGroup.Item value="basic">Базовый</RadioGroup.Item>
 				<RadioGroup.Item value="pro">Расширенный</RadioGroup.Item>
