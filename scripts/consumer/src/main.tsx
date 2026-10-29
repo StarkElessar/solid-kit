@@ -6,6 +6,7 @@ import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
+import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createContext, useContext } from 'solid-js';
 import { render } from 'solid-js/web';
 
@@ -41,6 +42,14 @@ render(
 				<Button variant="plain">День</Button>
 				<Button variant="plain">Неделя</Button>
 			</ButtonGroup>
+			<ToggleGroup.Root aria-label="Вид" defaultValue="list">
+				<ToggleGroup.Item value="list">Список</ToggleGroup.Item>
+				<ToggleGroup.Item value="grid">Сетка</ToggleGroup.Item>
+			</ToggleGroup.Root>
+			<ToggleGroup.Root aria-label="Дни" mode="multi" defaultValue={['mon']}>
+				<ToggleGroup.Item value="mon">Пн</ToggleGroup.Item>
+				<ToggleGroup.Item value="tue">Вт</ToggleGroup.Item>
+			</ToggleGroup.Root>
 		</AppContext.Provider>
 	),
 	root

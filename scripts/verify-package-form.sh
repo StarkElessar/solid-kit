@@ -106,6 +106,7 @@ process.exit(base >= 0 && input > base ? 0 : 1);
 ' && ok "control base comes before Input rules in the built CSS" || fail "control base is missing or comes after Input rules in the built CSS"
 grep -lq -- '--s-kit-field-gap' dist/assets/*.css && ok "Field styles are in the built CSS" || fail "Field styles are missing from the built CSS"
 grep -lq -- '--s-kit-button-group-gap' dist/assets/*.css && ok "ButtonGroup styles are in the built CSS" || fail "ButtonGroup styles are missing from the built CSS"
+grep -lq -- '--s-kit-toggle-group-selected-bg' dist/assets/*.css && ok "ToggleGroup styles are in the built CSS" || fail "ToggleGroup styles are missing from the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
