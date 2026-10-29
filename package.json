@@ -2,6 +2,11 @@
 	"name": "@stark/solid-kit",
 	"version": "0.2.0",
 	"description": "Личный UI-кит на Solid.js: исходники без сборки, модульный, темизация через CSS-переменные",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/StarkElessar/solid-kit.git"
+	},
 	"type": "module",
 	"files": ["src"],
 	"sideEffects": ["**/*.css"],
