@@ -4,6 +4,7 @@ import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
+import { Switch } from '@stark/solid-kit/switch';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import type { JSX } from 'solid-js';
 
@@ -82,5 +83,13 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 				<RadioGroup.Item value='b' data-row-control='radio-b'>Два</RadioGroup.Item>
 			</RadioGroup.Root>
 		)
+	},
+	{
+		id: 'switch',
+		render: (size) => <Switch data-row-control='switch' defaultChecked size={size}>Переключатель</Switch>
+	},
+	{
+		id: 'switch-bare',
+		render: (size) => <Switch data-row-control='switch-bare' aria-label='Без подписи' size={size}/>
 	}
 ];

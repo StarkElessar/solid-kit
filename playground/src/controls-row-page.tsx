@@ -4,6 +4,7 @@ import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
+import { Switch } from '@stark/solid-kit/switch';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
@@ -15,12 +16,14 @@ import { DEMO_CONTROLS } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
 import { DemoRadioGroups } from './demo-radio-groups';
+import { DemoSwitches } from './demo-switches';
 import { DemoToggleGroups } from './demo-toggle-groups';
 import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
 import { pick } from './pick';
 import { runRadioChecks } from './radio-checks';
 import { runRowChecks } from './row-checks';
+import { runSwitchChecks } from './switch-checks';
 import type { CheckResult } from './theme-checks';
 import { runToggleGroupChecks } from './toggle-group-checks';
 
@@ -58,7 +61,9 @@ function renderFocusControls(): JSX.Element[] {
 		<RadioGroup.Root aria-label='Радио' orientation='horizontal' defaultValue='two'>
 			<RadioGroup.Item value='one' aria-label='Радио' data-focus-name='radio'/>
 			<RadioGroup.Item value='two' aria-label='Выбранное радио' data-focus-name='radio-checked'/>
-		</RadioGroup.Root>
+		</RadioGroup.Root>,
+		<Switch aria-label='Переключатель' data-focus-name='switch'/>,
+		<Switch aria-label='Включённый переключатель' defaultChecked data-focus-name='switch-on'/>
 	];
 }
 
@@ -76,7 +81,8 @@ export function ControlsRowPage(): JSX.Element {
 				...runFieldChecks(page),
 				...runToggleGroupChecks(page),
 				...runCheckboxChecks(page),
-				...runRadioChecks(page)
+				...runRadioChecks(page),
+				...runSwitchChecks(page)
 			]);
 		}
 	};
@@ -150,6 +156,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>RadioGroup: группа, состояния и контраст отметки (стрелки двигают выбор)</h2>
 				<DemoRadioGroups/>
+			</section>
+
+			<section>
+				<h2>Switch: состояния и контраст дорожки и ползунка</h2>
+				<DemoSwitches/>
 			</section>
 
 			<section>

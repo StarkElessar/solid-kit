@@ -62,13 +62,10 @@
     background: var(--s-kit-color-primary-active);
 }
 
+/* дорожка всегда залита (серая или primary), поэтому внутреннее кольцо везде цвета «на заливке» */
 .input:focus-visible {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline: var(--s-kit-focus-width) solid var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
     outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
-
-.input:checked:focus-visible {
-    outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
 }
 
 .thumb {

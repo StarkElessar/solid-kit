@@ -44,15 +44,23 @@ function tokenColor(scope: Element, name: string): Rgba {
 	return color;
 }
 
-/** Цвет под элементом: ближайшая непрозрачная заливка самого элемента или его предков, иначе поверхность страницы. */
-function underlying(element: Element, surface: Rgba): Rgba {
-	for (let current: Element | null = element; current; current = current.parentElement) {
-		const fill = resolveColor(getComputedStyle(current).backgroundColor);
-		if (fill[3] !== 0) {
-			return fill;
-		}
+/**
+ * Цвет под элементом: заливка самого элемента или ближайшего предка; полупрозрачная заливка смешивается с тем, что под ней,
+ * без заливок остаётся поверхность страницы.
+ */
+function underlying(element: Element | null, surface: Rgba): Rgba {
+	if (!element) {
+		return surface;
 	}
-	return surface;
+	const fill = resolveColor(getComputedStyle(element).backgroundColor);
+	if (fill[3] === 0) {
+		return underlying(element.parentElement, surface);
+	}
+	if (fill[3] === 255) {
+		return fill;
+	}
+	const [red, green, blue] = blend(rgb(fill), fill[3] / 255, rgb(underlying(element.parentElement, surface)));
+	return [red, green, blue, 255];
 }
 
 /**
