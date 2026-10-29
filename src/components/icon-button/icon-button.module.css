@@ -1,0 +1,22 @@
+/*
+ * Компонентные токены IconButton (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-icon-button-radius
+ * Цвета и состояния берутся у Button: --s-kit-button-bg, --s-kit-button-bg-hover, --s-kit-button-bg-active, --s-kit-button-color.
+ * Варианты задаются атрибутом data-variant: primary, tinted, plain, danger.
+ */
+
+.root {
+    composes: root from "../button/button.module.css";
+
+    flex: none;
+
+    inline-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-inline: 0;
+    border-radius: var(--s-kit-icon-button-radius, var(--s-kit-button-radius, var(--s-kit-radius)));
+}
+
+.root > svg {
+    flex: none;
+    inline-size: 1.25em;
+    block-size: 1.25em;
+}
