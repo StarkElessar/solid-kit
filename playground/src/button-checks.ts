@@ -44,10 +44,15 @@ function tokenColor(scope: Element, name: string): Rgba {
 	return color;
 }
 
-/** Цвет под элементом: собственная заливка или, если она прозрачная, поверхность страницы. */
+/** Цвет под элементом: ближайшая непрозрачная заливка самого элемента или его предков, иначе поверхность страницы. */
 function underlying(element: Element, surface: Rgba): Rgba {
-	const fill = resolveColor(getComputedStyle(element).backgroundColor);
-	return fill[3] === 0 ? surface : fill;
+	for (let current: Element | null = element; current; current = current.parentElement) {
+		const fill = resolveColor(getComputedStyle(current).backgroundColor);
+		if (fill[3] !== 0) {
+			return fill;
+		}
+	}
+	return surface;
 }
 
 /**
@@ -72,8 +77,8 @@ export function runButtonChecks(page: HTMLElement): CheckResult[] {
 
 	for (const block of page.querySelectorAll<HTMLElement>('[data-focus-block]')) {
 		const mode = block.dataset['focusBlock'] ?? '?';
-		const inset = mode === 'inset';
 		for (const control of block.querySelectorAll<HTMLElement>('button, input')) {
+			const inset = control.closest('[data-s-kit-focus-inset]') !== null;
 			const label = control.dataset['focusName'] ?? control.dataset['variant'] ?? '?';
 			const options: FocusOptions & { focusVisible: boolean } = { focusVisible: true };
 			control.focus(options);

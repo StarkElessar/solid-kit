@@ -29,6 +29,17 @@ export function runRowChecks(root: ParentNode): CheckResult[] {
 					detail: `ширина ${rect.width}px, высота ${rect.height}px`
 				});
 			}
+			if (control.hasAttribute('data-row-group')) {
+				const offsets = [...control.children].map((child) => {
+					const childRect = child.getBoundingClientRect();
+					return { height: childRect.height, inset: childRect.top - rect.top };
+				});
+				results.push({
+					name: `${rowId}: ${control.dataset['rowControl'] ?? '?'} (${size}) сегменты на 4 px ниже оболочки и на 2 px от края`,
+					ok: offsets.every((item) => Math.abs(item.height - (rect.height - 4)) <= 0.01 && Math.abs(item.inset - 2) <= 0.01),
+					detail: offsets.map((item) => `${item.height}px, отступ ${item.inset}px`).join('; ')
+				});
+			}
 			bySize.set(size, [...(bySize.get(size) ?? []), rect]);
 		}
 		for (const [size, rects] of bySize) {

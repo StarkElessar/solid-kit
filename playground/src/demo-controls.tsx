@@ -1,4 +1,5 @@
 import { Button } from '@stark/solid-kit/button';
+import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import type { JSX } from 'solid-js';
@@ -40,6 +41,16 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 		id: 'input-invalid',
 		render: (size) => (
 			<Input data-row-control='input-invalid' aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' size={size}/>
+		)
+	},
+	{
+		id: 'button-group',
+		render: (size) => (
+			<ButtonGroup data-row-control='button-group' data-row-group aria-label='Период' size={size}>
+				<Button variant='plain'>День</Button>
+				<Button variant='plain'>Неделя</Button>
+				<Button variant='plain'>Месяц</Button>
+			</ButtonGroup>
 		)
 	}
 ];

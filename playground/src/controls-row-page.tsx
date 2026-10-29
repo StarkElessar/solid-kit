@@ -1,4 +1,5 @@
 import { Button } from '@stark/solid-kit/button';
+import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
@@ -34,7 +35,11 @@ function renderFocusControls(): JSX.Element[] {
 			<IconButton variant={variant} aria-label={variant} data-focus-name={`icon-${variant}`}><DemoIcon/></IconButton>
 		)),
 		<Input aria-label='Поле' placeholder='Текст' data-focus-name='input'/>,
-		<Input aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' data-focus-name='input-invalid'/>
+		<Input aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' data-focus-name='input-invalid'/>,
+		<ButtonGroup aria-label='Группа'>
+			<Button variant='plain' data-focus-name='group-first'>Один</Button>
+			<Button variant='plain' data-focus-name='group-second'>Два</Button>
+		</ButtonGroup>
 	];
 }
 
@@ -89,7 +94,7 @@ export function ControlsRowPage(): JSX.Element {
 			</For>
 
 			<section>
-				<h2>Кольцо фокуса: снаружи и внутри контейнера с data-s-kit-focus-inset</h2>
+				<h2>Кольцо фокуса: снаружи и внутри контейнера с data-s-kit-focus-inset, сегменты группы всегда внутри</h2>
 				<div class='focus-blocks'>
 					<div class='focus-block' data-focus-block='outer'>
 						{renderFocusControls()}
