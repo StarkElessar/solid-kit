@@ -2896,3 +2896,18 @@ Expected: повторный прогон матрицы на финальном
 **Согласованность имён и типов:** `registerLayer(layer: Layer): () => void`, `getLayerCount()` (Task 5) используются в Task 6 без изменений; `createPanelLayer({ open, panel, anchor, onDismiss })` и `createAnchoredPosition({ anchor, floating, open })` (Tasks 6–7) вызываются в `Probe` (Task 8) с теми же именами; `ProbeScope` и `Probe` экспортируются из `index.ts` и импортируются потребителем (Task 11) и playground (Task 9); маркеры `marker-used` / `marker-unused` в `Probe`/`ProbeUnused` совпадают с проверкой в скрипте; атрибуты `data-probe-panel`, `data-chip`, `data-scenario`, `data-swatch-group`, `data-swatch` совпадают между `themes-page.tsx`, `derived-swatches.tsx` и `theme-checks.ts`.
 
 **Известные риски исполнения (чинить по месту, фиксируя в коммите):** совместимость версий vitest 5 и vite 8.3.5; `eslint-plugin-solid` с ESLint 9; точная форма `git+file://` у pnpm 11; формат вывода `getComputedStyle().colorScheme` в Chrome; допустимость `transparent`/`currentcolor` в `color-named`.
+
+## Отклонения при выполнении (2026-10-29)
+
+Код в задачах выше написан до выполнения; реальный код в репозитории отличается так:
+
+- Стиль ESLint: без висячих запятых (`--fix` убирает их из примеров плана), Stroustrup-скобки, табы.
+- Тесты `createPanelLayer` и `createAnchoredPosition`: эффекты Solid выполняются после выхода из тела `createRoot`, поэтому сигналы переключаются снаружи корня, а не внутри.
+- jsdom не считает раскладку: тест позиционирования задаёт `clientWidth` и `clientHeight`; Popover API подменяется заглушками.
+- Тесты, читающие `tokens.css?raw`: пути заданы относительно cwd (в jsdom `import.meta.url` не путь к файлу, типов Node в tsconfig нет); в `vitest.config.ts` включён `test.css.include` для `?raw`, иначе CSS приходит пустым.
+- Stylelint: исключения `property-no-vendor-prefix` (`-webkit-backdrop-filter`, нужен Safari 17.5) и `declaration-block-no-duplicate-properties` (пара с префиксом это фолбэк).
+- `control-edge` 50 % вместо 42 % ради границы 3:1; производные значения токенов взяты из прототипа `kit.css`.
+- pnpm 11.12.0 и TypeScript 5.9.3 (peer `@stark/eslint-config` `<6.1`).
+- Критерий 1 проверен через `git+file://` (источник `github:` после публикации); Firefox и Safari не проверялись.
+- Открытый дефект: контраст текста основной кнопки в состояниях hover и active (спек, раздел 14, вопрос 7).
+
