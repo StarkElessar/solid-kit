@@ -72,20 +72,21 @@ export function runButtonChecks(page: HTMLElement): CheckResult[] {
 		const inset = mode === 'inset';
 		for (const button of block.querySelectorAll<HTMLButtonElement>('button')) {
 			const variant = button.dataset['variant'] ?? '?';
+			const label = button.dataset['focusName'] ?? variant;
 			const options: FocusOptions & { focusVisible: boolean } = { focusVisible: true };
 			button.focus(options);
 			const style = getComputedStyle(button);
 			const offset = Number.parseFloat(style.outlineOffset);
-			check(`${mode}/${variant}: кольцо фокуса показано`, style.outlineStyle === 'solid', `outline-style = ${style.outlineStyle}`);
+			check(`${mode}/${label}: кольцо фокуса показано`, style.outlineStyle === 'solid', `outline-style = ${style.outlineStyle}`);
 			check(
-				`${mode}/${variant}: кольцо ${inset ? 'внутри' : 'снаружи'}`,
+				`${mode}/${label}: кольцо ${inset ? 'внутри' : 'снаружи'}`,
 				inset ? offset < 0 : offset > 0,
 				`outline-offset = ${style.outlineOffset}`
 			);
 			const ring = resolveColor(style.outlineColor);
 			const under = inset ? underlying(button, surface) : surface;
 			const ratio = contrastRatio(blend(rgb(ring), ring[3] / 255, rgb(under)), rgb(under));
-			check(`${mode}/${variant}: кольцо контрастно к фону (3:1)`, ratio >= 3, `контраст ${ratio.toFixed(2)}:1`);
+			check(`${mode}/${label}: кольцо контрастно к фону (3:1)`, ratio >= 3, `контраст ${ratio.toFixed(2)}:1`);
 			button.blur();
 		}
 	}

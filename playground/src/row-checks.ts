@@ -22,6 +22,13 @@ export function runRowChecks(root: ParentNode): CheckResult[] {
 				ok: Math.abs(rect.height - expected) <= 0.01,
 				detail: `высота ${rect.height}px, ожидалось ${expected}px`
 			});
+			if (control.hasAttribute('data-row-square')) {
+				results.push({
+					name: `${rowId}: ${control.dataset['rowControl'] ?? '?'} (${size}) квадратная`,
+					ok: Math.abs(rect.width - rect.height) <= 0.01,
+					detail: `ширина ${rect.width}px, высота ${rect.height}px`
+				});
+			}
 			bySize.set(size, [...(bySize.get(size) ?? []), rect]);
 		}
 		for (const [size, rects] of bySize) {

@@ -1,9 +1,11 @@
 import { Button } from '@stark/solid-kit/button';
+import { IconButton } from '@stark/solid-kit/icon-button';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runButtonChecks } from './button-checks';
 import { ROWS, type RowSpec } from './control-rows';
 import { DEMO_CONTROLS } from './demo-controls';
+import { DemoIcon } from './demo-icon';
 import { pick } from './pick';
 import { runRowChecks } from './row-checks';
 import type { CheckResult } from './theme-checks';
@@ -18,6 +20,16 @@ const VARIANTS = ['primary', 'tinted', 'plain', 'danger'] as const;
 // список контролов статичен, поэтому реактивность по индексу не нужна
 function renderRow(row: RowSpec): JSX.Element[] {
 	return DEMO_CONTROLS.map((control, index) => control.render(row.sizeFor(index)));
+}
+
+// оба блока фокуса показывают одни и те же контролы; список статичен, поэтому реактивность по индексу не нужна
+function renderFocusControls(): JSX.Element[] {
+	return [
+		...VARIANTS.map((variant) => <Button variant={variant}>{variant}</Button>),
+		...VARIANTS.map((variant) => (
+			<IconButton variant={variant} aria-label={variant} data-focus-name={`icon-${variant}`}><DemoIcon/></IconButton>
+		))
+	];
 }
 
 export function ControlsRowPage(): JSX.Element {
@@ -74,10 +86,10 @@ export function ControlsRowPage(): JSX.Element {
 				<h2>Кольцо фокуса: снаружи и внутри контейнера с data-s-kit-focus-inset</h2>
 				<div class='focus-blocks'>
 					<div class='focus-block' data-focus-block='outer'>
-						<For each={VARIANTS}>{(variant) => <Button variant={variant}>{variant}</Button>}</For>
+						{renderFocusControls()}
 					</div>
 					<div class='focus-block' data-focus-block='inset' data-s-kit-focus-inset>
-						<For each={VARIANTS}>{(variant) => <Button variant={variant}>{variant}</Button>}</For>
+						{renderFocusControls()}
 					</div>
 				</div>
 			</section>
