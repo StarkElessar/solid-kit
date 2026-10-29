@@ -236,6 +236,43 @@ interface ToggleGroupItemProps extends Omit<ButtonProps, 'variant' | 'size' | 'o
 - **Тесты:** чистые функции (приведение значения, переходы single и multi, отсутствие мутации); компонент: группа с именем и атрибутами корня, `aria-pressed` и `data-selected` у сегментов, single uncontrolled и controlled (родитель не принял изменение, `null` как пустой выбор), повторный щелчок в single, multi uncontrolled и controlled, `disabled` корня и сегмента, `size`, проброс `class`, `style` и нативных атрибутов, ошибка у `Item` вне `Root`. Геометрия, кольцо внутри группы, контраст выбранного сегмента и реальный щелчок проверяются на странице playground (раздел 4).
 - **Вне объёма:** стрелки и roving tabindex, снятие выбора в single (`deselectable`), вертикальная ориентация, иконочные сегменты (квадратные), быстрая форма.
 
+### 3.6 Checkbox
+
+Флажок с подписью и без. Плоский компонент: корень `<label>` (клик по подписи переключает флажок), внутри нативный `<input type="checkbox">` с `appearance: none`, нарисованный киту, и необязательная подпись из `children`.
+
+```ts
+interface CheckboxProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>,
+  'class' | 'style' | 'size' | 'type' | 'checked' | 'defaultChecked' | 'onChange' | 'onInput' | 'children'> {
+  checked?: boolean;
+  defaultChecked?: boolean;          // по умолчанию false
+  onCheckedChange?: (checked: boolean) => void;
+  indeterminate?: boolean;           // только вид; состоянием владеет вызывающий
+  size?: 'sm' | 'md' | 'lg';         // на корне
+  class?: string;                    // на корне
+  style?: JSX.CSSProperties;         // на корне
+  children?: JSX.Element;            // подпись
+}
+```
+
+```tsx
+<Checkbox defaultChecked>Согласен</Checkbox>
+<Checkbox aria-label='Выбрать строку' checked={selected()} onCheckedChange={setSelected}/>
+```
+
+Решения (2026-10-29, владелец поручил писать план и сразу выполнять, подтверждение по ходу не требовалось):
+
+- **Куда идут атрибуты.** `class`, `style`, `size` и `children` относятся к корню `label`; все остальные нативные атрибуты (`id`, `name`, `value`, `disabled`, `required`, `aria-*`, `data-*`) идут на `input`. Поэтому `<Checkbox {...control}/>` из Field получает `id`, `aria-describedby`, `aria-invalid` на настоящий элемент. Корень несёт `data-s-kit` и `data-s-kit-size` (только при `size`), `input` `data-s-kit` не несёт: страница-ряд измеряет «корень контрола» как ближайший `[data-s-kit]`.
+- **Высота.** Корень `inline-flex`, `block-size: var(--s-kit-control-height, var(--s-kit-control-height-md))`, поэтому строка «отметка + подпись» (и без подписи) стоит в одной линии с остальными контролами (зонтичный спек, раздел 5). Сама отметка 16 px (токен `--s-kit-checkbox-size`), зазор до подписи 8 px (`--s-kit-checkbox-gap`).
+- **Вид.** Невыбранный: заливка `surface`, граница `1px solid --s-kit-color-control-edge` (контраст к поверхности не ниже 3:1, зонтичный спек, раздел 4.1), радиус 4 px (`--s-kit-checkbox-radius`). Выбранный и неопределённый: заливка и граница `--s-kit-color-primary`, галочка или тире цвета `--s-kit-color-primary-contrast` (inline-SVG `stroke: currentColor`, поверх input с `pointer-events: none`). Наведение: невыбранный `--s-kit-color-hover`, выбранный `primary-hover`; нажатие `primary-active`. `aria-invalid="true"` даёт красную границу и красное кольцо (как у Input).
+- **Кольцо фокуса** на самом `input` (`:focus-visible`, токены раздела 5.1): снаружи по умолчанию, внутри по `data-s-kit-focus-inset` на предке; у выбранного input цвет кольца `--s-kit-focus-ring-on-fill`.
+- **Controlled/uncontrolled** через `createControllableSignal<boolean>`: `checked` / `defaultChecked` / `onCheckedChange`. В контролируемом режиме, если родитель не принял изменение, DOM возвращается к значению родителя (как у Input).
+- **`indeterminate`** выставляется как DOM-свойство (`prop:indeterminate`); после щелчка браузер сам его сбрасывает, поэтому обработчик возвращает значение пропа: состояние «частично» меняет только вызывающий (главный флажок грида: щелчок даёт `onCheckedChange(true)`, а вызывающий решает, что дальше). Для скринридера нативный `indeterminate` даёт `mixed`. При `indeterminate` рисуется тире, а не галочка, независимо от `checked`.
+- **`disabled`:** нативный на `input`; корень получает `data-disabled`, курсор `not-allowed`, непрозрачность `--s-kit-disabled-opacity` на всю строку.
+- **Анимации:** переход фона и границы 150 мс, отключается при `prefers-reduced-motion`.
+- **Компонентные токены:** `--s-kit-checkbox-size`, `--s-kit-checkbox-radius`, `--s-kit-checkbox-gap`.
+- **Тесты:** нативный чекбокс с доступным именем от подписи и от `aria-label`; корень `label` с `data-s-kit`, `input` без него; `size` только при передаче; uncontrolled (`defaultChecked`, щелчок, `onCheckedChange`); controlled (следует за родителем, возврат при отказе); `indeterminate` (свойство, возврат после щелчка, реакция на смену пропа); `disabled`; проброс атрибутов на `input`, а `class` и `style` на корень; подпись только при `children`. Геометрия, контраст отметки и кольцо фокуса проверяются на странице playground (раздел 4).
+- **Вне объёма:** трёхсостоятельный цикл «частично → выбрано → снято» внутри компонента, группа флажков (`CheckboxGroup`), иконка вместо галочки через проп.
+
 ## 4. Страница «Контролы в ряд» и проверка высот
 
 Страница `controls-row-page.tsx` в playground, наращивается с каждым компонентом (раздел 5 зонтичного). Пять рядов: (1) без `size` и без обёртки, (2) обёртка `sm`, (3) обёртка `lg`, (4) обёртка `sm` и часть контролов с локальным `size="lg"`, (5) явный `size` у каждого. В каждом ряду контролы стоят на одной линии. Встроенная проверка сравнивает `getBoundingClientRect()` верха и низа каждого контрола с эталоном ряда и выводит отклонения как OK/FAIL (по образцу `theme-checks.ts`); допуск 0 px (контролы одного размера совпадают пиксель в пиксель), для рядов 4 и 5 эталон считается по размеру каждого контрола. Для групп (ButtonGroup, ToggleGroup) эталоном служит оболочка группы.
