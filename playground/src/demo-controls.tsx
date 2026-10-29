@@ -6,6 +6,7 @@ import { Input } from '@stark/solid-kit/input';
 import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
+import { Tabs } from '@stark/solid-kit/tabs';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import type { JSX } from 'solid-js';
 
@@ -96,5 +97,16 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 	{
 		id: 'numeric-input',
 		render: (size) => <NumericInput data-row-control='numeric-input' aria-label='Число' defaultValue={42} size={size}/>
+	},
+	{
+		id: 'tabs',
+		render: (size) => (
+			<Tabs.Root defaultValue='overview'>
+				<Tabs.List data-row-control='tabs' aria-label='Вкладки' size={size}>
+					<Tabs.Tab value='overview'>Обзор</Tabs.Tab>
+					<Tabs.Tab value='details'>Детали</Tabs.Tab>
+				</Tabs.List>
+			</Tabs.Root>
+		)
 	}
 ];

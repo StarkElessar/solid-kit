@@ -6,6 +6,7 @@ import { Input } from '@stark/solid-kit/input';
 import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
+import { Tabs } from '@stark/solid-kit/tabs';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
@@ -19,6 +20,7 @@ import { DemoIcon } from './demo-icon';
 import { DemoNumericInputs } from './demo-numeric-inputs';
 import { DemoRadioGroups } from './demo-radio-groups';
 import { DemoSwitches } from './demo-switches';
+import { DemoTabs } from './demo-tabs';
 import { DemoToggleGroups } from './demo-toggle-groups';
 import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
@@ -27,6 +29,7 @@ import { pick } from './pick';
 import { runRadioChecks } from './radio-checks';
 import { runRowChecks } from './row-checks';
 import { runSwitchChecks } from './switch-checks';
+import { runTabsChecks } from './tabs-checks';
 import type { CheckResult } from './theme-checks';
 import { runToggleGroupChecks } from './toggle-group-checks';
 
@@ -67,7 +70,13 @@ function renderFocusControls(): JSX.Element[] {
 			<RadioGroup.Item value='two' aria-label='Выбранное радио' data-focus-name='radio-checked'/>
 		</RadioGroup.Root>,
 		<Switch aria-label='Переключатель' data-focus-name='switch'/>,
-		<Switch aria-label='Включённый переключатель' defaultChecked data-focus-name='switch-on'/>
+		<Switch aria-label='Включённый переключатель' defaultChecked data-focus-name='switch-on'/>,
+		<Tabs.Root defaultValue='one'>
+			<Tabs.List aria-label='Вкладки'>
+				<Tabs.Tab value='one' data-focus-name='tab-selected'>Одна</Tabs.Tab>
+				<Tabs.Tab value='two' data-focus-name='tab'>Две</Tabs.Tab>
+			</Tabs.List>
+		</Tabs.Root>
 	];
 }
 
@@ -87,7 +96,8 @@ export function ControlsRowPage(): JSX.Element {
 				...runCheckboxChecks(page),
 				...runRadioChecks(page),
 				...runSwitchChecks(page),
-				...runNumericInputChecks(page)
+				...runNumericInputChecks(page),
+				...runTabsChecks(page)
 			]);
 		}
 	};
@@ -171,6 +181,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>NumericInput: ввод, стрелки, границы и фиксация на потере фокуса</h2>
 				<DemoNumericInputs/>
+			</section>
+
+			<section>
+				<h2>Tabs: выбор, стрелки по кругу, прокрутка полосы и контраст индикатора</h2>
+				<DemoTabs/>
 			</section>
 
 			<section>
