@@ -126,3 +126,7 @@ h2 {
     font-weight: 600;
     color: var(--s-kit-color-danger);
 }
+
+.swatch[data-swatch="subtle"] {
+    color: var(--s-kit-color-text);
+}
