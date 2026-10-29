@@ -1,5 +1,6 @@
 import '@stark/solid-kit/tokens.css';
 
+import { Button } from '@stark/solid-kit/button';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
 import { createContext, useContext } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -28,6 +29,7 @@ render(
 			<Probe defaultOpen>
 				<ScopeReader />
 			</Probe>
+			<Button id="btn" variant="danger">Удалить</Button>
 		</AppContext.Provider>
 	),
 	root

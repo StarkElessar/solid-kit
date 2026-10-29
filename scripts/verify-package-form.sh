@@ -71,6 +71,17 @@ DEV_PID=""
 if pnpm exec vite build >build.log 2>&1; then ok "vite build"; else fail "vite build (see $WORK/build.log)"; fi
 grep -lq -- '--s-kit-color-primary' dist/assets/*.css && ok "tokens are in the built CSS" || fail "tokens are missing from the built CSS"
 grep -lq -- '--s-kit-probe-radius' dist/assets/*.css && ok "Probe styles are in the built CSS" || fail "Probe styles are missing from the built CSS"
+grep -lq -- '--s-kit-button-radius' dist/assets/*.css && ok "Button styles are in the built CSS" || fail "Button styles are missing from the built CSS"
+# composes: правило общей основы (класс _control_) должно стоять в CSS раньше правил Button, иначе основа перекроет их
+node -e '
+const fs = require("node:fs");
+const dir = "dist/assets";
+const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
+const base = css.search(/\._control_[a-z0-9_]+\{/);
+const button = css.indexOf("--s-kit-button-radius");
+console.log("control base at", base, "button rules at", button);
+process.exit(base >= 0 && button > base ? 0 : 1);
+' && ok "control base comes before Button rules in the built CSS" || fail "control base is missing or comes after Button rules in the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
