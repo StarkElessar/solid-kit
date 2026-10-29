@@ -148,3 +148,20 @@ h2 {
     gap: 12px;
     align-items: center;
 }
+
+.focus-blocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.focus-block {
+    /* обрезает внешнее кольцо: проверяет, что внутреннее кольцо остаётся видимым */
+    overflow: hidden;
+    display: flex;
+    gap: 12px;
+
+    padding: 16px;
+    border: 1px solid var(--s-kit-color-hairline);
+    border-radius: var(--s-kit-radius);
+}

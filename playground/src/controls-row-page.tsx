@@ -1,5 +1,7 @@
+import { Button } from '@stark/solid-kit/button';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
+import { runButtonChecks } from './button-checks';
 import { ROWS, type RowSpec } from './control-rows';
 import { DEMO_CONTROLS } from './demo-controls';
 import { pick } from './pick';
@@ -9,6 +11,9 @@ import type { CheckResult } from './theme-checks';
 type Theme = 'system' | 'light' | 'dark';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
+// переход фона в основе контролов длится 150 мс
+const TRANSITION_SETTLE_MS = 250;
+const VARIANTS = ['primary', 'tinted', 'plain', 'danger'] as const;
 
 // список контролов статичен, поэтому реактивность по индексу не нужна
 function renderRow(row: RowSpec): JSX.Element[] {
@@ -22,11 +27,12 @@ export function ControlsRowPage(): JSX.Element {
 
 	const runChecks = (): void => {
 		if (page) {
-			setResults(runRowChecks(page));
+			setResults([...runRowChecks(page), ...runButtonChecks(page)]);
 		}
 	};
 
-	// раскладка читает токены текущей темы: проверки перезапускаются после смены темы и первого рендера
+	// раскладка читает токены текущей темы: проверки перезапускаются после смены темы и первого рендера,
+	// когда переходы цвета (150 мс) закончились, иначе контраст считается по промежуточным цветам
 	createEffect(() => {
 		const root = document.documentElement;
 		if (theme() === 'system') {
@@ -35,7 +41,7 @@ export function ControlsRowPage(): JSX.Element {
 		else {
 			root.setAttribute('data-s-kit-theme', theme());
 		}
-		requestAnimationFrame(runChecks);
+		setTimeout(runChecks, TRANSITION_SETTLE_MS);
 	});
 
 	return (
@@ -63,6 +69,18 @@ export function ControlsRowPage(): JSX.Element {
 					</section>
 				)}
 			</For>
+
+			<section>
+				<h2>Кольцо фокуса: снаружи и внутри контейнера с data-s-kit-focus-inset</h2>
+				<div class='focus-blocks'>
+					<div class='focus-block' data-focus-block='outer'>
+						<For each={VARIANTS}>{(variant) => <Button variant={variant}>{variant}</Button>}</For>
+					</div>
+					<div class='focus-block' data-focus-block='inset' data-s-kit-focus-inset>
+						<For each={VARIANTS}>{(variant) => <Button variant={variant}>{variant}</Button>}</For>
+					</div>
+				</div>
+			</section>
 
 			<section>
 				<h2>Проверки</h2>

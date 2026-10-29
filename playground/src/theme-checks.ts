@@ -6,12 +6,12 @@ export interface CheckResult {
 	readonly detail: string;
 }
 
-type Rgba = readonly [red: number, green: number, blue: number, alpha: number];
+export type Rgba = readonly [red: number, green: number, blue: number, alpha: number];
 
 let context: CanvasRenderingContext2D | undefined;
 
 /** Приводит любой CSS-цвет (в том числе результат color-mix и light-dark) к байтам sRGB через канвас 1x1. */
-function resolveColor(cssColor: string): Rgba {
+export function resolveColor(cssColor: string): Rgba {
 	if (!context) {
 		const canvas = document.createElement('canvas');
 		canvas.width = 1;
