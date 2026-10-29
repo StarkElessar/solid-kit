@@ -1,11 +1,13 @@
 import { Button } from '@stark/solid-kit/button';
 import { IconButton } from '@stark/solid-kit/icon-button';
+import { Input } from '@stark/solid-kit/input';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runButtonChecks } from './button-checks';
 import { ROWS, type RowSpec } from './control-rows';
 import { DEMO_CONTROLS } from './demo-controls';
 import { DemoIcon } from './demo-icon';
+import { runInputChecks } from './input-checks';
 import { pick } from './pick';
 import { runRowChecks } from './row-checks';
 import type { CheckResult } from './theme-checks';
@@ -28,7 +30,9 @@ function renderFocusControls(): JSX.Element[] {
 		...VARIANTS.map((variant) => <Button variant={variant}>{variant}</Button>),
 		...VARIANTS.map((variant) => (
 			<IconButton variant={variant} aria-label={variant} data-focus-name={`icon-${variant}`}><DemoIcon/></IconButton>
-		))
+		)),
+		<Input aria-label='Поле' placeholder='Текст' data-focus-name='input'/>,
+		<Input aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' data-focus-name='input-invalid'/>
 	];
 }
 
@@ -39,7 +43,7 @@ export function ControlsRowPage(): JSX.Element {
 
 	const runChecks = (): void => {
 		if (page) {
-			setResults([...runRowChecks(page), ...runButtonChecks(page)]);
+			setResults([...runRowChecks(page), ...runButtonChecks(page), ...runInputChecks(page)]);
 		}
 	};
 

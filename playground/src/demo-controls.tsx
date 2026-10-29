@@ -1,5 +1,6 @@
 import { Button } from '@stark/solid-kit/button';
 import { IconButton } from '@stark/solid-kit/icon-button';
+import { Input } from '@stark/solid-kit/input';
 import type { JSX } from 'solid-js';
 
 import type { ControlSize } from './control-rows';
@@ -33,5 +34,12 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 	iconButton('primary'),
 	iconButton('tinted'),
 	iconButton('plain'),
-	iconButton('danger')
+	iconButton('danger'),
+	{ id: 'input', render: (size) => <Input data-row-control='input' aria-label='Поле' placeholder='Текст' size={size}/> },
+	{
+		id: 'input-invalid',
+		render: (size) => (
+			<Input data-row-control='input-invalid' aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' size={size}/>
+		)
+	}
 ];

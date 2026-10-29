@@ -50,7 +50,10 @@ function underlying(element: Element, surface: Rgba): Rgba {
 	return fill[3] === 0 ? surface : fill;
 }
 
-/** Контраст текста вариантов Button в трёх состояниях и кольцо фокуса снаружи и внутри контейнера (спек этапа 1, раздел 5). */
+/**
+ * Контраст текста вариантов Button в трёх состояниях и кольцо фокуса у кнопок и полей Input
+ * снаружи и внутри контейнера (спек этапа 1, раздел 5).
+ */
 export function runButtonChecks(page: HTMLElement): CheckResult[] {
 	const results: CheckResult[] = [];
 	const check = (name: string, ok: boolean, detail: string): void => {
@@ -70,12 +73,11 @@ export function runButtonChecks(page: HTMLElement): CheckResult[] {
 	for (const block of page.querySelectorAll<HTMLElement>('[data-focus-block]')) {
 		const mode = block.dataset['focusBlock'] ?? '?';
 		const inset = mode === 'inset';
-		for (const button of block.querySelectorAll<HTMLButtonElement>('button')) {
-			const variant = button.dataset['variant'] ?? '?';
-			const label = button.dataset['focusName'] ?? variant;
+		for (const control of block.querySelectorAll<HTMLElement>('button, input')) {
+			const label = control.dataset['focusName'] ?? control.dataset['variant'] ?? '?';
 			const options: FocusOptions & { focusVisible: boolean } = { focusVisible: true };
-			button.focus(options);
-			const style = getComputedStyle(button);
+			control.focus(options);
+			const style = getComputedStyle(control);
 			const offset = Number.parseFloat(style.outlineOffset);
 			check(`${mode}/${label}: кольцо фокуса показано`, style.outlineStyle === 'solid', `outline-style = ${style.outlineStyle}`);
 			check(
@@ -84,10 +86,10 @@ export function runButtonChecks(page: HTMLElement): CheckResult[] {
 				`outline-offset = ${style.outlineOffset}`
 			);
 			const ring = resolveColor(style.outlineColor);
-			const under = inset ? underlying(button, surface) : surface;
+			const under = inset ? underlying(control, surface) : surface;
 			const ratio = contrastRatio(blend(rgb(ring), ring[3] / 255, rgb(under)), rgb(under));
 			check(`${mode}/${label}: кольцо контрастно к фону (3:1)`, ratio >= 3, `контраст ${ratio.toFixed(2)}:1`);
-			button.blur();
+			control.blur();
 		}
 	}
 	return results;
