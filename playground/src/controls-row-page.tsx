@@ -3,6 +3,7 @@ import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
@@ -13,10 +14,12 @@ import { DemoCheckboxes } from './demo-checkboxes';
 import { DEMO_CONTROLS } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
+import { DemoRadioGroups } from './demo-radio-groups';
 import { DemoToggleGroups } from './demo-toggle-groups';
 import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
 import { pick } from './pick';
+import { runRadioChecks } from './radio-checks';
 import { runRowChecks } from './row-checks';
 import type { CheckResult } from './theme-checks';
 import { runToggleGroupChecks } from './toggle-group-checks';
@@ -51,7 +54,11 @@ function renderFocusControls(): JSX.Element[] {
 			<ToggleGroup.Item value='two' data-focus-name='toggle-plain'>Два</ToggleGroup.Item>
 		</ToggleGroup.Root>,
 		<Checkbox aria-label='Флажок' data-focus-name='checkbox'/>,
-		<Checkbox aria-label='Выбранный флажок' defaultChecked data-focus-name='checkbox-checked'/>
+		<Checkbox aria-label='Выбранный флажок' defaultChecked data-focus-name='checkbox-checked'/>,
+		<RadioGroup.Root aria-label='Радио' orientation='horizontal' defaultValue='two'>
+			<RadioGroup.Item value='one' aria-label='Радио' data-focus-name='radio'/>
+			<RadioGroup.Item value='two' aria-label='Выбранное радио' data-focus-name='radio-checked'/>
+		</RadioGroup.Root>
 	];
 }
 
@@ -68,7 +75,8 @@ export function ControlsRowPage(): JSX.Element {
 				...runInputChecks(page),
 				...runFieldChecks(page),
 				...runToggleGroupChecks(page),
-				...runCheckboxChecks(page)
+				...runCheckboxChecks(page),
+				...runRadioChecks(page)
 			]);
 		}
 	};
@@ -137,6 +145,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>Checkbox: состояния и контраст отметки</h2>
 				<DemoCheckboxes/>
+			</section>
+
+			<section>
+				<h2>RadioGroup: группа, состояния и контраст отметки (стрелки двигают выбор)</h2>
+				<DemoRadioGroups/>
 			</section>
 
 			<section>

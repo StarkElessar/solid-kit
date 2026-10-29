@@ -191,3 +191,10 @@ h2 {
     gap: 24px;
     align-items: center;
 }
+
+.radio-demos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-start;
+}

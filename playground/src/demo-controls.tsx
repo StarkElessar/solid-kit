@@ -3,6 +3,7 @@ import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import type { JSX } from 'solid-js';
 
@@ -72,5 +73,14 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 	{
 		id: 'checkbox-bare',
 		render: (size) => <Checkbox data-row-control='checkbox-bare' aria-label='Без подписи' size={size}/>
+	},
+	{
+		id: 'radio-group',
+		render: (size) => (
+			<RadioGroup.Root aria-label='Режим радио' orientation='horizontal' defaultValue='a' size={size}>
+				<RadioGroup.Item value='a' data-row-control='radio-a'>Один</RadioGroup.Item>
+				<RadioGroup.Item value='b' data-row-control='radio-b'>Два</RadioGroup.Item>
+			</RadioGroup.Root>
+		)
 	}
 ];
