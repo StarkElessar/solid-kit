@@ -205,3 +205,10 @@ h2 {
     gap: 24px;
     align-items: center;
 }
+
+.numeric-input-demos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}

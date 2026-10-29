@@ -3,6 +3,7 @@ import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
@@ -91,5 +92,9 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 	{
 		id: 'switch-bare',
 		render: (size) => <Switch data-row-control='switch-bare' aria-label='Без подписи' size={size}/>
+	},
+	{
+		id: 'numeric-input',
+		render: (size) => <NumericInput data-row-control='numeric-input' aria-label='Число' defaultValue={42} size={size}/>
 	}
 ];

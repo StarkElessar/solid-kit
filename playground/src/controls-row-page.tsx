@@ -3,6 +3,7 @@ import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
@@ -15,11 +16,13 @@ import { DemoCheckboxes } from './demo-checkboxes';
 import { DEMO_CONTROLS } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
+import { DemoNumericInputs } from './demo-numeric-inputs';
 import { DemoRadioGroups } from './demo-radio-groups';
 import { DemoSwitches } from './demo-switches';
 import { DemoToggleGroups } from './demo-toggle-groups';
 import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
+import { runNumericInputChecks } from './numeric-input-checks';
 import { pick } from './pick';
 import { runRadioChecks } from './radio-checks';
 import { runRowChecks } from './row-checks';
@@ -48,6 +51,7 @@ function renderFocusControls(): JSX.Element[] {
 		)),
 		<Input aria-label='Поле' placeholder='Текст' data-focus-name='input'/>,
 		<Input aria-label='Поле с ошибкой' aria-invalid='true' defaultValue='Ошибка' data-focus-name='input-invalid'/>,
+		<NumericInput aria-label='Число' defaultValue={7} data-focus-name='numeric-input'/>,
 		<ButtonGroup aria-label='Группа'>
 			<Button variant='plain' data-focus-name='group-first'>Один</Button>
 			<Button variant='plain' data-focus-name='group-second'>Два</Button>
@@ -82,7 +86,8 @@ export function ControlsRowPage(): JSX.Element {
 				...runToggleGroupChecks(page),
 				...runCheckboxChecks(page),
 				...runRadioChecks(page),
-				...runSwitchChecks(page)
+				...runSwitchChecks(page),
+				...runNumericInputChecks(page)
 			]);
 		}
 	};
@@ -161,6 +166,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>Switch: состояния и контраст дорожки и ползунка</h2>
 				<DemoSwitches/>
+			</section>
+
+			<section>
+				<h2>NumericInput: ввод, стрелки, границы и фиксация на потере фокуса</h2>
+				<DemoNumericInputs/>
 			</section>
 
 			<section>
