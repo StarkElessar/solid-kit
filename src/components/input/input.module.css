@@ -1,0 +1,33 @@
+/*
+ * Компонентные токены Input (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-input-border, --s-kit-input-radius, --s-kit-input-width
+ * Ошибка поля задаётся нативным aria-invalid="true": красная граница и красное кольцо фокуса.
+ */
+
+.root {
+    composes: control from "../../styles/control-base.module.css";
+
+    cursor: text;
+
+    inline-size: var(--s-kit-input-width, 12rem);
+    min-inline-size: 0;
+    border: 1px solid var(--s-kit-input-border, var(--s-kit-color-control-edge));
+    border-radius: var(--s-kit-input-radius, var(--s-kit-radius));
+
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-color-surface);
+}
+
+.root::placeholder {
+    color: var(--s-kit-color-muted);
+    opacity: 1;
+}
+
+.root[aria-invalid="true"] {
+    border-color: var(--s-kit-color-danger);
+}
+
+.root[aria-invalid="true"]:focus-visible {
+    outline-color: var(--s-kit-color-danger);
+}
