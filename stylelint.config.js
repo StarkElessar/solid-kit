@@ -19,7 +19,14 @@ export default {
 	// var(--x) проверяется по токенам, объявленным в tokens.css
 	referenceFiles: ['src/styles/tokens.css'],
 	rules: {
-		'no-unknown-custom-properties': true
+		'no-unknown-custom-properties': true,
+		// Safari 17.5 (минимум кита) знает только -webkit-backdrop-filter; без него материал панелей не размывается (раздел 4.3)
+		'property-no-vendor-prefix': [true, { ignoreProperties: ['-webkit-backdrop-filter'] }],
+		// пара -webkit-backdrop-filter + backdrop-filter с одним значением это не дубликат, а фолбэк для Safari
+		'declaration-block-no-duplicate-properties': [
+			true,
+			{ ignore: ['consecutive-duplicates', 'consecutive-duplicates-with-different-syntaxes'] }
+		]
 	},
 	overrides: [{ files: ['src/components/**/*.css'], rules: componentRules }]
 };
