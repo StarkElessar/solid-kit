@@ -77,7 +77,7 @@ node -e '
 const fs = require("node:fs");
 const dir = "dist/assets";
 const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
-const base = css.search(/\._control_[a-z0-9_]+\{/);
+const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
 const button = css.indexOf("--s-kit-button-radius");
 console.log("control base at", base, "button rules at", button);
 process.exit(base >= 0 && button > base ? 0 : 1);
@@ -99,7 +99,7 @@ node -e '
 const fs = require("node:fs");
 const dir = "dist/assets";
 const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
-const base = css.search(/\._control_[a-z0-9_]+\{/);
+const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
 const input = css.indexOf("--s-kit-input-radius");
 console.log("control base at", base, "input rules at", input);
 process.exit(base >= 0 && input > base ? 0 : 1);

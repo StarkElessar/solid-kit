@@ -11,7 +11,7 @@ function over(color: Rgba, under: Rgba): Rgb {
 	return blend(rgb(color), color[3] / 255, rgb(under));
 }
 
-/** Граница поля 3:1 (WCAG 1.4.11), текст и плейсхолдер 4.5:1 на обычном поле и граница поля с ошибкой 3:1. */
+/** Граница поля: ширина больше нуля, контраст 3:1 (WCAG 1.4.11) и у поля с ошибкой; текст и плейсхолдер 4.5:1 на обычном поле. */
 export function runInputChecks(page: HTMLElement): CheckResult[] {
 	const results: CheckResult[] = [];
 	const check = (name: string, ok: boolean, detail: string): void => {
@@ -27,6 +27,9 @@ export function runInputChecks(page: HTMLElement): CheckResult[] {
 
 	const border = ratio(over(resolveColor(getComputedStyle(input).borderTopColor), surface));
 	check('Input: граница отличима от фона (3:1)', border >= 3, `контраст ${border.toFixed(2)}:1`);
+
+	const borderWidth = Number.parseFloat(getComputedStyle(input).borderTopWidth);
+	check('Input: граница имеет ширину (основа контролов её не обнуляет)', borderWidth > 0, `ширина ${borderWidth}px`);
 
 	const invalidBorder = ratio(over(resolveColor(getComputedStyle(invalid).borderTopColor), surface));
 	check('Input с ошибкой: граница отличима от фона (3:1)', invalidBorder >= 3, `контраст ${invalidBorder.toFixed(2)}:1`);
