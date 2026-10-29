@@ -6,6 +6,7 @@ import { Checkbox } from '@stark/solid-kit/checkbox';
 import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
@@ -40,6 +41,7 @@ render(
 			<Button id="btn" variant="danger">Удалить</Button>
 			<IconButton id="icon-btn" aria-label="Закрыть" variant="tinted">×</IconButton>
 			<Input id="field" aria-label="Имя" defaultValue="Анна" aria-invalid="true" />
+			<NumericInput aria-label="Количество" min={0} defaultValue={1} />
 			<Field label="Почта" hint="Подсказка">{(control) => <input {...control} />}</Field>
 			<ButtonGroup aria-label="Период">
 				<Button variant="plain">День</Button>
