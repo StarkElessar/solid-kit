@@ -1,0 +1,71 @@
+/*
+ * Компонентные токены Button (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-button-bg, --s-kit-button-bg-hover, --s-kit-button-bg-active, --s-kit-button-color, --s-kit-button-radius
+ * Варианты задаются атрибутом data-variant: primary, tinted, plain, danger.
+ */
+
+.root {
+    composes: control from "../../styles/control-base.module.css";
+    border-radius: var(--s-kit-button-radius, var(--s-kit-radius));
+    font-weight: 500;
+}
+
+.root[data-variant="primary"] {
+    color: var(--s-kit-button-color, var(--s-kit-color-primary-contrast));
+    background: var(--s-kit-button-bg, var(--s-kit-color-primary));
+}
+
+.root[data-variant="primary"]:hover:not(:disabled) {
+    background: var(--s-kit-button-bg-hover, var(--s-kit-color-primary-hover));
+}
+
+.root[data-variant="primary"]:active:not(:disabled) {
+    background: var(--s-kit-button-bg-active, var(--s-kit-color-primary-active));
+}
+
+.root[data-variant="primary"]:focus-visible {
+    outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
+}
+
+.root[data-variant="tinted"] {
+    color: var(--s-kit-button-color, var(--s-kit-color-text));
+    background: var(--s-kit-button-bg, var(--s-kit-color-tint));
+}
+
+.root[data-variant="tinted"]:hover:not(:disabled) {
+    background: var(--s-kit-button-bg-hover, var(--s-kit-color-tint-hover));
+}
+
+.root[data-variant="tinted"]:active:not(:disabled) {
+    background: var(--s-kit-button-bg-active, var(--s-kit-color-tint-active));
+}
+
+.root[data-variant="plain"] {
+    color: var(--s-kit-button-color, var(--s-kit-color-text));
+    background: var(--s-kit-button-bg, transparent);
+}
+
+.root[data-variant="plain"]:hover:not(:disabled) {
+    background: var(--s-kit-button-bg-hover, var(--s-kit-color-hover));
+}
+
+.root[data-variant="plain"]:active:not(:disabled) {
+    background: var(--s-kit-button-bg-active, var(--s-kit-color-tint));
+}
+
+.root[data-variant="danger"] {
+    color: var(--s-kit-button-color, var(--s-kit-color-primary-contrast));
+    background: var(--s-kit-button-bg, var(--s-kit-color-danger));
+}
+
+.root[data-variant="danger"]:hover:not(:disabled) {
+    background: var(--s-kit-button-bg-hover, var(--s-kit-color-danger-hover));
+}
+
+.root[data-variant="danger"]:active:not(:disabled) {
+    background: var(--s-kit-button-bg-active, var(--s-kit-color-danger-active));
+}
+
+.root[data-variant="danger"]:focus-visible {
+    outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
+}

@@ -1,0 +1,42 @@
+/*
+ * Общая основа контролов этапа 1 (спек этапа 1, раздел 2): размер по разделу 5, шрифт, кольцо фокуса, недоступное состояние.
+ * Подключается через composes; цвета, границу и скругление добавляет компонент.
+ */
+
+.control {
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-block: 0;
+    padding-inline: var(--s-kit-control-padding-x, var(--s-kit-control-padding-x-md));
+    border: 0;
+    border-radius: var(--s-kit-radius);
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    line-height: 1;
+    white-space: nowrap;
+
+    transition: background-color 150ms, border-color 150ms;
+}
+
+.control:focus-visible {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+}
+
+.control:disabled {
+    cursor: not-allowed;
+    opacity: var(--s-kit-disabled-opacity);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .control {
+        transition: none;
+    }
+}

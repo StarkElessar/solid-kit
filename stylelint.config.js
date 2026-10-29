@@ -25,6 +25,8 @@ export default {
 	referenceFiles: ['src/styles/tokens.css'],
 	rules: {
 		'no-unknown-custom-properties': true,
+		// composes это ключевое слово CSS Modules, а не свойство CSS
+		'property-no-unknown': [true, { ignoreProperties: ['composes'] }],
 		// Safari 17.5 (минимум кита) знает только -webkit-backdrop-filter; без него материал панелей не размывается (раздел 4.3)
 		'property-no-vendor-prefix': [true, { ignoreProperties: ['-webkit-backdrop-filter'] }],
 		// пара -webkit-backdrop-filter + backdrop-filter с одним значением это не дубликат, а фолбэк для Safari
