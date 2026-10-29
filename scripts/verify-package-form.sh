@@ -109,6 +109,7 @@ grep -lq -- '--s-kit-button-group-gap' dist/assets/*.css && ok "ButtonGroup styl
 grep -lq -- '--s-kit-toggle-group-selected-bg' dist/assets/*.css && ok "ToggleGroup styles are in the built CSS" || fail "ToggleGroup styles are missing from the built CSS"
 grep -lq -- '--s-kit-checkbox-radius' dist/assets/*.css && ok "Checkbox styles are in the built CSS" || fail "Checkbox styles are missing from the built CSS"
 grep -lq -- '--s-kit-radio-size' dist/assets/*.css && ok "RadioGroup styles are in the built CSS" || fail "RadioGroup styles are missing from the built CSS"
+grep -lq -- '--s-kit-switch-width' dist/assets/*.css && ok "Switch styles are in the built CSS" || fail "Switch styles are missing from the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
