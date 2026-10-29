@@ -319,6 +319,40 @@ interface RadioGroupItemProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElem
 - **Тесты:** группа с именем и атрибутами корня, радио с доступным именем от подписи и от `aria-label`, общий и уникальный `name` (и переопределение), `defaultValue`, выбор и `onValueChange`, повторный щелчок по выбранному молчит, controlled (следует за родителем, возврат при отказе, `null`), `disabled` группы и элемента, `size` и `orientation`, проброс атрибутов, ошибка у Item вне группы. Геометрия, контраст отметки, кольцо и стрелки проверяются на странице playground (раздел 4).
 - **Вне объёма:** одиночный `Radio`, `required` и валидация группы, отдельный `aria-orientation`, карточки-радио (Item со своей разметкой внутри).
 
+### 3.8 Switch
+
+Переключатель «включено / выключено» с подписью и без. Плоский компонент по образцу Checkbox: корень `<label>`, внутри нативный `<input type="checkbox" role="switch">` с `appearance: none` (дорожка) и соседний `span` (ползунок).
+
+```ts
+interface SwitchProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>,
+  'class' | 'style' | 'size' | 'type' | 'role' | 'checked' | 'defaultChecked' | 'onChange' | 'onInput' | 'children'> {
+  checked?: boolean;
+  defaultChecked?: boolean;          // по умолчанию false
+  onCheckedChange?: (checked: boolean) => void;
+  size?: 'sm' | 'md' | 'lg';         // на корне
+  class?: string;                    // на корне
+  style?: JSX.CSSProperties;         // на корне
+  children?: JSX.Element;            // подпись
+}
+```
+
+```tsx
+<Switch defaultChecked>Уведомления</Switch>
+<Switch aria-label='Тёмная тема' checked={dark()} onCheckedChange={setDark}/>
+```
+
+Решения (2026-10-29, владелец поручил писать план и сразу выполнять):
+
+- **Устройство как у Checkbox** (раздел 3.6): `class`, `style`, `size`, `children` на корне `label`, остальные нативные атрибуты на `input` (поэтому `<Switch {...control}/>` из Field получает `id` и `aria-*` на настоящий элемент), `data-s-kit` и `data-s-kit-size` (только при `size`) на корне, `data-disabled` у корня при `disabled`. Роль `switch` задана самим компонентом и не переопределяется: браузер отдаёт скринридеру состояние `checked` как `aria-checked`.
+- **Controlled/uncontrolled:** `checked` / `defaultChecked` / `onCheckedChange` через `createControllableSignal<boolean>`; если родитель не принял изменение, DOM возвращается к его значению (как у Checkbox). Состояния `indeterminate` у переключателя нет.
+- **Высота** корня равна высоте контрола (`var(--s-kit-control-height, var(--s-kit-control-height-md))`), как у Checkbox, поэтому строка стоит в одной линии с остальными контролами.
+- **Вид.** Дорожка 32×18 px, скругление в полукруг (`--s-kit-switch-width`, `--s-kit-switch-height`), ползунок на 4 px меньше высоты дорожки и на 2 px от её края. Выключен: дорожка цвета `--s-kit-color-control-edge` (контраст к поверхности не ниже 3:1, зонтичный спек, раздел 4.1), ползунок `--s-kit-color-surface`. Включён: дорожка `--s-kit-color-primary`, ползунок `--s-kit-color-primary-contrast`. Включённая: hover `primary-hover`, active `primary-active`. У выключенной дорожки hover и active не меняются (подходящего токена нет). Кольцо фокуса на самом `input` (снаружи по умолчанию, внутри по `data-s-kit-focus-inset`, у включённого цвет `--s-kit-focus-ring-on-fill`). Красного состояния для `aria-invalid` нет (YAGNI: переключатель не участвует в валидации).
+- **Анимации.** Цвет дорожки 150 мс и сдвиг ползунка (`transform`) 150 мс, оба отключаются при `prefers-reduced-motion`. Правило раздела 2 «размеры и позиция не анимируются» относится к свойствам раскладки (ширина, высота, отступы): ползунок двигается `transform` и на раскладку не влияет, раздел 2 уточнён этим комментарием.
+- **Тексты и RTL.** Подпись стоит справа от переключателя; сдвиг ползунка рассчитан на LTR, RTL в этапе не поддерживается.
+- **Компонентные токены:** `--s-kit-switch-width` (32px), `--s-kit-switch-height` (18px), `--s-kit-switch-gap` (8px, до подписи).
+- **Тесты:** нативный чекбокс с ролью `switch` и доступным именем от подписи и от `aria-label`; корень `label` с `data-s-kit`, `input` без него; `size` только при передаче; uncontrolled (`defaultChecked`, щелчок, `onCheckedChange`); щелчок по подписи; controlled (следует за родителем, возврат при отказе); `disabled`; проброс атрибутов на `input`, `class` и `style` на корень; подпись только при `children`. Геометрия, контраст дорожки и ползунка, кольцо фокуса проверяются на странице playground (раздел 4).
+- **Вне объёма:** красное состояние ошибки, подписи «Вкл/Выкл» внутри дорожки, иконки в ползунке, RTL.
+
 ## 4. Страница «Контролы в ряд» и проверка высот
 
 Страница `controls-row-page.tsx` в playground, наращивается с каждым компонентом (раздел 5 зонтичного). Пять рядов: (1) без `size` и без обёртки, (2) обёртка `sm`, (3) обёртка `lg`, (4) обёртка `sm` и часть контролов с локальным `size="lg"`, (5) явный `size` у каждого. В каждом ряду контролы стоят на одной линии. Встроенная проверка сравнивает `getBoundingClientRect()` верха и низа каждого контрола с эталоном ряда и выводит отклонения как OK/FAIL (по образцу `theme-checks.ts`); допуск 0 px (контролы одного размера совпадают пиксель в пиксель), для рядов 4 и 5 эталон считается по размеру каждого контрола. Для групп (ButtonGroup, ToggleGroup) эталоном служит оболочка группы.
