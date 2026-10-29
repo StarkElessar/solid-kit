@@ -1,0 +1,33 @@
+/*
+ * Компонентные токены ButtonGroup (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-button-group-padding, --s-kit-button-group-gap, --s-kit-button-group-radius
+ * Кнопки внутри обычные Button; группа владеет их высотой и радиусом. Правила для детей написаны как
+ * .root > [data-s-kit]: специфичность выше, чем у правил Button, порядок CSS в бандле не важен.
+ */
+
+.root {
+    display: inline-flex;
+    flex: none;
+    gap: var(--s-kit-button-group-gap, 2px);
+    align-items: center;
+
+    box-sizing: border-box;
+    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding: var(--s-kit-button-group-padding, 2px);
+    border-radius: var(--s-kit-button-group-radius, var(--s-kit-radius));
+
+    background: var(--s-kit-color-tint);
+}
+
+.root > [data-s-kit] {
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 2 * var(--s-kit-button-group-padding, 2px));
+    border-radius: calc(var(--s-kit-button-group-radius, var(--s-kit-radius)) - var(--s-kit-button-group-padding, 2px));
+}
+
+.root > [data-s-kit][data-variant="plain"]:hover:not(:disabled) {
+    background: var(--s-kit-button-bg-hover, var(--s-kit-color-tint-hover));
+}
+
+.root > [data-s-kit][data-variant="plain"]:active:not(:disabled) {
+    background: var(--s-kit-button-bg-active, var(--s-kit-color-tint-active));
+}
