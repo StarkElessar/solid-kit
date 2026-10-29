@@ -273,6 +273,52 @@ interface CheckboxProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>,
 - **Тесты:** нативный чекбокс с доступным именем от подписи и от `aria-label`; корень `label` с `data-s-kit`, `input` без него; `size` только при передаче; uncontrolled (`defaultChecked`, щелчок, `onCheckedChange`); controlled (следует за родителем, возврат при отказе); `indeterminate` (свойство, возврат после щелчка, реакция на смену пропа); `disabled`; проброс атрибутов на `input`, а `class` и `style` на корень; подпись только при `children`. Геометрия, контраст отметки и кольцо фокуса проверяются на странице playground (раздел 4).
 - **Вне объёма:** трёхсостоятельный цикл «частично → выбрано → снято» внутри компонента, группа флажков (`CheckboxGroup`), иконка вместо галочки через проп.
 
+### 3.7 Radio и RadioGroup
+
+Группа радиокнопок: compound `RadioGroup.Root` (оболочка с состоянием выбора) и `RadioGroup.Item` (одна радиокнопка с подписью или без). Нативные `<input type="radio">` с общим `name`, нарисованные тем же приёмом, что Checkbox.
+
+```ts
+interface RadioGroupRootProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'class' | 'style'> {
+  value?: string | null;                    // null: контролируемо, ничего не выбрано
+  defaultValue?: string | null;             // по умолчанию null
+  onValueChange?: (value: string) => void;
+  name?: string;                            // по умолчанию уникальное имя группы
+  disabled?: boolean;
+  orientation?: 'vertical' | 'horizontal';  // по умолчанию vertical
+  size?: 'sm' | 'md' | 'lg';
+  class?: string;
+  style?: JSX.CSSProperties;
+}
+interface RadioGroupItemProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>,
+  'class' | 'style' | 'size' | 'type' | 'name' | 'value' | 'checked' | 'defaultChecked' | 'onChange' | 'onInput' | 'children'> {
+  value: string;
+  class?: string;                           // на корне (label)
+  style?: JSX.CSSProperties;                // на корне (label)
+  children?: JSX.Element;                   // подпись
+}
+```
+
+```tsx
+<RadioGroup.Root aria-label='Тариф' defaultValue='basic'>
+  <RadioGroup.Item value='basic'>Базовый</RadioGroup.Item>
+  <RadioGroup.Item value='pro'>Расширенный</RadioGroup.Item>
+</RadioGroup.Root>
+```
+
+Решения (2026-10-29, владелец поручил писать план и сразу выполнять):
+
+- **Radio это `RadioGroup.Item`.** Отдельной папки `radio` и отдельного публичного пути нет: одиночная радиокнопка без группы не имеет смысла (YAGNI), публичный путь один, `@stark/solid-kit/radio-group`. Строка «Radio + RadioGroup» таблицы порядка закрывается этим компонентом. Отступление от формулировки «плоские: Radio» раздела 2: Radio существует только как часть compound.
+- **Нативная группа.** Все `input` группы получают один `name` (`name` корня или уникальный, `createUniqueId`), поэтому браузер сам даёт то, ради чего радио и существует: один Tab-стоп на группу, стрелки перемещают и выбирают, пропуск отключённых, Space выбирает. Собственной клавиатурной логики и roving tabindex нет.
+- **Корень** `div role="radiogroup"` с `data-s-kit`, `data-s-kit-size` (только при `size`), `data-orientation`; имя через `aria-label` или `aria-labelledby`. `inline-flex`: вертикально без зазора (строка и так высотой с контрол), горизонтально зазор 16 px. Остальные нативные атрибуты (`id`, `aria-describedby`, `aria-invalid`) идут на корень, поэтому группа принимает атрибуты Field.
+- **Item** как Checkbox: корень `label` (`data-s-kit`, `class`, `style`, подпись), внутри `input` с `appearance: none` и соседний SVG с точкой поверх него; остальные нативные атрибуты на `input`. Размер задаёт только группа (`size` у корня или обёртка), у Item `size` нет. Высота корня Item равна высоте контрола, как у Checkbox.
+- **Вид.** Круглая отметка 16 px (`--s-kit-radio-size`): не выбрана заливка `surface` и граница `control-edge`; выбрана заливка и граница `primary`, точка `primary-contrast`; hover, active, фокус и `disabled` как у Checkbox. `aria-invalid="true"` на корне группы даёт красную границу не выбранных радио и красное кольцо у них.
+- **Controlled/uncontrolled** через `createControllableSignal<string | null>`: `value` / `defaultValue` / `onValueChange` (вызывается только со значением выбранного элемента). Выбранный Item определяется сравнением значения. В контролируемом режиме, если родитель не принял изменение, корень после выбора возвращает `checked` всех радио группы к значению родителя (браузер уже перенёс выбор).
+- **`disabled`:** на корне отключает все радио, на Item одно; корень Item получает `data-disabled`, курсор `not-allowed`, непрозрачность `--s-kit-disabled-opacity`.
+- **Компонентные токены:** `--s-kit-radio-size`, `--s-kit-radio-gap` (до подписи, 8px), `--s-kit-radio-group-gap`.
+- **Раскладка папки:** `radio-group-context.ts`, `radio-group-root.tsx`, `radio-group-item.tsx`, `radio-group.module.css`, `index.ts` (`export const RadioGroup = { Root, Item }`).
+- **Тесты:** группа с именем и атрибутами корня, радио с доступным именем от подписи и от `aria-label`, общий и уникальный `name` (и переопределение), `defaultValue`, выбор и `onValueChange`, повторный щелчок по выбранному молчит, controlled (следует за родителем, возврат при отказе, `null`), `disabled` группы и элемента, `size` и `orientation`, проброс атрибутов, ошибка у Item вне группы. Геометрия, контраст отметки, кольцо и стрелки проверяются на странице playground (раздел 4).
+- **Вне объёма:** одиночный `Radio`, `required` и валидация группы, отдельный `aria-orientation`, карточки-радио (Item со своей разметкой внутри).
+
 ## 4. Страница «Контролы в ряд» и проверка высот
 
 Страница `controls-row-page.tsx` в playground, наращивается с каждым компонентом (раздел 5 зонтичного). Пять рядов: (1) без `size` и без обёртки, (2) обёртка `sm`, (3) обёртка `lg`, (4) обёртка `sm` и часть контролов с локальным `size="lg"`, (5) явный `size` у каждого. В каждом ряду контролы стоят на одной линии. Встроенная проверка сравнивает `getBoundingClientRect()` верха и низа каждого контрола с эталоном ряда и выводит отклонения как OK/FAIL (по образцу `theme-checks.ts`); допуск 0 px (контролы одного размера совпадают пиксель в пиксель), для рядов 4 и 5 эталон считается по размеру каждого контрола. Для групп (ButtonGroup, ToggleGroup) эталоном служит оболочка группы.
