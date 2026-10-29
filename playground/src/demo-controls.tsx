@@ -1,5 +1,6 @@
 import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
+import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
@@ -63,5 +64,13 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 				<ToggleGroup.Item value='month'>Месяц</ToggleGroup.Item>
 			</ToggleGroup.Root>
 		)
+	},
+	{
+		id: 'checkbox',
+		render: (size) => <Checkbox data-row-control='checkbox' defaultChecked size={size}>Флажок</Checkbox>
+	},
+	{
+		id: 'checkbox-bare',
+		render: (size) => <Checkbox data-row-control='checkbox-bare' aria-label='Без подписи' size={size}/>
 	}
 ];

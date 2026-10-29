@@ -1,12 +1,15 @@
 import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
+import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runButtonChecks } from './button-checks';
+import { runCheckboxChecks } from './checkbox-checks';
 import { ROWS, type RowSpec } from './control-rows';
+import { DemoCheckboxes } from './demo-checkboxes';
 import { DEMO_CONTROLS } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
@@ -46,7 +49,9 @@ function renderFocusControls(): JSX.Element[] {
 		<ToggleGroup.Root aria-label='Переключатели' mode='multi' defaultValue={['one']}>
 			<ToggleGroup.Item value='one' data-focus-name='toggle-selected'>Один</ToggleGroup.Item>
 			<ToggleGroup.Item value='two' data-focus-name='toggle-plain'>Два</ToggleGroup.Item>
-		</ToggleGroup.Root>
+		</ToggleGroup.Root>,
+		<Checkbox aria-label='Флажок' data-focus-name='checkbox'/>,
+		<Checkbox aria-label='Выбранный флажок' defaultChecked data-focus-name='checkbox-checked'/>
 	];
 }
 
@@ -62,7 +67,8 @@ export function ControlsRowPage(): JSX.Element {
 				...runButtonChecks(page),
 				...runInputChecks(page),
 				...runFieldChecks(page),
-				...runToggleGroupChecks(page)
+				...runToggleGroupChecks(page),
+				...runCheckboxChecks(page)
 			]);
 		}
 	};
@@ -126,6 +132,11 @@ export function ControlsRowPage(): JSX.Element {
 			<section>
 				<h2>ToggleGroup: щелчок меняет значение, выбранный сегмент отличается заливкой и цветом текста</h2>
 				<DemoToggleGroups/>
+			</section>
+
+			<section>
+				<h2>Checkbox: состояния и контраст отметки</h2>
+				<DemoCheckboxes/>
 			</section>
 
 			<section>

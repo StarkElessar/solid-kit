@@ -15,7 +15,8 @@ export function runRowChecks(root: ParentNode): CheckResult[] {
 		const bySize = new Map<string, DOMRect[]>();
 		for (const control of row.querySelectorAll<HTMLElement>('[data-row-control]')) {
 			const size = control.closest('[data-s-kit-size]')?.getAttribute('data-s-kit-size') ?? 'md';
-			const rect = control.getBoundingClientRect();
+			const root = control.closest<HTMLElement>('[data-s-kit]') ?? control;
+			const rect = root.getBoundingClientRect();
 			const expected = tokenPixels(row, size);
 			results.push({
 				name: `${rowId}: ${control.dataset['rowControl'] ?? '?'} (${size}) имеет высоту токена`,
@@ -30,7 +31,7 @@ export function runRowChecks(root: ParentNode): CheckResult[] {
 				});
 			}
 			if (control.hasAttribute('data-row-group')) {
-				const offsets = [...control.children].map((child) => {
+				const offsets = [...root.children].map((child) => {
 					const childRect = child.getBoundingClientRect();
 					return { height: childRect.height, inset: childRect.top - rect.top };
 				});
