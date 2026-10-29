@@ -1,0 +1,28 @@
+/*
+ * Компонентные токены Field (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-field-gap
+ * Размер на корне (data-s-kit-size) действует и на вложенный контрол; ошибка показывается атрибутом data-invalid.
+ */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-kit-field-gap, 6px);
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    line-height: var(--s-kit-line-height);
+    color: var(--s-kit-color-text);
+}
+
+.label {
+    font-weight: 500;
+}
+
+.message {
+    color: var(--s-kit-color-muted);
+}
+
+.root[data-invalid] .message {
+    color: var(--s-kit-color-danger);
+}
