@@ -39,6 +39,9 @@
     --s-kit-focus-width: 2px;
     --s-kit-focus-offset: 2px;
 
+    /* недоступное состояние контролов */
+    --s-kit-disabled-opacity: 0.45;
+
     /* материал панелей (раздел 4.3) */
     --s-kit-panel-blur: 20px;
     --s-kit-panel-opacity: 82%;
@@ -79,6 +82,7 @@
     --s-kit-color-control-edge: color-mix(in oklch, var(--s-kit-color-text) 50%, transparent);
     --s-kit-color-danger-subtle: color-mix(in oklch, var(--s-kit-color-danger) 14%, var(--s-kit-color-surface));
     --s-kit-color-danger-hover: color-mix(in oklch, var(--s-kit-color-danger), var(--s-kit-color-text) 14%);
+    --s-kit-color-danger-active: color-mix(in oklch, var(--s-kit-color-danger), var(--s-kit-color-text) 26%);
     --s-kit-color-success-subtle: color-mix(in oklch, var(--s-kit-color-success) 14%, var(--s-kit-color-surface));
     --s-kit-color-success-hover: color-mix(in oklch, var(--s-kit-color-success), var(--s-kit-color-text) 14%);
     --s-kit-color-warning-subtle: color-mix(in oklch, var(--s-kit-color-warning) 16%, var(--s-kit-color-surface));
@@ -121,4 +125,7 @@
 /* внутреннее кольцо фокуса для потомков обрезающего контейнера (раздел 5.1) */
 [data-s-kit-focus-inset] {
     --s-kit-focus-ring-offset: calc(-1 * var(--s-kit-focus-width));
+
+    /* внутри кольцо ложится на заливку компонента: кольцо цвета primary поверх заливки primary даёт 1:1 */
+    --s-kit-focus-ring-on-fill: var(--s-kit-color-primary-contrast);
 }

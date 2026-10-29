@@ -43,6 +43,16 @@ describe('stylelint rules of the kit', () => {
 		expect(rules.filter((rule) => rule === 'declaration-property-value-disallowed-list')).toHaveLength(2);
 	});
 
+	it('forbids var(--s-kit-control-height) without a fallback in component CSS', async () => {
+		const rules = await lint('.a {\n    block-size: var(--s-kit-control-height);\n}\n', COMPONENT_FILE);
+		expect(rules).toContain('declaration-property-value-disallowed-list');
+	});
+
+	it('allows var(--s-kit-control-height, var(--s-kit-control-height-md))', async () => {
+		const code = '.a {\n    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));\n}\n';
+		expect(await lint(code, COMPONENT_FILE)).toEqual([]);
+	});
+
 	it('flags a var() that points at an undeclared token', async () => {
 		expect(await lint('.a {\n    color: var(--s-kit-color-typo);\n}\n', COMPONENT_FILE)).toContain('no-unknown-custom-properties');
 	});

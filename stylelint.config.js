@@ -8,8 +8,13 @@ const componentRules = {
 	],
 	// outline: none без замены запрещён; кольцо задаётся токенами фокуса (спек, раздел 5.1).
 	'declaration-property-value-disallowed-list': [
-		{ outline: ['none', '0'], 'outline-style': ['none'] },
-		{ message: 'Do not remove the focus indicator: use the --s-kit-focus-* tokens.' }
+		{
+			outline: ['none', '0'],
+			'outline-style': ['none'],
+			// единое правило разрешения размера (раздел 5): без фолбэка контрол вне обёртки остаётся без высоты
+			'/.+/': [/var\(--s-kit-control-height\)/]
+		},
+		{ message: 'Do not remove the focus indicator (use --s-kit-focus-* tokens) and always give --s-kit-control-height a fallback.' }
 	]
 };
 
@@ -28,5 +33,5 @@ export default {
 			{ ignore: ['consecutive-duplicates', 'consecutive-duplicates-with-different-syntaxes'] }
 		]
 	},
-	overrides: [{ files: ['src/components/**/*.css'], rules: componentRules }]
+	overrides: [{ files: ['src/components/**/*.css', 'src/styles/**/*.module.css'], rules: componentRules }]
 };

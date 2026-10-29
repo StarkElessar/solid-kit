@@ -26,6 +26,7 @@ const DERIVED_COLORS = [
 	'control-edge',
 	'danger-subtle',
 	'danger-hover',
+	'danger-active',
 	'success-subtle',
 	'success-hover',
 	'warning-subtle',
@@ -50,6 +51,7 @@ const OTHER_TOKENS = [
 	'focus-width',
 	'focus-offset',
 	'focus-space',
+	'disabled-opacity',
 	'panel-blur',
 	'panel-opacity',
 	'shadow-color',
@@ -92,6 +94,11 @@ describe('token contract', () => {
 		expect(tokens).toMatch(/\[data-s-kit-focus-inset\]/);
 	});
 
+	it('sets the on-fill focus ring colour only inside a focus-inset container', () => {
+		expect(tokens).toMatch(/\[data-s-kit-focus-inset\]\s*{[^}]*--s-kit-focus-ring-on-fill:\s*var\(--s-kit-color-primary-contrast\)/);
+		expect(tokens.match(/--s-kit-focus-ring-on-fill:/g)).toHaveLength(1);
+	});
+
 	it('recomputes derived tokens on every component root', () => {
 		expect(tokens).toMatch(/:root,\s*\[data-s-kit\]\s*{/);
 	});
@@ -110,6 +117,7 @@ describe('contrast of base token pairs (WCAG 2.x, 4.5:1)', () => {
 		['text', 'surface'],
 		['primary-contrast', 'primary'],
 		['primary', 'surface'],
+		['primary-contrast', 'danger'],
 		['danger', 'surface'],
 		['success', 'surface'],
 		['warning', 'surface']
