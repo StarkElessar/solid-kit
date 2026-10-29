@@ -6,7 +6,9 @@ import { createEffect, createSignal, For, type JSX } from 'solid-js';
 import { runButtonChecks } from './button-checks';
 import { ROWS, type RowSpec } from './control-rows';
 import { DEMO_CONTROLS } from './demo-controls';
+import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
+import { runFieldChecks } from './field-checks';
 import { runInputChecks } from './input-checks';
 import { pick } from './pick';
 import { runRowChecks } from './row-checks';
@@ -43,7 +45,7 @@ export function ControlsRowPage(): JSX.Element {
 
 	const runChecks = (): void => {
 		if (page) {
-			setResults([...runRowChecks(page), ...runButtonChecks(page), ...runInputChecks(page)]);
+			setResults([...runRowChecks(page), ...runButtonChecks(page), ...runInputChecks(page), ...runFieldChecks(page)]);
 		}
 	};
 
@@ -96,6 +98,11 @@ export function ControlsRowPage(): JSX.Element {
 						{renderFocusControls()}
 					</div>
 				</div>
+			</section>
+
+			<section>
+				<h2>Field: подпись, подсказка и ошибка вокруг поля</h2>
+				<DemoFields/>
 			</section>
 
 			<section>
