@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.DS_Store
+
+# репозиторий публичный: секреты и бэкапы не коммитятся
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.npmrc
+*.bak
+*.backup
+backups/

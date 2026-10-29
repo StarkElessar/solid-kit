@@ -1,0 +1,46 @@
+{
+	"name": "@stark/solid-kit",
+	"version": "0.1.0",
+	"description": "Личный UI-кит на Solid.js: исходники без сборки, модульный, темизация через CSS-переменные",
+	"type": "module",
+	"files": ["src"],
+	"sideEffects": ["**/*.css"],
+	"exports": {
+		"./tokens.css": "./src/styles/tokens.css",
+		"./package.json": "./package.json",
+		"./*": {
+			"solid": "./src/components/*/index.ts",
+			"default": "./src/components/*/index.ts"
+		}
+	},
+	"scripts": {
+		"dev": "pnpm --filter playground dev",
+		"lint": "eslint . --max-warnings 0 && stylelint \"src/**/*.css\" \"playground/src/**/*.css\"",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p playground",
+		"test": "vitest run",
+		"check": "pnpm lint && pnpm typecheck && pnpm test"
+	},
+	"peerDependencies": {
+		"solid-js": "^1.9.0"
+	},
+	"dependencies": {
+		"@floating-ui/dom": "^1.8.0",
+		"@tanstack/solid-virtual": "^3.13.50"
+	},
+	"devDependencies": {
+		"@solidjs/testing-library": "^0.8.10",
+		"@stark/eslint-config": "git+ssh://git@github.com/StarkElessar/stark-eslint-config.git#v0.1.0",
+		"@stark/stylelint-config": "git+ssh://git@github.com/StarkElessar/stark-stylelint-config.git#v0.1.0",
+		"eslint": "^9.0.0",
+		"eslint-plugin-solid": "^0.14.5",
+		"globals": "^17.0.0",
+		"jsdom": "^30.0.0",
+		"solid-js": "1.9.17",
+		"stylelint": "^17.14.0",
+		"typescript": "5.9.3",
+		"vite": "8.3.5",
+		"vite-plugin-solid": "2.11.14",
+		"vitest": "^5.0.0"
+	},
+	"packageManager": "pnpm@11.12.0"
+}
