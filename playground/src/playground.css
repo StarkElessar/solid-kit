@@ -1,0 +1,128 @@
+html {
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-font-size);
+    line-height: var(--s-kit-line-height);
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-color-surface);
+}
+
+body {
+    margin: 0;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    max-inline-size: 1100px;
+    padding: 24px;
+
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-color-surface);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.toolbar h1 {
+    margin: 0 auto 0 0;
+    font-size: 20px;
+}
+
+h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.boxes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.box {
+    min-block-size: 220px;
+    padding: 16px;
+    border: 1px solid var(--s-kit-color-hairline);
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-color-surface);
+}
+
+.chip {
+    display: inline-block;
+
+    inline-size: 16px;
+    block-size: 16px;
+    margin-inline-end: 8px;
+    border-radius: 4px;
+
+    vertical-align: middle;
+
+    background: var(--s-kit-color-primary);
+}
+
+.swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.swatch-group {
+    padding: 12px;
+    border-radius: var(--s-kit-radius);
+    color: var(--s-kit-color-text);
+    background: var(--s-kit-color-surface);
+}
+
+.swatch-row {
+    display: flex;
+    gap: 8px;
+    margin-block-start: 8px;
+}
+
+.swatch {
+    display: grid;
+    flex: 1;
+    place-items: center;
+
+    block-size: 40px;
+    border-radius: var(--s-kit-radius);
+
+    font-size: 11px;
+    color: var(--s-kit-color-primary-contrast);
+}
+
+.dialog {
+    border: 0;
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+    color: var(--s-kit-color-text);
+    background: var(--s-kit-color-surface);
+}
+
+.checks {
+    padding: 0;
+    list-style: none;
+}
+
+.checks li {
+    padding-block: 2px;
+}
+
+.checks li[data-ok="true"] {
+    color: var(--s-kit-color-success);
+}
+
+.checks li[data-ok="false"] {
+    font-weight: 600;
+    color: var(--s-kit-color-danger);
+}
