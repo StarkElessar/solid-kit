@@ -114,6 +114,21 @@ function addLayer(
 		outside.remove();
 	});
 
+	it('does not call close() of a lower layer that the upper layer has just unregistered', () => {
+		const outside = document.createElement('div');
+		document.body.append(outside);
+		const lower = addLayer();
+		const upper = addLayer();
+		upper.close.mockImplementation(() => {
+			lower.unregister();
+			upper.unregister();
+		});
+		pointerDownOn(outside);
+		expect(upper.close).toHaveBeenCalledOnce();
+		expect(lower.close).not.toHaveBeenCalled();
+		outside.remove();
+	});
+
 	it('survives a layer that unregisters itself while being closed', () => {
 		const outside = document.createElement('div');
 		document.body.append(outside);
@@ -141,7 +156,10 @@ Expected: FAIL (каскад и `modal` ещё не реализованы; та
 В `src/utils/layer-stack.ts` заменить интерфейс `Layer` и обработчик `onPointerDown`:
 
 ```ts
-/** Открытый слой (панель или диалог). Раздел 8 спека: Esc обрабатывает только верхний слой, клик снаружи каскадно закрывает слои сверху вниз. */
+/**
+ * Открытый слой (панель или диалог). Раздел 8 спека: Esc обрабатывает только верхний слой,
+ * клик снаружи каскадно закрывает слои сверху вниз.
+ */
 export interface Layer {
 	/** Принадлежит ли цель события слою (его панель или его инициатор). */
 	contains: (target: Node) => boolean;
@@ -160,6 +178,10 @@ function onPointerDown(event: PointerEvent): void {
 	const target = event.target;
 	// обход по копии: close() слоя может синхронно снять регистрацию и изменить стек
 	for (const layer of [...layers].reverse()) {
+		// слой мог быть снят закрытием вышележащего слоя: уже не зарегистрированному close() не вызываем
+		if (!layers.includes(layer)) {
+			continue;
+		}
 		if (layer.contains(target) || layer.modal) {
 			return;
 		}
@@ -303,7 +325,7 @@ export const PanelHostContext = createContext<Accessor<Element | undefined>>();
 Создать `src/internal/panel/panel-portal.tsx`:
 
 ```tsx
-import { type Accessor, createMemo, type JSX, useContext } from 'solid-js';
+import { type Accessor, type JSX, useContext } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
 import { PanelHostContext, resolvePanelHost } from './panel-host';
@@ -317,14 +339,16 @@ export interface PanelPortalProps {
 /** Монтирует панель в хост (спек этапа 2, раздел 3.2): не в `body` и не внутрь инициатора. */
 export function PanelPortal(props: PanelPortalProps): JSX.Element {
 	const provided = useContext(PanelHostContext);
-	const host = createMemo<Element>(() => {
+	// Не createMemo: при defaultOpen панель создаётся, пока инициатор ещё не вставлен в DOM (parentElement равен null),
+	// а мемо закэшировало бы `body`. Обычная функция читается эффектом Portal уже после вставки.
+	const host = (): Element => {
 		const fromContext = provided?.();
 		if (fromContext) {
 			return fromContext;
 		}
 		const anchor = props.anchor();
 		return anchor ? resolvePanelHost(anchor) : document.body;
-	});
+	};
 
 	return (
 		<Portal
@@ -392,10 +416,30 @@ afterEach(() => {
 describe('focusInitial', () => {
 	it('focuses the first tabbable element and skips disabled, hidden and tabindex=-1 ones', () => {
 		const panel = build(
-			'<button disabled id="a"></button><button tabindex="-1" id="b"></button><div hidden><button id="c"></button></div><input id="d"/><button id="e"></button>'
+			[
+			'<button disabled id="a"></button><button tabindex="-1" id="b"></button>',
+			'<div hidden><button id="c"></button></div><input id="d"/><button id="e"></button>'
+		].join('')
 		);
 		focusInitial(panel, 'first');
 		expect(document.activeElement?.id).toBe('d');
+	});
+
+	it('keeps looking when an element does not accept the focus (hidden by CSS), and falls back to the panel', () => {
+		const panel = build('<button id="a"></button><button id="b"></button>');
+		const first = panel.querySelector<HTMLElement>('#a');
+		if (first) {
+			first.focus = (): void => {};
+		}
+		focusInitial(panel, 'first');
+		expect(document.activeElement?.id).toBe('b');
+		const lonely = build('<button id="c"></button>');
+		const only = lonely.querySelector<HTMLElement>('#c');
+		if (only) {
+			only.focus = (): void => {};
+		}
+		focusInitial(lonely, 'first');
+		expect(document.activeElement).toBe(lonely);
 	});
 
 	it('focuses the panel itself (making it focusable) when nothing inside is tabbable', () => {
@@ -512,7 +556,17 @@ Expected: FAIL (модулей нет).
 ```ts
 export type InitialFocus = 'first' | 'panel' | 'none';
 
-const TABBABLE = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]';
+const TABBABLE = [
+	'a[href]',
+	'button',
+	'input:not([type="hidden"])',
+	'select',
+	'textarea',
+	'summary',
+	'[tabindex]',
+	'[contenteditable=""]',
+	'[contenteditable="true"]'
+].join(', ');
 
 function isTabbable(element: HTMLElement): boolean {
 	if (element.tabIndex < 0 || element.matches(':disabled')) {
@@ -521,15 +575,22 @@ function isTabbable(element: HTMLElement): boolean {
 	return element.closest('[hidden], [inert]') === null;
 }
 
-/** Первый табулируемый элемент панели, а если его нет, сама панель (ей ставится `tabindex="-1"`). Прокрутка страницы не нужна. */
+/**
+ * Первый элемент панели, который реально принял фокус, а если такого нет, сама панель (ей ставится `tabindex="-1"`).
+ * Элементы под `display: none` или `visibility: hidden` фокус не принимают: перебор идёт дальше, а не обрывается.
+ * Прокрутка страницы не нужна.
+ */
 export function focusInitial(panel: HTMLElement, mode: InitialFocus): void {
 	if (mode === 'none') {
 		return;
 	}
-	const target = mode === 'first' ? Array.from(panel.querySelectorAll<HTMLElement>(TABBABLE)).find(isTabbable) : undefined;
-	if (target) {
-		target.focus({ preventScroll: true });
-		return;
+	if (mode === 'first') {
+		for (const candidate of Array.from(panel.querySelectorAll<HTMLElement>(TABBABLE)).filter(isTabbable)) {
+			candidate.focus({ preventScroll: true });
+			if (document.activeElement === candidate) {
+				return;
+			}
+		}
 	}
 	if (!panel.hasAttribute('tabindex')) {
 		panel.setAttribute('tabindex', '-1');
@@ -559,8 +620,17 @@ export function blocksImplicitSubmit(event: KeyboardEvent, panel: HTMLElement): 
 ```ts
 import type { JSX } from 'solid-js';
 
-/** События, которые корень панели изолирует делегированными обработчиками Solid (спек этапа 2, раздел 3.3). `onKeyDown` обрабатывает сам FloatingPanel. */
-export type IsolatedEventProp = 'onClick' | 'onDblClick' | 'onContextMenu' | 'onPointerDown' | 'onMouseDown' | 'onKeyUp' | 'onInput' | 'onFocusIn' | 'onFocusOut';
+/** События, которые корень панели изолирует делегированными обработчиками Solid (спек этапа 2, раздел 3.3). */
+export type IsolatedEventProp =
+	| 'onClick'
+	| 'onDblClick'
+	| 'onContextMenu'
+	| 'onPointerDown'
+	| 'onMouseDown'
+	| 'onKeyUp'
+	| 'onInput'
+	| 'onFocusIn'
+	| 'onFocusOut';
 
 function stop(event: Event): void {
 	event.stopPropagation();
@@ -718,6 +788,25 @@ export function createFocusRestore(options: FocusRestoreOptions): void {
 }
 ```
 
+- [ ] **Step 5a: Защитные правила Stylelint для `src/internal`**
+
+Основа панелей лежит в `src/internal/`, куда `componentRules` (запрет литералов цвета, `outline: none/0`, голого `--s-kit-control-height`) не доходят. В `stylelint.config.js` расширить `overrides[0].files`:
+
+```js
+	overrides: [{ files: ['src/components/**/*.css', 'src/internal/**/*.css', 'src/styles/**/*.module.css'], rules: componentRules }]
+```
+
+В `src/styles/stylelint-rules.test.ts` рядом с `COMPONENT_FILE` добавить `const INTERNAL_FILE = 'src/internal/example/example.module.css';` и тест (по образцу соседних):
+
+```ts
+	it('applies the component rules to src/internal as well', async () => {
+		expect(await lint('.a {\n    color: #fff;\n}\n', INTERNAL_FILE)).toContain('color-no-hex');
+	});
+```
+
+Run: `pnpm exec vitest run src/styles/stylelint-rules.test.ts`
+Expected: PASS (тест падает без правки конфига).
+
 - [ ] **Step 6: Падающие тесты FloatingPanel**
 
 Создать `src/internal/floating-panel/floating-panel.test.tsx`:
@@ -744,20 +833,34 @@ interface Harness {
 	setOpen: (open: boolean) => void;
 }
 
-function renderPanel(options: { open?: boolean; wrap?: (inner: JSX.Element) => JSX.Element; children?: JSX.Element } = {}): Harness {
+interface PanelOptions {
+	open?: boolean;
+	/** `inner` вызывать внутри обёртки (`{inner()}`): иначе содержимое создаётся раньше провайдера контекста и не видит его. */
+	wrap?: (inner: () => JSX.Element) => JSX.Element;
+	children?: JSX.Element;
+	dismissExempt?: (() => Element | undefined) | undefined;
+}
+
+function renderPanel(options: PanelOptions = {}): Harness {
 	const onDismiss = vi.fn();
 	const [open, setOpen] = createSignal(options.open ?? true);
 	const [anchor, setAnchor] = createSignal<HTMLElement>();
-	const wrap = options.wrap ?? ((inner: JSX.Element) => inner);
+	const wrap = options.wrap ?? ((inner: () => JSX.Element) => inner());
 	render(() =>
-		wrap(
+		wrap(() => (
 			<>
 				<button type='button' ref={setAnchor}>anchor</button>
-				<FloatingPanel open={open} onDismiss={onDismiss} anchor={anchor} data-testid='panel'>
+				<FloatingPanel
+					open={open}
+					onDismiss={onDismiss}
+					anchor={anchor}
+					dismissExempt={options.dismissExempt}
+					data-testid='panel'
+				>
 					{options.children ?? 'content'}
 				</FloatingPanel>
 			</>
-		)
+		))
 	);
 	return { onDismiss, setOpen };
 }
@@ -773,7 +876,7 @@ describe('FloatingPanel', () => {
 	});
 
 	it('mounts the panel into the parent of the anchor, through a display: contents wrapper', () => {
-		renderPanel({ wrap: (inner) => <section data-testid='host'>{inner}</section> });
+		renderPanel({ wrap: (inner) => <section data-testid='host'>{inner()}</section> });
 		const panel = screen.getByTestId('panel');
 		const host = screen.getByTestId('host');
 		expect(panel.parentElement?.parentElement).toBe(host);
@@ -782,7 +885,9 @@ describe('FloatingPanel', () => {
 	});
 
 	it('skips a label ancestor: the panel is not a descendant of the label', () => {
-		renderPanel({ wrap: (inner) => <section data-testid='host'><label data-testid='label'>{inner}</label></section> });
+		renderPanel({
+			wrap: (inner) => <section data-testid='host'><label data-testid='label'>{inner()}</label></section>
+		});
 		const panel = screen.getByTestId('panel');
 		expect(screen.getByTestId('label').contains(panel)).toBe(false);
 		expect(panel.parentElement?.parentElement).toBe(screen.getByTestId('host'));
@@ -791,9 +896,26 @@ describe('FloatingPanel', () => {
 	it('mounts into the host given by PanelHostContext', () => {
 		const custom = document.createElement('aside');
 		document.body.append(custom);
-		renderPanel({ wrap: (inner) => <PanelHostContext.Provider value={() => custom}>{inner}</PanelHostContext.Provider> });
+		renderPanel({ wrap: (inner) => <PanelHostContext.Provider value={() => custom}>{inner()}</PanelHostContext.Provider> });
 		expect(custom.contains(screen.getByTestId('panel'))).toBe(true);
 		custom.remove();
+	});
+
+	it('the nearest PanelHostContext provider wins', () => {
+		const outer = document.createElement('aside');
+		const inner = document.createElement('nav');
+		document.body.append(outer, inner);
+		renderPanel({
+			wrap: (content) => (
+				<PanelHostContext.Provider value={() => outer}>
+					<PanelHostContext.Provider value={() => inner}>{content()}</PanelHostContext.Provider>
+				</PanelHostContext.Provider>
+			)
+		});
+		expect(inner.contains(screen.getByTestId('panel'))).toBe(true);
+		expect(outer.contains(screen.getByTestId('panel'))).toBe(false);
+		outer.remove();
+		inner.remove();
 	});
 
 	it('puts data-s-kit, the size attribute, class and style on the root and passes other attributes through', () => {
@@ -827,7 +949,7 @@ describe('FloatingPanel', () => {
 		const onParentClick = vi.fn();
 		const onInnerClick = vi.fn();
 		renderPanel({
-			wrap: (inner) => <div onClick={onParentClick}>{inner}</div>,
+			wrap: (inner) => <div onClick={onParentClick}>{inner()}</div>,
 			children: <button type='button' onClick={onInnerClick}>inside</button>
 		});
 		fireEvent.click(screen.getByText('inside'));
@@ -864,6 +986,12 @@ describe('FloatingPanel', () => {
 		expect(onDismiss).toHaveBeenCalledTimes(2);
 	});
 
+	it('a click on a big dismissExempt-less area counts as outside: dismissExempt decides what is exempt from dismissal', () => {
+		const { onDismiss } = renderPanel({ dismissExempt: () => undefined });
+		fireEvent.pointerDown(screen.getByText('anchor'));
+		expect(onDismiss).toHaveBeenCalledOnce();
+	});
+
 	it('focuses the first tabbable element on open and returns the focus to the anchor on close', () => {
 		const { setOpen } = renderPanel({ children: <button type='button'>inside</button> });
 		expect(document.activeElement).toBe(screen.getByText('inside'));
@@ -872,7 +1000,7 @@ describe('FloatingPanel', () => {
 	});
 
 	it('does not take the focus back when it already moved to another element', () => {
-		const { setOpen } = renderPanel({ wrap: (inner) => <>{inner}<input aria-label='other'/></> });
+		const { setOpen } = renderPanel({ wrap: (inner) => <>{inner()}<input aria-label='other'/></> });
 		const other = screen.getByLabelText('other');
 		other.focus();
 		setOpen(false);
@@ -881,7 +1009,7 @@ describe('FloatingPanel', () => {
 
 	it('cancels Enter in an input whose form is outside the panel, so that the host form is not submitted', () => {
 		renderPanel({
-			wrap: (inner) => <form>{inner}</form>,
+			wrap: (inner) => <form>{inner()}</form>,
 			children: <input aria-label='name'/>
 		});
 		const event = createEvent.keyDown(screen.getByLabelText('name'), { key: 'Enter' });
@@ -926,8 +1054,13 @@ export interface FloatingPanelProps extends FloatingPanelAttributes {
 	onDismiss: () => void;
 	/** Якорь позиционирования: элемент или виртуальный (точка клика). */
 	anchor: Accessor<AnchorElement | undefined>;
-	/** Реальный элемент инициатора для выбора хоста, исключения из dismiss и возврата фокуса; по умолчанию сам якорь, если он элемент. */
+	/** Реальный элемент инициатора для выбора хоста и возврата фокуса; по умолчанию сам якорь, если он элемент. */
 	anchorElement?: Accessor<Element | undefined> | undefined;
+	/**
+	 * Элемент, pointerdown по которому не считается кликом снаружи (кнопка Popover). По умолчанию это `anchorElement`;
+	 * ContextMenu передаёт `() => undefined`: его область вызова не часть меню, клик по ней закрывает меню.
+	 */
+	dismissExempt?: Accessor<Element | undefined> | undefined;
 	placement?: Placement | undefined;
 	gap?: number | undefined;
 	matchAnchorWidth?: boolean | undefined;
@@ -952,6 +1085,7 @@ export function FloatingPanel(props: FloatingPanelProps): JSX.Element {
 		'onDismiss',
 		'anchor',
 		'anchorElement',
+		'dismissExempt',
 		'placement',
 		'gap',
 		'matchAnchorWidth',
@@ -988,7 +1122,12 @@ export function FloatingPanel(props: FloatingPanelProps): JSX.Element {
 			return local.matchAnchorWidth;
 		}
 	});
-	createPanelLayer({ panel, anchor: anchorElement, open: local.open, onDismiss: local.onDismiss });
+	createPanelLayer({
+		panel,
+		anchor: () => (local.dismissExempt ? local.dismissExempt() : anchorElement()),
+		open: local.open,
+		onDismiss: local.onDismiss
+	});
 	createFocusOnOpen({ panel, open: local.open, mode: () => local.initialFocus ?? 'first' });
 	createFocusRestore({ panel, anchor: anchorElement, open: local.open });
 
@@ -1030,7 +1169,7 @@ Expected: PASS. Если `typecheck` ругается на типы `onKeyDown`/
 - [ ] **Step 10: Коммит**
 
 ```bash
-git add src/internal
+git add src/internal stylelint.config.js src/styles/stylelint-rules.test.ts
 git commit -m "feat(overlays): FloatingPanel: изоляция событий, сброс свойств, фокус, защита от неявной отправки формы" -m "$TRAILERS"
 ```
 
@@ -1160,6 +1299,37 @@ describe('Popover', () => {
 		fireEvent.click(custom);
 		expect(custom.getAttribute('aria-expanded')).toBe('true');
 		expect(screen.getByText('content')).toBeTruthy();
+	});
+
+	it('the public ref of Popover.Trigger still receives the button', () => {
+		const onRef = vi.fn();
+		render(() => (
+			<Popover.Root>
+				<Popover.Trigger ref={onRef}>Open</Popover.Trigger>
+				<Popover.Content>content</Popover.Content>
+			</Popover.Root>
+		));
+		expect(onRef).toHaveBeenCalledExactlyOnceWith(screen.getByRole('button', { name: 'Open' }));
+	});
+
+	it('Popover.Content accepts onKeyDown and ref, and onKeyDown still runs before the isolation', () => {
+		const onKeyDown = vi.fn();
+		const onRef = vi.fn();
+		const onParentKeyDown = vi.fn();
+		render(() => (
+			<div onKeyDown={onParentKeyDown}>
+				<Popover.Root defaultOpen>
+					<Popover.Trigger>Open</Popover.Trigger>
+					<Popover.Content onKeyDown={onKeyDown} ref={onRef}>
+						<button type='button'>inside</button>
+					</Popover.Content>
+				</Popover.Root>
+			</div>
+		));
+		expect(onRef).toHaveBeenCalledExactlyOnceWith(screen.getByRole('button', { name: 'inside' }).parentElement);
+		fireEvent.keyDown(screen.getByRole('button', { name: 'inside' }), { key: 'a' });
+		expect(onKeyDown).toHaveBeenCalledOnce();
+		expect(onParentKeyDown).not.toHaveBeenCalled();
 	});
 
 	it('a user onClick runs first and event.preventDefault() cancels the toggle', () => {
@@ -1386,7 +1556,7 @@ export function PopoverRoot(props: PopoverRootProps): JSX.Element {
 Создать `src/components/popover/popover-trigger.tsx`:
 
 ```tsx
-import { type JSX, onCleanup, splitProps } from 'solid-js';
+import { type JSX, onCleanup, Show, splitProps } from 'solid-js';
 
 import { Button, type ButtonProps } from '../button/button';
 
@@ -1409,7 +1579,7 @@ export interface PopoverTriggerProps extends Omit<ButtonProps, 'onClick'> {
 
 export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
 	const context = usePopoverContext('Popover.Trigger');
-	const [local, rest] = splitProps(props, ['render', 'onClick']);
+	const [local, rest] = splitProps(props, ['render', 'onClick', 'ref']);
 
 	onCleanup(() => {
 		context.setAnchor(undefined);
@@ -1418,6 +1588,10 @@ export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
 	const attributes: PopoverTriggerAttributes = {
 		ref: (element) => {
 			context.setAnchor(element);
+			// публичный ref Button не теряется: компилятор Solid передаёт любой ref дочернему компоненту функцией
+			if (typeof local.ref === 'function') {
+				local.ref(element as HTMLButtonElement);
+			}
 		},
 		get 'aria-expanded'() {
 			return context.open();
@@ -1434,7 +1608,11 @@ export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
 		}
 	};
 
-	return local.render ? local.render(attributes) : <Button {...rest} {...attributes}/>;
+	return (
+		<Show when={local.render} fallback={<Button {...rest} {...attributes}/>}>
+			{(render) => render()(attributes)}
+		</Show>
+	);
 }
 ```
 
@@ -1454,6 +1632,10 @@ import { usePopoverContext } from './popover-context';
 import type { PopoverState } from './popover-state';
 
 export interface PopoverContentProps extends FloatingPanelAttributes {
+	/** Вызывается раньше изоляции события; остальные изолируемые события (`onClick`, `onInput` и др.) вешаются на элементы внутри. */
+	onKeyDown?: ((event: KeyboardEvent & { currentTarget: HTMLDivElement }) => void) | undefined;
+	/** Корневой элемент панели. */
+	ref?: ((element: HTMLDivElement) => void) | undefined;
 	size?: 'sm' | 'md' | 'lg' | undefined;
 	matchAnchorWidth?: boolean | undefined;
 	class?: string | undefined;
@@ -1463,7 +1645,7 @@ export interface PopoverContentProps extends FloatingPanelAttributes {
 
 export function PopoverContent(props: PopoverContentProps): JSX.Element {
 	const context = usePopoverContext('Popover.Content');
-	const [local, rest] = splitProps(props, ['size', 'matchAnchorWidth', 'class', 'style', 'children']);
+	const [local, rest] = splitProps(props, ['size', 'matchAnchorWidth', 'class', 'style', 'children', 'ref', 'onKeyDown']);
 	const state: PopoverState = {
 		open: context.open,
 		close: () => {
@@ -1482,6 +1664,8 @@ export function PopoverContent(props: PopoverContentProps): JSX.Element {
 			placement={context.placement()}
 			gap={context.gap()}
 			matchAnchorWidth={local.matchAnchorWidth}
+			onKeyDown={local.onKeyDown}
+			panelRef={local.ref}
 			size={local.size}
 			class={local.class ? `${styles['content']} ${local.class}` : styles['content']}
 			style={local.style}
@@ -1578,10 +1762,14 @@ git commit -m "feat(popover): Popover: Root, Trigger (Button или render), Con
 import { Popover } from '@stark/solid-kit/popover';
 ```
 
+Демонстрационные панели секций 1 и 3 должны оставаться открытыми для проверок, поэтому они управляемые: `open` без `onOpenChange`
+(неуправляемый `defaultOpen` закрылся бы первым же `pointerdown` по переключателю темы: стек закрывает слои каскадом, и `required(...)`
+в `theme-checks.ts` не нашёл бы панель).
+
 Секция 1 (две обёртки): заменить `<Probe defaultOpen>Светлая обёртка</Probe>` и `<Probe defaultOpen>Тёмная обёртка</Probe>` на
 
 ```tsx
-<Popover.Root defaultOpen>
+<Popover.Root open>
 	<Popover.Trigger>Popover</Popover.Trigger>
 	<Popover.Content>Светлая обёртка</Popover.Content>
 </Popover.Root>
@@ -1598,7 +1786,7 @@ import { Popover } from '@stark/solid-kit/popover';
 		event.preventDefault();
 	}}
 >
-	<Popover.Root defaultOpen>
+	<Popover.Root open>
 		<Popover.Trigger>Popover</Popover.Trigger>
 		<Popover.Content>
 			<i class='chip' data-chip/>
@@ -1672,7 +1860,7 @@ Expected: зелёная (число тестов: база минус тест�
 
 - [ ] **Step 6: Страница «Темы» в Chrome**
 
-Открыть `#themes`, запустить проверки с клавиатуры в системной, светлой и тёмной темах (ждать 1,5–2 с после переключения). Ожидается: то же число проверок, что в базе Step 1, 0 FAIL; панели видны во всех четырёх секциях; панель из секции 4 поверх модального dialog. Настоящими нажатиями проверить: в открытом dialog открыть Popover, один Esc закрывает только Popover, второй закрывает dialog (нативный `<dialog>` страницы закрывается нативно, это проверка того, что стек Esc не мешает диалогу, когда слоёв нет). Проверить глазами: панель не прыгает при открытии, шрифт и цвет из токенов, тень и материал на месте. Если что-то расходится, зафиксировать в итогах и исправить до коммита.
+Открыть `#themes`, запустить проверки с клавиатуры в системной, светлой и тёмной темах (ждать 1,5–2 с после переключения). Ожидается: то же число проверок, что в базе Step 1, 0 FAIL; панели видны во всех четырёх секциях; панель из секции 4 поверх модального dialog. Настоящими нажатиями проверить: в открытом dialog открыть Popover из секции 4, Esc закрывает его (верхний слой стека), возвращая фокус на кнопку. Фоновые управляемые панели секций 1 и 3 остаются в стеке, поэтому второй Esc нативный `<dialog>` страницы не закроет (в стек он не зарегистрирован, это появится с компонентом Dialog в части 2): закрыть его кнопкой на странице; это ожидаемо, а не дефект. Проверить глазами: панель не прыгает при открытии, шрифт и цвет из токенов, тень и материал на месте. Если что-то расходится, зафиксировать в итогах и исправить до коммита.
 
 - [ ] **Step 7: Матрица формы пакета**
 
