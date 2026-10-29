@@ -72,16 +72,17 @@ if pnpm exec vite build >build.log 2>&1; then ok "vite build"; else fail "vite b
 grep -lq -- '--s-kit-color-primary' dist/assets/*.css && ok "tokens are in the built CSS" || fail "tokens are missing from the built CSS"
 grep -lq -- '--s-kit-probe-radius' dist/assets/*.css && ok "Probe styles are in the built CSS" || fail "Probe styles are missing from the built CSS"
 grep -lq -- '--s-kit-button-radius' dist/assets/*.css && ok "Button styles are in the built CSS" || fail "Button styles are missing from the built CSS"
-# composes: правило общей основы (класс _control_) должно стоять в CSS раньше правил Button, иначе основа перекроет их
+# composes: основа контролов (класс _control_) обёрнута в :where() и имеет нулевую специфичность, поэтому порядок правил в CSS не важен:
+# сборка оставляет одну копию основы после правил всех компонентов, и без :where() она перекрыла бы границу Input и радиус Button
 node -e '
 const fs = require("node:fs");
 const dir = "dist/assets";
 const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
+const plain = css.search(/(^|[},])\._control_[a-z0-9_]+\{/);
 const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
-const button = css.indexOf("--s-kit-button-radius");
-console.log("control base at", base, "button rules at", button);
-process.exit(base >= 0 && button > base ? 0 : 1);
-' && ok "control base comes before Button rules in the built CSS" || fail "control base is missing or comes after Button rules in the built CSS"
+console.log("control base (:where) at", base, "bare class rule at", plain);
+process.exit(base >= 0 && plain < 0 ? 0 : 1);
+' && ok "control base has zero specificity (:where) in the built CSS" || fail "control base is missing from the built CSS or has non-zero specificity"
 grep -lq -- '--s-kit-icon-button-radius' dist/assets/*.css && ok "IconButton styles are in the built CSS" || fail "IconButton styles are missing from the built CSS"
 # composes в два шага: правила Button должны стоять в CSS раньше правил IconButton, иначе квадрат и радиус не перекроют Button
 node -e '
@@ -94,16 +95,6 @@ console.log("button rules at", button, "icon button rules at", iconButton);
 process.exit(button >= 0 && iconButton > button ? 0 : 1);
 ' && ok "Button rules come before IconButton rules in the built CSS" || fail "IconButton rules are missing or come before Button rules in the built CSS"
 grep -lq -- '--s-kit-input-radius' dist/assets/*.css && ok "Input styles are in the built CSS" || fail "Input styles are missing from the built CSS"
-# composes: правило общей основы должно стоять в CSS раньше правил Input, иначе основа (border: 0) перекроет границу поля
-node -e '
-const fs = require("node:fs");
-const dir = "dist/assets";
-const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
-const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
-const input = css.indexOf("--s-kit-input-radius");
-console.log("control base at", base, "input rules at", input);
-process.exit(base >= 0 && input > base ? 0 : 1);
-' && ok "control base comes before Input rules in the built CSS" || fail "control base is missing or comes after Input rules in the built CSS"
 grep -lq -- '--s-kit-field-gap' dist/assets/*.css && ok "Field styles are in the built CSS" || fail "Field styles are missing from the built CSS"
 grep -lq -- '--s-kit-button-group-gap' dist/assets/*.css && ok "ButtonGroup styles are in the built CSS" || fail "ButtonGroup styles are missing from the built CSS"
 grep -lq -- '--s-kit-toggle-group-selected-bg' dist/assets/*.css && ok "ToggleGroup styles are in the built CSS" || fail "ToggleGroup styles are missing from the built CSS"
@@ -111,16 +102,6 @@ grep -lq -- '--s-kit-checkbox-radius' dist/assets/*.css && ok "Checkbox styles a
 grep -lq -- '--s-kit-radio-size' dist/assets/*.css && ok "RadioGroup styles are in the built CSS" || fail "RadioGroup styles are missing from the built CSS"
 grep -lq -- '--s-kit-switch-width' dist/assets/*.css && ok "Switch styles are in the built CSS" || fail "Switch styles are missing from the built CSS"
 grep -lq -- '--s-kit-tabs-indicator-width' dist/assets/*.css && ok "Tabs styles are in the built CSS" || fail "Tabs styles are missing from the built CSS"
-# composes: основа должна стоять раньше правил Tabs, иначе block-size и border-radius основы перекроют правила вкладки
-node -e '
-const fs = require("node:fs");
-const dir = "dist/assets";
-const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
-const base = css.search(/:where\(\._control_[a-z0-9_]+\)\{/);
-const tabs = css.indexOf("--s-kit-tabs-radius");
-console.log("control base at", base, "tabs rules at", tabs);
-process.exit(base >= 0 && tabs > base ? 0 : 1);
-' && ok "control base comes before Tabs rules in the built CSS" || fail "control base is missing or comes after Tabs rules in the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
