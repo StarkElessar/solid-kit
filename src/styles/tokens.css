@@ -1,0 +1,121 @@
+/*
+ * solid-kit: глобальные токены (спек, разделы 4, 4.1-4.3, 5, 5.1).
+ * Базовые токены публичны: переопределяются на :root или на обёртке.
+ * Производные внутренние: считаются на :root и на корне каждого компонента [data-s-kit],
+ * поэтому переопределённый на обёртке primary перестраивает всё внутри неё.
+ * Компонентные токены (--s-kit-<компонент>-*) нигде не объявляются: компонент читает их с фолбэком.
+ * Литералы цветов допустимы только в этом файле.
+ */
+
+:root {
+    /* базовые цвета: палитра «Синий» (светлая тема, тёмная тема) */
+    --s-kit-color-primary: light-dark(#0071e3, #4da3ff);
+    --s-kit-color-primary-contrast: light-dark(#fff, #04162e);
+    --s-kit-color-surface: light-dark(#fff, #1c1c1e);
+    --s-kit-color-text: light-dark(#1d1d1f, #f5f5f7);
+    --s-kit-color-border: light-dark(#d2d2d7, #3a3a3c);
+    --s-kit-color-danger: light-dark(#d70015, #ff6961);
+    --s-kit-color-success: light-dark(#1f7a37, #4cd964);
+    --s-kit-color-warning: light-dark(#a85200, #ffb340);
+
+    /* форма и шрифт; кит файлы шрифтов не поставляет */
+    --s-kit-radius: 8px;
+    --s-kit-font: "IBM Plex Sans", system-ui, sans-serif;
+    --s-kit-font-size: 14px;
+    --s-kit-line-height: 1.4;
+
+    /* размеры контролов (раздел 5) */
+    --s-kit-control-height-sm: 28px;
+    --s-kit-control-height-md: 32px;
+    --s-kit-control-height-lg: 40px;
+    --s-kit-control-padding-x-sm: 10px;
+    --s-kit-control-padding-x-md: 12px;
+    --s-kit-control-padding-x-lg: 16px;
+    --s-kit-control-font-size-sm: 12px;
+    --s-kit-control-font-size-md: 14px;
+    --s-kit-control-font-size-lg: 15px;
+
+    /* фокус (раздел 5.1) */
+    --s-kit-focus-width: 2px;
+    --s-kit-focus-offset: 2px;
+
+    /* материал панелей (раздел 4.3) */
+    --s-kit-panel-blur: 20px;
+    --s-kit-panel-opacity: 82%;
+
+    /* слои вне top layer: липкие шапки, лоадер грида */
+    --s-kit-z-sticky: 10;
+    --s-kit-z-loader: 20;
+
+    color-scheme: light dark;
+}
+
+:root,
+[data-s-kit] {
+    --s-kit-focus-space: calc(var(--s-kit-focus-width) + var(--s-kit-focus-offset));
+
+    /* hover и active смешиваются с primary-contrast: состояние заметно у любой палитры, включая монохромную */
+    --s-kit-color-primary-hover: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-primary-active: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-primary-contrast) 26%);
+    --s-kit-color-primary-subtle: color-mix(in oklch, var(--s-kit-color-primary) 10%, var(--s-kit-color-surface));
+    --s-kit-color-focus-ring: color-mix(in oklch, var(--s-kit-color-primary) 75%, transparent);
+    --s-kit-color-muted: color-mix(in oklch, var(--s-kit-color-text) 62%, var(--s-kit-color-surface));
+    --s-kit-color-hover: color-mix(in oklch, var(--s-kit-color-text) 5%, var(--s-kit-color-surface));
+    --s-kit-color-tint: color-mix(in oklch, var(--s-kit-color-text) 7%, var(--s-kit-color-surface));
+    --s-kit-color-tint-hover: color-mix(in oklch, var(--s-kit-color-text) 11%, var(--s-kit-color-surface));
+    --s-kit-color-tint-active: color-mix(in oklch, var(--s-kit-color-text) 16%, var(--s-kit-color-surface));
+    --s-kit-color-row-selected: color-mix(in oklch, var(--s-kit-color-primary) 9%, var(--s-kit-color-surface));
+    --s-kit-color-surface-2: color-mix(in oklch, var(--s-kit-color-text) 4%, var(--s-kit-color-surface));
+    --s-kit-color-group: color-mix(in oklch, var(--s-kit-color-text) 2%, transparent);
+
+    /* линии полупрозрачные и считаются от text: мягкие на любом фоне */
+    --s-kit-color-hairline: color-mix(in oklch, var(--s-kit-color-text) 8%, transparent);
+    --s-kit-color-border-strong: color-mix(in oklch, var(--s-kit-color-text) 14%, transparent);
+
+    /* граница флажка и радио: не менее 3:1 к поверхности (WCAG 1.4.11), проверяет tokens.test.ts */
+    --s-kit-color-control-edge: color-mix(in oklch, var(--s-kit-color-text) 50%, transparent);
+    --s-kit-color-danger-subtle: color-mix(in oklch, var(--s-kit-color-danger) 14%, var(--s-kit-color-surface));
+    --s-kit-color-danger-hover: color-mix(in oklch, var(--s-kit-color-danger), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-success-subtle: color-mix(in oklch, var(--s-kit-color-success) 14%, var(--s-kit-color-surface));
+    --s-kit-color-success-hover: color-mix(in oklch, var(--s-kit-color-success), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-warning-subtle: color-mix(in oklch, var(--s-kit-color-warning) 16%, var(--s-kit-color-surface));
+    --s-kit-color-warning-hover: color-mix(in oklch, var(--s-kit-color-warning), var(--s-kit-color-primary-contrast) 14%);
+
+    /* полупрозрачный материал панели; у компонента обязателен запасной сплошной фон surface */
+    --s-kit-color-panel: color-mix(in oklch, var(--s-kit-color-surface) var(--s-kit-panel-opacity), transparent);
+    --s-kit-shadow-color: color-mix(in oklch, var(--s-kit-color-text) 18%, transparent);
+    --s-kit-shadow-popover: 0 10px 30px var(--s-kit-shadow-color), 0 0 0 0.5px var(--s-kit-color-border-strong);
+}
+
+/* принудительная тема только задаёт color-scheme: light-dark() разрешается по нему на элементе-потребителе */
+[data-s-kit-theme="light"] {
+    color-scheme: light;
+}
+
+[data-s-kit-theme="dark"] {
+    color-scheme: dark;
+}
+
+/* размер: на контроле или на обёртке; контрол без size переменную не объявляет */
+[data-s-kit-size="sm"] {
+    --s-kit-control-height: var(--s-kit-control-height-sm);
+    --s-kit-control-padding-x: var(--s-kit-control-padding-x-sm);
+    --s-kit-control-font-size: var(--s-kit-control-font-size-sm);
+}
+
+[data-s-kit-size="md"] {
+    --s-kit-control-height: var(--s-kit-control-height-md);
+    --s-kit-control-padding-x: var(--s-kit-control-padding-x-md);
+    --s-kit-control-font-size: var(--s-kit-control-font-size-md);
+}
+
+[data-s-kit-size="lg"] {
+    --s-kit-control-height: var(--s-kit-control-height-lg);
+    --s-kit-control-padding-x: var(--s-kit-control-padding-x-lg);
+    --s-kit-control-font-size: var(--s-kit-control-font-size-lg);
+}
+
+/* внутреннее кольцо фокуса для потомков обрезающего контейнера (раздел 5.1) */
+[data-s-kit-focus-inset] {
+    --s-kit-focus-ring-offset: calc(-1 * var(--s-kit-focus-width));
+}
