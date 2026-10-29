@@ -1,6 +1,8 @@
 /*
  * Компонентные токены ToggleGroup (публичный API кастомизации, читаются с фолбэком на глобальные):
- *   --s-kit-toggle-group-selected-bg, --s-kit-toggle-group-selected-color
+ *   --s-kit-toggle-group-selected-bg, --s-kit-toggle-group-selected-color, --s-kit-toggle-group-selected-shadow
+ * Выбранный сегмент «приподнят» над оболочкой, как в сегментированном контроле Apple: светлее оболочки (в светлой теме surface,
+ * в тёмной tint-active) и с тонкой тенью. Заливка к оболочке почти не контрастна, различие держит тень и цвет текста.
  * Геометрия, размер и внутреннее кольцо фокуса приходят от ButtonGroup. Правила выбранного сегмента написаны со специфичностью
  * выше, чем у правил Button и ButtonGroup для plain (в том числе hover и active): порядок CSS в бандле не важен.
  * Наведение и нажатие на выбранный сегмент заливку не меняют.
@@ -8,10 +10,16 @@
 
 [data-s-kit-focus-inset] .item[data-selected][data-variant="plain"] {
     color: var(--s-kit-toggle-group-selected-color, var(--s-kit-color-primary));
-    background: var(--s-kit-toggle-group-selected-bg, var(--s-kit-color-primary-subtle));
+    background: var(--s-kit-toggle-group-selected-bg, light-dark(var(--s-kit-color-surface), var(--s-kit-color-tint-active)));
+    box-shadow:
+        var(
+            --s-kit-toggle-group-selected-shadow,
+            0 1px 2px var(--s-kit-shadow-color),
+            0 0 0 0.5px var(--s-kit-color-border-strong)
+        );
 }
 
 [data-s-kit-focus-inset] .item[data-selected][data-variant="plain"]:hover:not(:disabled),
 [data-s-kit-focus-inset] .item[data-selected][data-variant="plain"]:active:not(:disabled) {
-    background: var(--s-kit-toggle-group-selected-bg, var(--s-kit-color-primary-subtle));
+    background: var(--s-kit-toggle-group-selected-bg, light-dark(var(--s-kit-color-surface), var(--s-kit-color-tint-active)));
 }
