@@ -2,6 +2,7 @@ import '@stark/solid-kit/tokens.css';
 
 import { Button } from '@stark/solid-kit/button';
 import { IconButton } from '@stark/solid-kit/icon-button';
+import { Input } from '@stark/solid-kit/input';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
 import { createContext, useContext } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -32,6 +33,7 @@ render(
 			</Probe>
 			<Button id="btn" variant="danger">Удалить</Button>
 			<IconButton id="icon-btn" aria-label="Закрыть" variant="tinted">×</IconButton>
+			<Input id="field" aria-label="Имя" defaultValue="Анна" aria-invalid="true" />
 		</AppContext.Provider>
 	),
 	root

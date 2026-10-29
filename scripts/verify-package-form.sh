@@ -93,6 +93,17 @@ const iconButton = css.indexOf("--s-kit-icon-button-radius");
 console.log("button rules at", button, "icon button rules at", iconButton);
 process.exit(button >= 0 && iconButton > button ? 0 : 1);
 ' && ok "Button rules come before IconButton rules in the built CSS" || fail "IconButton rules are missing or come before Button rules in the built CSS"
+grep -lq -- '--s-kit-input-radius' dist/assets/*.css && ok "Input styles are in the built CSS" || fail "Input styles are missing from the built CSS"
+# composes: правило общей основы должно стоять в CSS раньше правил Input, иначе основа (border: 0) перекроет границу поля
+node -e '
+const fs = require("node:fs");
+const dir = "dist/assets";
+const css = fs.readdirSync(dir).filter((file) => file.endsWith(".css")).map((file) => fs.readFileSync(dir + "/" + file, "utf8")).join("\n");
+const base = css.search(/\._control_[a-z0-9_]+\{/);
+const input = css.indexOf("--s-kit-input-radius");
+console.log("control base at", base, "input rules at", input);
+process.exit(base >= 0 && input > base ? 0 : 1);
+' && ok "control base comes before Input rules in the built CSS" || fail "control base is missing or comes after Input rules in the built CSS"
 grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
