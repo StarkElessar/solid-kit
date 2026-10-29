@@ -2,6 +2,7 @@ import '@stark/solid-kit/tokens.css';
 
 import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
+import { Checkbox } from '@stark/solid-kit/checkbox';
 import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
@@ -42,6 +43,7 @@ render(
 				<Button variant="plain">День</Button>
 				<Button variant="plain">Неделя</Button>
 			</ButtonGroup>
+			<Checkbox defaultChecked>Согласен</Checkbox>
 			<ToggleGroup.Root aria-label="Вид" defaultValue="list">
 				<ToggleGroup.Item value="list">Список</ToggleGroup.Item>
 				<ToggleGroup.Item value="grid">Сетка</ToggleGroup.Item>
