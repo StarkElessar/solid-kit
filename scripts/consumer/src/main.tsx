@@ -7,6 +7,7 @@ import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { Probe, ProbeScope } from '@stark/solid-kit/probe';
+import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
 import { createContext, useContext } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -44,6 +45,10 @@ render(
 				<Button variant="plain">Неделя</Button>
 			</ButtonGroup>
 			<Checkbox defaultChecked>Согласен</Checkbox>
+			<RadioGroup.Root aria-label="Тариф" defaultValue="basic">
+				<RadioGroup.Item value="basic">Базовый</RadioGroup.Item>
+				<RadioGroup.Item value="pro">Расширенный</RadioGroup.Item>
+			</RadioGroup.Root>
 			<ToggleGroup.Root aria-label="Вид" defaultValue="list">
 				<ToggleGroup.Item value="list">Список</ToggleGroup.Item>
 				<ToggleGroup.Item value="grid">Сетка</ToggleGroup.Item>
