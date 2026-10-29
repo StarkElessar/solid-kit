@@ -18,7 +18,7 @@ function pick<T extends string>(options: readonly T[], value: string, fallback: 
 export function ThemesPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
 	const [size, setSize] = createSignal<Size>('default');
-	const [palette, setPalette] = createSignal<PaletteName>('blue');
+	const [palette, setPalette] = createSignal<PaletteName>('mint');
 	const [primary, setPrimary] = createSignal('');
 	const [results, setResults] = createSignal<readonly CheckResult[]>([]);
 	let page: HTMLElement | undefined;
@@ -71,13 +71,13 @@ export function ThemesPage(): JSX.Element {
 				</label>
 				<label>
 					Палитра
-					<select onChange={(event) => setPalette(pick(PALETTE_NAMES, event.currentTarget.value, 'blue'))}>
+					<select onChange={(event) => setPalette(pick(PALETTE_NAMES, event.currentTarget.value, 'mint'))}>
 						<For each={PALETTE_NAMES}>{(value) => <option value={value}>{value}</option>}</For>
 					</select>
 				</label>
 				<label>
 					Primary
-					<input type='color' value='#0071e3' onInput={(event) => setPrimary(event.currentTarget.value)}/>
+					<input type='color' value='#17785a' onInput={(event) => setPrimary(event.currentTarget.value)}/>
 				</label>
 				<button type='button' onClick={() => setPrimary('')}>
 					Сбросить primary

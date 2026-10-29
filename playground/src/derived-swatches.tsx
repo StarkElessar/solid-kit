@@ -12,7 +12,7 @@ const TOKEN_BY_KIND: Record<(typeof KINDS)[number], string> = {
 	subtle: '--s-kit-color-primary-subtle'
 };
 
-/** Покой, hover, active и subtle основной кнопки для палитр Синий и Моно в обеих темах. */
+/** Покой, hover, active и subtle основной кнопки для палитр Мята, Синий и Моно в обеих темах. */
 export function DerivedSwatches(): JSX.Element {
 	return (
 		<div class='swatch-grid'>

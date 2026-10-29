@@ -8,8 +8,8 @@
  */
 
 :root {
-    /* базовые цвета: палитра «Синий» (светлая тема, тёмная тема) */
-    --s-kit-color-primary: light-dark(#0071e3, #4da3ff);
+    /* базовые цвета: палитра «Мята» (светлая тема, тёмная тема) */
+    --s-kit-color-primary: light-dark(#17785a, #4fc79c);
     --s-kit-color-primary-contrast: light-dark(#fff, #04162e);
     --s-kit-color-surface: light-dark(#fff, #1c1c1e);
     --s-kit-color-text: light-dark(#1d1d1f, #f5f5f7);
@@ -54,9 +54,12 @@
 [data-s-kit] {
     --s-kit-focus-space: calc(var(--s-kit-focus-width) + var(--s-kit-focus-offset));
 
-    /* hover и active смешиваются с primary-contrast: состояние заметно у любой палитры, включая монохромную */
-    --s-kit-color-primary-hover: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-primary-contrast) 14%);
-    --s-kit-color-primary-active: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-primary-contrast) 26%);
+    /*
+     * hover и active смешиваются с text: контраст текста кнопки не падает (смесь с primary-contrast роняла его ниже 4.5:1).
+     * Палитра, у которой primary почти равен text (Моно), переопределяет оба токена, иначе состояния неотличимы от покоя.
+     */
+    --s-kit-color-primary-hover: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-text) 14%);
+    --s-kit-color-primary-active: color-mix(in oklch, var(--s-kit-color-primary), var(--s-kit-color-text) 26%);
     --s-kit-color-primary-subtle: color-mix(in oklch, var(--s-kit-color-primary) 10%, var(--s-kit-color-surface));
     --s-kit-color-focus-ring: color-mix(in oklch, var(--s-kit-color-primary) 75%, transparent);
     --s-kit-color-muted: color-mix(in oklch, var(--s-kit-color-text) 62%, var(--s-kit-color-surface));
@@ -75,11 +78,11 @@
     /* граница флажка и радио: не менее 3:1 к поверхности (WCAG 1.4.11), проверяет tokens.test.ts */
     --s-kit-color-control-edge: color-mix(in oklch, var(--s-kit-color-text) 50%, transparent);
     --s-kit-color-danger-subtle: color-mix(in oklch, var(--s-kit-color-danger) 14%, var(--s-kit-color-surface));
-    --s-kit-color-danger-hover: color-mix(in oklch, var(--s-kit-color-danger), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-danger-hover: color-mix(in oklch, var(--s-kit-color-danger), var(--s-kit-color-text) 14%);
     --s-kit-color-success-subtle: color-mix(in oklch, var(--s-kit-color-success) 14%, var(--s-kit-color-surface));
-    --s-kit-color-success-hover: color-mix(in oklch, var(--s-kit-color-success), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-success-hover: color-mix(in oklch, var(--s-kit-color-success), var(--s-kit-color-text) 14%);
     --s-kit-color-warning-subtle: color-mix(in oklch, var(--s-kit-color-warning) 16%, var(--s-kit-color-surface));
-    --s-kit-color-warning-hover: color-mix(in oklch, var(--s-kit-color-warning), var(--s-kit-color-primary-contrast) 14%);
+    --s-kit-color-warning-hover: color-mix(in oklch, var(--s-kit-color-warning), var(--s-kit-color-text) 14%);
 
     /* полупрозрачный материал панели; у компонента обязателен запасной сплошной фон surface */
     --s-kit-color-panel: color-mix(in oklch, var(--s-kit-color-surface) var(--s-kit-panel-opacity), transparent);
