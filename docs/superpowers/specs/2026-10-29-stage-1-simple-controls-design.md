@@ -188,6 +188,54 @@ interface ButtonGroupProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'cla
 - **Компонентные токены:** `--s-kit-button-group-padding` (2px), `--s-kit-button-group-gap` (2px), `--s-kit-button-group-radius`.
 - **Тесты:** корень `div` с `role="group"` и `data-s-kit`, `data-s-kit-focus-inset`; доступное имя; размер только при `size`; дети в порядке следования; проброс `class`, `style`, нативных атрибутов и переопределение `role`. Высоты и отступы сегментов, кольцо внутри оболочки проверяются на странице playground (раздел 4).
 
+### 3.5 ToggleGroup
+
+Группа переключателей поверх ButtonGroup с общим состоянием выбора: режим `single` (один выбранный сегмент, сегментированный контрол) и `multi` (любое число выбранных). Compound: `ToggleGroup.Root` и `ToggleGroup.Item`.
+
+```ts
+interface ToggleGroupBaseProps extends ButtonGroupProps { // size, class, style, нативные атрибуты div
+  disabled?: boolean;
+}
+interface ToggleGroupSingleProps extends ToggleGroupBaseProps {
+  mode?: 'single';                          // по умолчанию
+  value?: string | null;                    // null: контролируемо, ничего не выбрано
+  defaultValue?: string | null;             // по умолчанию null
+  onValueChange?: (value: string) => void;
+}
+interface ToggleGroupMultiProps extends ToggleGroupBaseProps {
+  mode: 'multi';
+  value?: readonly string[];
+  defaultValue?: readonly string[];         // по умолчанию []
+  onValueChange?: (value: string[]) => void; // весь выбор, в порядке включения
+}
+interface ToggleGroupItemProps extends Omit<ButtonProps, 'variant' | 'size' | 'onClick' | 'aria-pressed'> {
+  value: string;
+}
+```
+
+```tsx
+<ToggleGroup.Root aria-label='Период' defaultValue='week' size='sm'>
+  <ToggleGroup.Item value='day'>День</ToggleGroup.Item>
+  <ToggleGroup.Item value='week'>Неделя</ToggleGroup.Item>
+</ToggleGroup.Root>
+```
+
+Решения (2026-10-29, на утверждение владельцем вместе с планом):
+
+- **Compound без быстрой формы.** Состояние выбора живёт в `ToggleGroup.Root` (`createControllableSignal`) и отдаётся частям через контекст (`isSelected`, `toggle`, `disabled`); `Item` вне `Root` бросает понятную ошибку. Фасада `<ToggleGroup items={...}>` нет (YAGNI: сегменты пишутся разметкой, как в примере). Корень это `ButtonGroup`, поэтому геометрия, внутреннее кольцо фокуса и размер приходят от него без дублирования; `Item` это `Button` с `variant='plain'`.
+- **Режимы.** `mode='single'` по умолчанию. Контракт значения по зонтичному спеку (раздел 7): `undefined` значит «не контролируется», пустой выбор выражается `null` в single и `[]` в multi. Внутри состояние одно и то же, список выбранных; `value` режима single приводится к списку из нуля или одного элемента.
+- **В режиме single повторный щелчок по выбранному сегменту выбор не снимает** и `onValueChange` не вызывает (сегментированный контрол: один сегмент выбран всегда, кроме начального состояния без `defaultValue`). Опция `deselectable` не вводится; добавить её позже можно без поломки API. `onValueChange` в single получает `string`, а не `string | null`.
+- **В режиме multi** щелчок включает и выключает сегмент; `onValueChange` получает новый массив (порядок включения, входной массив не мутируется).
+- **Семантика.** Корень `role="group"` от ButtonGroup, имя через `aria-label` или `aria-labelledby`. Каждый сегмент это `<button aria-pressed="true|false">` в обоих режимах. Клавиатура: Tab к каждому сегменту по очереди, Space и Enter переключают (нативная кнопка). **Стрелки и roving tabindex не делаются:** это вне цели первой итерации (раздел 1 зонтичного спека), в итогах записывается как ограничение, а не как заявленная навигация. Radio-семантика single-режима (`role="radiogroup"`) не используется: она требует стрелок.
+- **Вид выбранного сегмента.** Сегмент несёт `data-selected` (атрибут, а не класс). Заливка `--s-kit-toggle-group-selected-bg`, по умолчанию `--s-kit-color-primary-subtle` (зонтичный спек, раздел 5), и цвет текста `--s-kit-toggle-group-selected-color`, по умолчанию `--s-kit-color-primary`. Цвет текста добавлен вторым признаком, потому что `primary-subtle` близок к `tint` оболочки; фактический контраст заливки к оболочке и текста к заливке измеряет страница playground. Наведение и нажатие на выбранный сегмент заливку не меняют (явные правила со специфичностью выше, чем у `plain`-состояний ButtonGroup). Невыбранные сегменты ведут себя как `plain` в ButtonGroup.
+- **CSS.** Правила выбранного сегмента написаны как `[data-s-kit-focus-inset] .item[data-selected][data-variant="plain"]...` (специфичность выше, чем у правил Button и ButtonGroup), поэтому порядок CSS в бандле не важен, как у ButtonGroup.
+- **`disabled`.** На `Root` отключает все сегменты, на `Item` один сегмент (нативный `disabled`, непрозрачность и курсор из общей основы). Своего `onClick` у `Item` нет: щелчок переключает выбор; реакция на изменение это `onValueChange` корня.
+- **Размер задаёт только группа** (`size` у `Root`, либо обёртка); `Item` свой `size` и `variant` не принимает.
+- **Компонентные токены:** `--s-kit-toggle-group-selected-bg`, `--s-kit-toggle-group-selected-color`; геометрия оболочки и сегментов это токены ButtonGroup.
+- **Раскладка папки** (раздел 2, compound): `toggle-group-selection.ts` (чистые функции `toSelection`, `nextSelection`), `toggle-group-context.ts`, `toggle-group-root.tsx`, `toggle-group-item.tsx`, `toggle-group.module.css`, `index.ts` (`export const ToggleGroup = { Root, Item }`).
+- **Тесты:** чистые функции (приведение значения, переходы single и multi, отсутствие мутации); компонент: группа с именем и атрибутами корня, `aria-pressed` и `data-selected` у сегментов, single uncontrolled и controlled (родитель не принял изменение, `null` как пустой выбор), повторный щелчок в single, multi uncontrolled и controlled, `disabled` корня и сегмента, `size`, проброс `class`, `style` и нативных атрибутов, ошибка у `Item` вне `Root`. Геометрия, кольцо внутри группы, контраст выбранного сегмента и реальный щелчок проверяются на странице playground (раздел 4).
+- **Вне объёма:** стрелки и roving tabindex, снятие выбора в single (`deselectable`), вертикальная ориентация, иконочные сегменты (квадратные), быстрая форма.
+
 ## 4. Страница «Контролы в ряд» и проверка высот
 
 Страница `controls-row-page.tsx` в playground, наращивается с каждым компонентом (раздел 5 зонтичного). Пять рядов: (1) без `size` и без обёртки, (2) обёртка `sm`, (3) обёртка `lg`, (4) обёртка `sm` и часть контролов с локальным `size="lg"`, (5) явный `size` у каждого. В каждом ряду контролы стоят на одной линии. Встроенная проверка сравнивает `getBoundingClientRect()` верха и низа каждого контрола с эталоном ряда и выводит отклонения как OK/FAIL (по образцу `theme-checks.ts`); допуск 0 px (контролы одного размера совпадают пиксель в пиксель), для рядов 4 и 5 эталон считается по размеру каждого контрола. Для групп (ButtonGroup, ToggleGroup) эталоном служит оболочка группы.
@@ -211,6 +259,7 @@ interface ButtonGroupProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'cla
 1. **`composes` общей CSS-основы (закрыт 2026-10-29).** Работает в сборке Vite 8: правило `_control_` стоит в итоговом CSS раньше правил Button, у Button в бандле два имени класса. Проверяет матрица формы пакета (скрипт ищет позицию правила основы и правил Button). Запасной вариант не нужен. Побочное требование: в конфиге stylelint `composes` внесён в `property-no-unknown` как исключение.
 2. **Правило stylelint про `var(--s-kit-control-height)` без фолбэка (закрыт 2026-10-29).** Принято: `declaration-property-value-disallowed-list` с регулярным ключом, действует в `src/components/**/*.css` и `src/styles/**/*.module.css`, покрыто тестами.
 3. **Прокрутка вкладок Tabs** (стрелки, кромка): решается в плане Tabs.
+4. **Вид выбранного сегмента ToggleGroup (открыт, 2026-10-29).** Принято на время плана: заливка `primary-subtle` и текст цвета primary. Закрывается после просмотра владельцем страницы «Контролы в ряд»: если выбранный сегмент не читается на оболочке, меняется заливка (например, белая «подложка» `surface` с тенью, как у сегментированного контрола Apple) или добавляется второй признак; на API это не влияет.
 
 ## 8. Итоги Button (2026-10-29)
 
