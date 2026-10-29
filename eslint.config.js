@@ -21,5 +21,10 @@ export default defineConfig([
 			parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname }
 		}
 	},
-	{ ...solid, files: ['**/*.{ts,tsx}'] }
+	{ ...solid, files: ['**/*.{ts,tsx}'] },
+	{
+		files: ['**/*.{ts,tsx}'],
+		// числа в шаблонных строках нужны для inline-стилей позиционирования (`${x}px`)
+		rules: { '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }] }
+	}
 ]);
