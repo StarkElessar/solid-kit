@@ -1,6 +1,6 @@
 {
 	"name": "@stark/solid-kit",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Личный UI-кит на Solid.js: исходники без сборки, модульный, темизация через CSS-переменные",
 	"type": "module",
 	"files": ["src"],
