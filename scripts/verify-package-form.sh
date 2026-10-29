@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Критерий 1 спека (раздел 12): установка тега кита в проект вне репозитория и проверка формы пакета.
+# Использование: scripts/verify-package-form.sh <ref> [source]
+#   ref     коммит или тег (должен быть закоммичен)
+#   source  по умолчанию git+file://<этот репозиторий>; после первой публикации: github:StarkElessar/solid-kit
+set -euo pipefail
+
+REF="${1:?usage: verify-package-form.sh <ref> [source]}"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SOURCE="${2:-git+file://$REPO_ROOT}"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/solid-kit-consumer.XXXXXX")"
+PORT=5199
+FAILED=0
+DEV_PID=""
+
+ok() { echo "OK:   $*"; }
+fail() { echo "FAIL: $*"; FAILED=1; }
+note() { echo "NOTE: $*"; }
+cleanup() { if [ -n "$DEV_PID" ]; then kill "$DEV_PID" 2>/dev/null || true; fi; }
+trap cleanup EXIT
+
+echo "consumer project: $WORK"
+echo "kit source:       $SOURCE#$REF"
+cp -R "$REPO_ROOT/scripts/consumer/." "$WORK/"
+cd "$WORK"
+
+pnpm install --ignore-workspace
+pnpm add --ignore-workspace "$SOURCE#$REF"
+
+# --- состав установленного пакета: применён ли files, что попало в пакет
+KIT="$(cd node_modules/@stark/solid-kit && pwd -P)"
+echo "--- installed package: $KIT"
+ls -A "$KIT"
+[ -d "$KIT/src" ] && ok "src/ is installed" || fail "src/ is missing"
+[ -e "$KIT/playground" ] && fail "playground/ was installed (files was not applied)" || ok "playground/ is not installed"
+[ -e "$KIT/docs" ] && fail "docs/ was installed (files was not applied)" || ok "docs/ is not installed"
+[ -e "$KIT/pnpm-workspace.yaml" ] && note "pnpm-workspace.yaml is installed" || ok "pnpm-workspace.yaml is not installed"
+if ls -d node_modules/.pnpm/*/node_modules/vitest >/dev/null 2>&1; then
+	note "devDependencies of the kit were installed (vitest is present)"
+else
+	ok "devDependencies of the kit were not installed"
+fi
+
+# --- единственная копия solid-js на диске
+COPIES="$(find node_modules/.pnpm -maxdepth 1 -name 'solid-js@*' | wc -l | tr -d ' ')"
+[ "$COPIES" = "1" ] && ok "one solid-js copy on disk" || fail "solid-js copies on disk: $COPIES"
+
+# --- критерий 2: tsc --noEmit в поддерживаемой матрице, на TypeScript 5.9.3 и 7.0.2
+if pnpm exec tsc --noEmit; then ok "tsc --noEmit on TypeScript $(pnpm exec tsc -v)"; else fail "tsc --noEmit on TypeScript 5.9.3"; fi
+if pnpm --package=typescript@7.0.2 dlx tsc --noEmit; then ok "tsc --noEmit on TypeScript 7.0.2"; else fail "tsc --noEmit on TypeScript 7.0.2"; fi
+
+# --- vite dev с холодной оптимизацией: кит не должен попасть в pre-bundle
+rm -rf node_modules/.vite
+./node_modules/.bin/vite --port "$PORT" --strictPort >dev.log 2>&1 &
+DEV_PID=$!
+for _ in $(seq 1 60); do curl -sf --noproxy '*' "http://localhost:$PORT/" >/dev/null && break; sleep 0.5; done
+curl -s --noproxy '*' "http://localhost:$PORT/src/main.tsx" >/dev/null
+sleep 3
+if node --input-type=module -e '
+import fs from "node:fs";
+const meta = JSON.parse(fs.readFileSync("node_modules/.vite/deps/_metadata.json", "utf8"));
+const names = Object.keys(meta.optimized);
+console.log("optimized deps:", names.join(", ") || "(none)");
+process.exit(names.some((name) => name.includes("solid-kit")) ? 1 : 0);
+'; then ok "kit is not in the Vite dependency pre-bundle"; else fail "kit was pre-bundled by Vite"; fi
+if grep -qi "multiple instances of Solid" dev.log; then fail "dev log reports multiple Solid instances"; else ok "no multiple-Solid warning in the dev log"; fi
+kill "$DEV_PID" 2>/dev/null || true
+DEV_PID=""
+
+# --- vite build: стили и токены на месте, неимпортированного компонента в бандле нет
+if pnpm exec vite build >build.log 2>&1; then ok "vite build"; else fail "vite build (see $WORK/build.log)"; fi
+grep -lq -- '--s-kit-color-primary' dist/assets/*.css && ok "tokens are in the built CSS" || fail "tokens are missing from the built CSS"
+grep -lq -- '--s-kit-probe-radius' dist/assets/*.css && ok "Probe styles are in the built CSS" || fail "Probe styles are missing from the built CSS"
+grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
+grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
+
+echo
+echo "Browser step (manual): run 'cd $WORK && ./node_modules/.bin/vite' and 'vite preview';"
+echo "expect #scope = probe-scope and #app = app in both (one solid-js copy), no console errors."
+echo "consumer project kept at: $WORK"
+exit "$FAILED"
