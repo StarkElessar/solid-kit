@@ -1,6 +1,7 @@
 import '@stark/solid-kit/tokens.css';
 
 import { Button } from '@stark/solid-kit/button';
+import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
@@ -36,6 +37,10 @@ render(
 			<IconButton id="icon-btn" aria-label="Закрыть" variant="tinted">×</IconButton>
 			<Input id="field" aria-label="Имя" defaultValue="Анна" aria-invalid="true" />
 			<Field label="Почта" hint="Подсказка">{(control) => <input {...control} />}</Field>
+			<ButtonGroup aria-label="Период">
+				<Button variant="plain">День</Button>
+				<Button variant="plain">Неделя</Button>
+			</ButtonGroup>
 		</AppContext.Provider>
 	),
 	root
