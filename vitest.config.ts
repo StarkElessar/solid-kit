@@ -8,5 +8,7 @@ export default defineConfig({
 		environment: 'jsdom',
 		include: ['src/**/*.test.{ts,tsx}'],
 		restoreMocks: true,
-	},
+		// tokens.css читается тестами как текст (?raw); по умолчанию Vitest подменяет любой CSS пустым модулем
+		css: { include: [/\.css\?raw$/] }
+	}
 });
