@@ -169,7 +169,7 @@ git commit -m "feat(dialog): isOutsideRect, адаптер диалога для
 - Create: `src/components/dialog/dialog-state.ts`, `dialog-context.ts`, `use-dialog.ts`, `create-dialog-layer.ts`
 - Create: `src/components/dialog/dialog-root.tsx`, `dialog-trigger.tsx`, `dialog-content.tsx`
 - Create: `src/components/dialog/dialog.module.css`, `index.ts` (частичный: Root, Trigger, Content, `useDialog`; остальные части добавляет Task 3)
-- Modify: `src/internal/floating-panel/panel-isolation.ts` (тип `HTMLElement` вместо `HTMLDivElement`), `src/components/popover/popover-trigger.tsx` (принадлежность якоря, Step 10), `src/components/popover/popover.test.tsx`
+- Modify: `src/internal/floating-panel/panel-isolation.ts` (тип `HTMLElement` вместо `HTMLDivElement`), `src/components/popover/popover-trigger.tsx` (принадлежность якоря, Step 9a), `src/components/popover/popover.test.tsx`
 - Test: `src/components/dialog/dialog.test.tsx`
 
 **Interfaces:**
@@ -1172,6 +1172,29 @@ export { useDialog } from './use-dialog';
 export const Dialog = { Root: DialogRoot, Trigger: DialogTrigger, Content: DialogContent };
 ```
 
+- [ ] **Step 9a: То же исправление принадлежности якоря в `Popover.Trigger` (код части 1)**
+
+У `Popover.Trigger` та же ошибка: при двух инициаторах общий якорь принадлежит последнему смонтированному, а очистка любого инициатора его сбрасывает. В `src/components/popover/popover-trigger.tsx` заменить очистку и `ref`/`onClick` так же, как в `DialogTrigger` (Step 5): переменная `let own: HTMLElement | undefined;`, в `ref` `own = element;`, очистка `if (context.anchor() === own) { context.setAnchor(undefined); }`, а в `onClick` перед переключением, если панель закрыта, `context.setAnchor(event.currentTarget);`. Тест в `popover.test.tsx` (в конец `describe`):
+
+```tsx
+	it('with two triggers the panel opens in the host of the one that was pressed', () => {
+		render(() => (
+			<Popover.Root>
+				<section data-testid='host-a'>
+					<Popover.Trigger>Open A</Popover.Trigger>
+				</section>
+				<section data-testid='host-b'>
+					<Popover.Trigger>Open B</Popover.Trigger>
+				</section>
+				<Popover.Content>content</Popover.Content>
+			</Popover.Root>
+		));
+		fireEvent.click(screen.getByRole('button', { name: 'Open A' }));
+		expect(screen.getByTestId('host-a').contains(screen.getByText('content'))).toBe(true);
+		expect(screen.getByTestId('host-b').contains(screen.getByText('content'))).toBe(false);
+	});
+```
+
 - [ ] **Step 9: Запустить тесты, типы, линт**
 
 Run: `pnpm exec vitest run src/components/dialog && pnpm typecheck && pnpm exec eslint src --max-warnings 0 && pnpm exec stylelint "src/**/*.css"`
@@ -1183,8 +1206,8 @@ Expected: PASS. Возможные расхождения и что с ними 
 - [ ] **Step 10: Коммит**
 
 ```bash
-git add src/components/dialog
-git commit -m "feat(dialog): Dialog: Root, Trigger, Content на нативном dialog, слой стека с modal, useDialog" -m "$TRAILERS"
+git add src/components/dialog src/components/popover src/internal/floating-panel/panel-isolation.ts
+git commit -m "feat(dialog): Dialog: Root, Trigger, Content на нативном dialog, слой стека с modal, useDialog; якорь принадлежит нажатому инициатору" -m "$TRAILERS"
 ```
 
 ---
@@ -1886,7 +1909,7 @@ git commit -m "feat(playground): страница «Панели»: демонс
 (Клавиши только настоящие: `computer key`; фокус на нужной кнопке ставить JS-ом, нажимать Enter.)
 1. **Esc с Popover:** открыть «Диалог с Popover», открыть «Открыть панель», ввести символ в поле панели. Первый Esc закрывает только панель (фокус на кнопке «Открыть панель»), второй закрывает диалог (фокус на инициаторе «Диалог с Popover»). `onOpenChange(false)` диалога один раз: проверить через `console.log` в временной правке или по счётчику `Dialog.Root onOpenChange` на странице; временную правку не коммитить.
 2. **Подложка:** в первом диалоге клик по подложке закрывает диалог; выделение текста мышью, начатое внутри диалога и законченное над подложкой, диалог не закрывает; в «Диалоге с длинным телом» клик по подложке не закрывает (`closeOnBackdropClick={false}`).
-3. **Прокрутка страницы:** при открытом диалоге колесо над подложкой и над диалогом не двигает страницу (`window.scrollY` не меняется), ширина содержимого страницы не прыгает при открытии и закрытии (`document.documentElement.clientWidth` до, во время и после), после закрытия прокрутка возвращается. В длинном диалоге прокручивается только тело (`scrollTop` тела растёт), заголовок и подвал стоят.
+3. **Прокрутка страницы:** при открытом диалоге колесо над подложкой и над диалогом не двигает страницу (`window.scrollY` не меняется), ширина содержимого страницы не прыгает при открытии и закрытии (`document.documentElement.clientWidth` до, во время и после; страница в стенде выше экрана, поэтому полоса прокрутки есть), после закрытия прокрутка возвращается. Известное ограничение (замечание ревью Astra): на странице короче экрана при классических полосах прокрутки `scrollbar-gutter: stable` резервирует место под полосу, которой не было, и содержимое сужается на ширину полосы; при наложенных (overlay) полосах macOS сдвига нет. Записать это в итоги как ограничение, не как дефект стенда. В длинном диалоге прокручивается только тело (`scrollTop` тела растёт), заголовок и подвал стоят.
 4. **Фокус и кольцо:** Tab внутри диалога обходит контролы и кнопки по кругу в пределах диалога (нативная инертность фона); внешнее кольцо у «Input» в теле видно целиком (скриншот увеличенной области, `zoom`), не обрезано краем тела.
 5. **Закрытие и повторное открытие:** повторное открытие и закрытие трёх диалогов подряд не оставляет лишних `<dialog>` в DOM (`document.querySelectorAll('dialog').length` равно 0 при закрытых диалогах) и не накапливает слои (поведение Esc стабильно).
 6. **`::backdrop` и тема:** подложка полупрозрачная в обеих темах, текст диалога читаем (скриншоты в светлой и тёмной темах).
