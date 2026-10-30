@@ -246,6 +246,66 @@ h2 {
     border-radius: var(--s-kit-radius);
 }
 
+.scenario-demos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.scenario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+
+    box-sizing: border-box;
+    inline-size: min(100%, 640px);
+    padding: 12px;
+    border: 1px dashed var(--s-kit-color-border);
+    border-radius: var(--s-kit-radius);
+}
+
+.clippers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* низкий контейнер с инициатором у нижнего края: панель обязана выйти за его границы */
+.clipper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: flex-end;
+
+    box-sizing: border-box;
+    inline-size: 220px;
+    block-size: 96px;
+    padding: 8px;
+    border: 1px solid var(--s-kit-color-border);
+    border-radius: var(--s-kit-radius);
+}
+
+.panel-body {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cell-table {
+    table-layout: fixed;
+    inline-size: 200px;
+    border: 1px solid var(--s-kit-color-border);
+}
+
+.cell-table td {
+    overflow: hidden;
+    padding: 8px;
+    text-align: end;
+    white-space: nowrap;
+}
+
 /* высота страницы нужна, чтобы проверять блокировку прокрутки под диалогом */
 .page-filler {
     block-size: 120vh;

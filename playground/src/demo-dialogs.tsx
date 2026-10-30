@@ -4,12 +4,15 @@ import { Dialog } from '@stark/solid-kit/dialog';
 import { Input } from '@stark/solid-kit/input';
 import { Popover } from '@stark/solid-kit/popover';
 import { Switch } from '@stark/solid-kit/switch';
-import { For, type JSX } from 'solid-js';
+import { createSignal, For, type JSX } from 'solid-js';
 
 const LONG_LINES = Array.from({ length: 30 }, (_, index) => index + 1);
 
 /** Три диалога для проверок и ручной приёмки: обычный с контролами у края тела, с Popover внутри и с длинным телом. */
 export function DemoDialogs(): JSX.Element {
+	const [closes, setCloses] = createSignal(0);
+	const [formSubmits, setFormSubmits] = createSignal(0);
+
 	return (
 		<div class='dialog-demos'>
 			<Dialog.Root>
@@ -29,7 +32,13 @@ export function DemoDialogs(): JSX.Element {
 				</Dialog.Content>
 			</Dialog.Root>
 
-			<Dialog.Root>
+			<Dialog.Root
+				onOpenChange={(open) => {
+					if (!open) {
+						setCloses((count) => count + 1);
+					}
+				}}
+			>
 				<Dialog.Trigger data-dialog-trigger='popover'>Диалог с Popover</Dialog.Trigger>
 				<Dialog.Content data-dialog-demo='popover'>
 					<Dialog.Title>Диалог с панелью</Dialog.Title>
@@ -37,7 +46,16 @@ export function DemoDialogs(): JSX.Element {
 						<Popover.Root>
 							<Popover.Trigger>Открыть панель</Popover.Trigger>
 							<Popover.Content>
-								<Input aria-label='Поле в панели' placeholder='Поле в панели'/>
+								<form
+									data-popover-form
+									onSubmit={(event) => {
+										event.preventDefault();
+										setFormSubmits((count) => count + 1);
+									}}
+								>
+									<Input aria-label='Поле в панели' placeholder='Поле в панели'/>
+									<Button type='submit'>Сохранить</Button>
+								</form>
 							</Popover.Content>
 						</Popover.Root>
 					</Dialog.Body>
@@ -59,6 +77,11 @@ export function DemoDialogs(): JSX.Element {
 					</Dialog.Footer>
 				</Dialog.Content>
 			</Dialog.Root>
+
+			<output data-counter='dialog-closes'>
+				onOpenChange(false) диалога с панелью: <span data-counter='dialog-closes-count'>{closes()}</span>; отправок формы панели:
+				<span data-counter='popover-form-submits'>{formSubmits()}</span>
+			</output>
 		</div>
 	);
 }

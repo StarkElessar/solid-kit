@@ -3,6 +3,7 @@ import { createEffect, createSignal, For, type JSX } from 'solid-js';
 import { runContextMenuChecks } from './context-menu-checks';
 import { DemoContextMenus } from './demo-context-menus';
 import { DemoDialogs } from './demo-dialogs';
+import { DemoPopoverScenarios } from './demo-popover-scenarios';
 import { runDialogChecks } from './dialog-checks';
 import { pick } from './pick';
 import type { CheckResult } from './theme-checks';
@@ -11,7 +12,7 @@ type Theme = 'system' | 'light' | 'dark';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 
-/** Страница «Панели» (раздел 8 зонтичного спека, критерий 6): наращивается частями этапа 2. Сейчас: Dialog и ContextMenu. */
+/** Страница «Панели» (раздел 8 зонтичного спека, критерий 6): наращивается частями этапа 2. Сейчас: Dialog, ContextMenu, Popover. */
 export function PanelsPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
 	const [results, setResults] = createSignal<readonly CheckResult[]>([]);
@@ -71,7 +72,17 @@ export function PanelsPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>3. Проверки</h2>
+				<h2>3. Сценарии панелей (критерий 6: б, в, д)</h2>
+				<p>
+					Ручная приёмка: Enter в поле панели внутри формы не увеличивает счётчик отправок; клик по кнопке в панели под предком
+					с pointer-events: none увеличивает счётчик нажатий; панели (д) не обрезаны и стоят у якоря; Esc в диалоге с Popover
+					закрывает сначала панель, потом диалог, счётчик onOpenChange(false) диалога равен 1.
+				</p>
+				<DemoPopoverScenarios/>
+			</section>
+
+			<section>
+				<h2>4. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>
