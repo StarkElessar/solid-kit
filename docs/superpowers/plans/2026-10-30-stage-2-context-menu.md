@@ -2025,7 +2025,7 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): JSX.El
 					return;
 				}
 				if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
-					// отменённое событие клавиатура уровня пропускает: иначе Enter и Space вызвали бы там click() и открыли подменю как мышью
+					// отменённое событие клавиатура уровня пропускает: иначе Enter и Space вызвали бы там click()
 					event.preventDefault();
 					const wasOpen = sub.open();
 					sub.setOpen(true, 'keyboard');
