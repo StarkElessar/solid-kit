@@ -1,0 +1,92 @@
+/*
+ * Компонентные токены ContextMenu (публичный API кастомизации):
+ *   --s-kit-menu-bg, --s-kit-menu-min-width, --s-kit-menu-max-width, --s-kit-menu-item-radius, --s-kit-menu-padding
+ * Сброс свойств, тень и размытие приходят из основы панелей (src/internal/floating-panel/panel-base.module.css).
+ * Корень меню ставит data-s-kit-focus-inset: кольцо пункта внутри его рамки. Подсветка пункта это :focus
+ * (мышь при наведении переводит на пункт фокус), поэтому :hover отдельно не стилизуется.
+ */
+
+.content {
+    composes: panel material from "../../internal/floating-panel/panel-base.module.css";
+
+    user-select: none;
+
+    min-inline-size: var(--s-kit-menu-min-width, 180px);
+    max-inline-size: var(--s-kit-menu-max-width, 320px);
+    padding: var(--s-kit-menu-padding, 4px);
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+
+    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
+    background: var(--s-kit-menu-bg, var(--s-kit-color-surface));
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        .content {
+            background: var(--s-kit-menu-bg, var(--s-kit-color-panel));
+        }
+    }
+}
+
+.item {
+    cursor: default;
+
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    box-sizing: border-box;
+    min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-inline: 10px;
+    border-radius: var(--s-kit-menu-item-radius, var(--s-kit-radius));
+
+    color: var(--s-kit-color-text);
+}
+
+.item:focus,
+.item[aria-expanded="true"] {
+    background: var(--s-kit-color-tint);
+}
+
+.item:focus-visible {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+}
+
+.item[data-variant="danger"] {
+    color: var(--s-kit-color-danger);
+}
+
+.item[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: var(--s-kit-disabled-opacity);
+}
+
+.label {
+    overflow: hidden;
+    flex: 1 1 auto;
+
+    min-inline-size: 0;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* стрелка подменю: уголок из границ, цвет текста пункта */
+.chevron {
+    transform: rotate(45deg);
+
+    flex: none;
+
+    box-sizing: border-box;
+    inline-size: 6px;
+    block-size: 6px;
+    border-block-start: 1.5px solid currentcolor;
+    border-inline-end: 1.5px solid currentcolor;
+}
+
+.separator {
+    block-size: 1px;
+    margin-block: 4px;
+    background: var(--s-kit-color-hairline);
+}

@@ -1429,7 +1429,7 @@ export interface MenuItemElementProps
 	onClick?: JSX.EventHandler<HTMLDivElement, MouseEvent> | undefined;
 	onPointerMove?: JSX.EventHandler<HTMLDivElement, PointerEvent> | undefined;
 	/** Корневой элемент пункта. */
-	itemRef?: ((element: HTMLDivElement) => void) | undefined;
+	rootRef?: ((element: HTMLDivElement) => void) | undefined;
 	/** Содержимое после подписи, не обрезаемое многоточием (стрелка подменю). */
 	trailing?: JSX.Element;
 	class?: string | undefined;
@@ -1445,7 +1445,7 @@ export function MenuItemElement(props: MenuItemElementProps): JSX.Element {
 		'disabled',
 		'onClick',
 		'onPointerMove',
-		'itemRef',
+		'rootRef',
 		'trailing',
 		'class',
 		'style',
@@ -1456,7 +1456,7 @@ export function MenuItemElement(props: MenuItemElementProps): JSX.Element {
 		<div
 			{...rest}
 			ref={(element) => {
-				local.itemRef?.(element);
+				local.rootRef?.(element);
 			}}
 			role='menuitem'
 			tabIndex={-1}
@@ -1499,7 +1499,7 @@ import { type JSX, splitProps } from 'solid-js';
 import { MenuItemElement, type MenuItemElementProps } from './menu-item-element';
 import { useMenuLevelContext } from './menu-level-context';
 
-export interface ContextMenuItemProps extends Omit<MenuItemElementProps, 'itemRef' | 'trailing'> {
+export interface ContextMenuItemProps extends Omit<MenuItemElementProps, 'rootRef' | 'trailing'> {
 	/** По умолчанию `true`: закрывает всю цепочку меню, а не только подменю. */
 	closeOnSelect?: boolean | undefined;
 	onSelect?: (() => void) | undefined;
@@ -1960,7 +1960,7 @@ import { useSubContext } from './sub-context';
 const HOVER_OPEN_DELAY = 120;
 
 export interface ContextMenuSubTriggerProps
-	extends Omit<MenuItemElementProps, 'itemRef' | 'trailing' | 'onKeyDown' | 'onPointerLeave'> {
+	extends Omit<MenuItemElementProps, 'rootRef' | 'trailing' | 'onKeyDown' | 'onPointerLeave'> {
 	onKeyDown?: JSX.EventHandler<HTMLDivElement, KeyboardEvent> | undefined;
 	onPointerLeave?: JSX.EventHandler<HTMLDivElement, PointerEvent> | undefined;
 }
@@ -1991,7 +1991,7 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): JSX.El
 		<MenuItemElement
 			{...rest}
 			id={sub.triggerId}
-			itemRef={(element) => {
+			rootRef={(element) => {
 				own = element;
 				sub.setTrigger(element);
 			}}
