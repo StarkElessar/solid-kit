@@ -162,6 +162,8 @@ export async function runPopoverScenarioChecks(page: HTMLElement): Promise<Check
 		const cell = required(page, '[data-scenario="a-cell"]');
 		const area = required(cell, '[data-scenario-area]');
 		area.scrollIntoView({ behavior: 'instant', block: 'center' });
+		// событие scroll приходит в следующем кадре и закрыло бы только что открытое меню
+		await frames();
 		const { x, y } = centerOf(area);
 		area.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y }));
 		await frames();
