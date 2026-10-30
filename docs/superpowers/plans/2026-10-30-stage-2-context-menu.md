@@ -630,7 +630,7 @@ function openByMouse(area: HTMLElement): boolean {
 	return fireEvent.contextMenu(area, { clientX: 120, clientY: 80 });
 }
 
-function press(key: string, target: Element = document.activeElement ?? document.body): KeyboardEvent {
+function press(key: string, target: Element = document.activeElement ?? document.body): Event {
 	const event = createEvent.keyDown(target, { key });
 	fireEvent(target, event);
 	return event;
@@ -1633,7 +1633,7 @@ function renderMenu(onSelect: () => void = vi.fn()) {
 				<ContextMenu.Item>Переименовать</ContextMenu.Item>
 				<ContextMenu.Sub>
 					<ContextMenu.SubTrigger>Переместить в</ContextMenu.SubTrigger>
-					<ContextMenu.SubContent aria-label='Куда'>
+					<ContextMenu.SubContent>
 						<ContextMenu.Item onSelect={onSelect}>Папка A</ContextMenu.Item>
 						<ContextMenu.Item closeOnSelect={false}>Папка B</ContextMenu.Item>
 						<ContextMenu.Sub>
@@ -1657,7 +1657,7 @@ function renderMenu(onSelect: () => void = vi.fn()) {
 
 const subTrigger = (): HTMLElement => screen.getByRole('menuitem', { name: 'Переместить в' });
 
-function press(key: string, target: Element = document.activeElement ?? document.body): KeyboardEvent {
+function press(key: string, target: Element = document.activeElement ?? document.body): Event {
 	const event = createEvent.keyDown(target, { key });
 	fireEvent(target, event);
 	return event;
@@ -1673,10 +1673,10 @@ describe('ContextMenu submenu', () => {
 		renderMenu();
 		expect(subTrigger().getAttribute('aria-haspopup')).toBe('menu');
 		expect(subTrigger().getAttribute('aria-expanded')).toBe('false');
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 		openByKeyboard();
 		expect(subTrigger().getAttribute('aria-expanded')).toBe('true');
-		const sub = screen.getByRole('menu', { name: 'Куда' });
+		const sub = screen.getByRole('menu', { name: 'Переместить в' });
 		expect(subTrigger().getAttribute('aria-controls')).toBe(sub.id);
 		expect(sub.getAttribute('aria-labelledby')).toBe(subTrigger().id);
 	});
@@ -1688,7 +1688,7 @@ describe('ContextMenu submenu', () => {
 			expect(press(key).defaultPrevented).toBe(true);
 			expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Папка A' }));
 			press('ArrowLeft');
-			expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+			expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 			expect(document.activeElement).toBe(subTrigger());
 		}
 	});
@@ -1705,9 +1705,9 @@ describe('ContextMenu submenu', () => {
 	it('a click on SubTrigger opens it at once and a second click keeps it open', () => {
 		renderMenu();
 		fireEvent.click(subTrigger());
-		expect(screen.getByRole('menu', { name: 'Куда' })).toBeTruthy();
+		expect(screen.getByRole('menu', { name: 'Переместить в' })).toBeTruthy();
 		fireEvent.click(subTrigger());
-		expect(screen.getByRole('menu', { name: 'Куда' })).toBeTruthy();
+		expect(screen.getByRole('menu', { name: 'Переместить в' })).toBeTruthy();
 	});
 
 	it('hovering opens it after 120 ms and keeps the focus on the SubTrigger; leaving earlier cancels', () => {
@@ -1715,16 +1715,16 @@ describe('ContextMenu submenu', () => {
 		renderMenu();
 		fireEvent.pointerMove(subTrigger());
 		vi.advanceTimersByTime(119);
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 		vi.advanceTimersByTime(1);
-		expect(screen.getByRole('menu', { name: 'Куда' })).toBeTruthy();
+		expect(screen.getByRole('menu', { name: 'Переместить в' })).toBeTruthy();
 		expect(document.activeElement).toBe(subTrigger());
 		fireEvent.keyDown(document.body, { key: 'Escape' });
 
 		fireEvent.pointerMove(subTrigger());
 		fireEvent.pointerLeave(subTrigger());
 		vi.advanceTimersByTime(500);
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 	});
 
 	it('ArrowRight on a hover-opened submenu moves the focus into it', () => {
@@ -1741,7 +1741,7 @@ describe('ContextMenu submenu', () => {
 		openByKeyboard();
 		subTrigger().focus();
 		fireEvent.pointerMove(screen.getByRole('menuitem', { name: 'Переименовать' }));
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 		expect(screen.getByRole('menu', { name: 'Корень' })).toBeTruthy();
 	});
 
@@ -1763,7 +1763,7 @@ describe('ContextMenu submenu layers', () => {
 		renderMenu();
 		openByKeyboard();
 		fireEvent.keyDown(document.body, { key: 'Escape' });
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 		expect(screen.getByRole('menu', { name: 'Корень' })).toBeTruthy();
 		expect(document.activeElement).toBe(subTrigger());
 		fireEvent.keyDown(document.body, { key: 'Escape' });
@@ -1784,7 +1784,7 @@ describe('ContextMenu submenu layers', () => {
 		fireEvent.pointerDown(subTrigger());
 		expect(screen.getAllByRole('menu')).toHaveLength(2);
 		fireEvent.pointerDown(screen.getByRole('menuitem', { name: 'Переименовать' }));
-		expect(screen.queryByRole('menu', { name: 'Куда' })).toBeNull();
+		expect(screen.queryByRole('menu', { name: 'Переместить в' })).toBeNull();
 		expect(screen.getByRole('menu', { name: 'Корень' })).toBeTruthy();
 	});
 
@@ -2025,9 +2025,8 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): JSX.El
 					return;
 				}
 				if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
-					// не доходит до клавиатуры уровня: Enter и Space там вызвали бы click() и открыли подменю как мышью
+					// отменённое событие клавиатура уровня пропускает: иначе Enter и Space вызвали бы там click() и открыли подменю как мышью
 					event.preventDefault();
-					event.stopPropagation();
 					const wasOpen = sub.open();
 					sub.setOpen(true, 'keyboard');
 					const panel = document.getElementById(sub.contentId);
@@ -2120,7 +2119,7 @@ export type { ContextMenuSubTriggerProps } from './context-menu-sub-trigger';
 
 - [ ] **Step 5: Запустить всё**
 
-Run: `pnpm check` — зелёный. Затем мутации: убрать из `MenuPanel` `event.defaultPrevented`-проверку не нужно; обязательные мутации: (а) в `ContextMenuSubTrigger.onKeyDown` убрать `event.stopPropagation()` — тест «does not run the parent Enter handler…» обязан упасть; (б) в `ContextMenuSub` убрать эффект закрытия по смене активного пункта — тест «moving to another item…» обязан упасть; (в) в `ContextMenuItem` поставить `select?.()` до `level.closeAll()` — тест «the menu is already closed when onSelect runs» обязан упасть. Вернуть код.
+Run: `pnpm check` — зелёный. Затем мутации: убрать из `MenuPanel` `event.defaultPrevented`-проверку не нужно; обязательные мутации: (а) мутация с `stopPropagation` оказалась бесполезной (клавиатуру уровня и так останавливает `defaultPrevented`), поэтому `stopPropagation` из `SubTrigger` убран; (б) в `ContextMenuSub` убрать эффект закрытия по смене активного пункта — тест «moving to another item…» обязан упасть; (в) в `ContextMenuItem` поставить `select?.()` до `level.closeAll()` — тест «the menu is already closed when onSelect runs» обязан упасть. Вернуть код.
 
 - [ ] **Step 6: Коммит**
 
