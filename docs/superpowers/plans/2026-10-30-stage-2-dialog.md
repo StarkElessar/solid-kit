@@ -35,7 +35,7 @@
 - Modify: `stylelint.config.js`, `src/styles/stylelint-rules.test.ts`
 
 **Interfaces:**
-- Produces: `isOutsideRect(rect: Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom'>, x: number, y: number): boolean`; `stubDialogApi(): () => void` (подмена `HTMLDialogElement.prototype.showModal/close`, возвращает функцию восстановления); `:global()` разрешён в CSS-модулях компонентов.
+- Produces: `isOutsideRect(rect: Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom'>, x: number, y: number): boolean`; `stubDialogApi(): { restore, flush }` (подмена `HTMLDialogElement.prototype.showModal/close`; событие `close` доставляется только по `flush()`); `:global()` разрешён в CSS-модулях компонентов.
 
 - [ ] **Step 1: Падающий тест чистой функции**
 
@@ -85,16 +85,27 @@ export function isOutsideRect(rect: Pick<DOMRect, 'left' | 'right' | 'top' | 'bo
 ```ts
 import { vi } from 'vitest';
 
+export interface DialogApiStub {
+	/** Возвращает прототип в исходное состояние и сбрасывает очередь событий. */
+	restore: () => void;
+	/** Доставляет накопленные события `close`: браузер шлёт их отдельной задачей позже вызова `close()`. */
+	flush: () => void;
+}
+
 /**
- * Тестовый адаптер диалога: в jsdom нет `showModal`, `close` и событий диалога. `showModal` выставляет атрибут `open`,
- * `close` убирает его и синхронно шлёт событие `close` (браузер шлёт его задачей позже; код компонента от порядка не зависит).
- * Возвращает функцию, которая возвращает прототип в исходное состояние.
+ * Тестовый адаптер диалога: в jsdom нет `showModal`, `close` и событий диалога. `showModal` выставляет атрибут `open`
+ * (у отсоединённого элемента и у уже открытого бросает `InvalidStateError`, как браузер), `close` убирает его и ставит событие
+ * `close` в очередь: доставка отложена до `flush()`, как в браузере, иначе тесты не заметят гонок с повторным открытием.
  */
-export function stubDialogApi(): () => void {
+export function stubDialogApi(): DialogApiStub {
 	const prototype = HTMLDialogElement.prototype;
 	const original = { showModal: prototype.showModal, close: prototype.close };
+	let queue: HTMLDialogElement[] = [];
 
 	prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+		if (!this.isConnected || this.hasAttribute('open')) {
+			throw new DOMException('The dialog cannot be shown modally', 'InvalidStateError');
+		}
 		this.setAttribute('open', '');
 	});
 	prototype.close = vi.fn(function (this: HTMLDialogElement) {
@@ -102,12 +113,22 @@ export function stubDialogApi(): () => void {
 			return;
 		}
 		this.removeAttribute('open');
-		this.dispatchEvent(new Event('close'));
+		queue.push(this);
 	});
 
-	return () => {
-		prototype.showModal = original.showModal;
-		prototype.close = original.close;
+	return {
+		restore: () => {
+			prototype.showModal = original.showModal;
+			prototype.close = original.close;
+			queue = [];
+		},
+		flush: () => {
+			const pending = queue;
+			queue = [];
+			for (const dialog of pending) {
+				dialog.dispatchEvent(new Event('close'));
+			}
+		}
 	};
 }
 ```
@@ -148,6 +169,7 @@ git commit -m "feat(dialog): isOutsideRect, адаптер диалога для
 - Create: `src/components/dialog/dialog-state.ts`, `dialog-context.ts`, `use-dialog.ts`, `create-dialog-layer.ts`
 - Create: `src/components/dialog/dialog-root.tsx`, `dialog-trigger.tsx`, `dialog-content.tsx`
 - Create: `src/components/dialog/dialog.module.css`, `index.ts` (частичный: Root, Trigger, Content, `useDialog`; остальные части добавляет Task 3)
+- Modify: `src/internal/floating-panel/panel-isolation.ts` (тип `HTMLElement` вместо `HTMLDivElement`), `src/components/popover/popover-trigger.tsx` (принадлежность якоря, Step 10), `src/components/popover/popover.test.tsx`
 - Test: `src/components/dialog/dialog.test.tsx`
 
 **Interfaces:**
@@ -168,10 +190,10 @@ import { Popover } from '../popover';
 
 import { Dialog, useDialog } from './index';
 
-let restoreDialogApi: () => void = () => {};
+let dialogApi = stubDialogApi();
 
 beforeEach(() => {
-	restoreDialogApi = stubDialogApi();
+	dialogApi = stubDialogApi();
 	// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
 	HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
 		this.removeAttribute('popover');
@@ -181,7 +203,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
-	restoreDialogApi();
+	dialogApi.restore();
 });
 
 function CloseFromHook() {
@@ -300,6 +322,7 @@ describe('Dialog', () => {
 			</Dialog.Root>
 		));
 		getDialog().close();
+		dialogApi.flush();
 		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
 		expect(document.querySelector('dialog')).toBeNull();
 	});
@@ -313,9 +336,40 @@ describe('Dialog', () => {
 		));
 		const dialog = getDialog();
 		dialog.close();
+		dialogApi.flush();
 		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
 		expect(dialog.hasAttribute('open')).toBe(true);
 		expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledTimes(2);
+	});
+
+	it('a delayed close event of the previous dialog instance is ignored after a quick reopen', () => {
+		const onOpenChange = vi.fn();
+		const [open, setOpen] = createSignal(true);
+		render(() => (
+			<Dialog.Root open={open()} onOpenChange={onOpenChange}>
+				<Dialog.Content>content</Dialog.Content>
+			</Dialog.Root>
+		));
+		setOpen(false);
+		setOpen(true);
+		dialogApi.flush();
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(getDialog().hasAttribute('open')).toBe(true);
+	});
+
+	it('unmounting an open controlled dialog neither reopens the detached element nor reports a change', () => {
+		const onOpenChange = vi.fn();
+		render(() => (
+			<Dialog.Root open onOpenChange={onOpenChange}>
+				<Dialog.Content>content</Dialog.Content>
+			</Dialog.Root>
+		));
+		cleanup();
+		expect(() => {
+			dialogApi.flush();
+		}).not.toThrow();
+		expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce();
+		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
 	it('controlled: the dialog element is closed when the parent sets open to false, without a second onOpenChange', () => {
@@ -436,6 +490,30 @@ describe('Dialog', () => {
 		expect(onRef).toHaveBeenCalledOnce();
 		fireEvent.click(screen.getByTestId('custom'));
 		expect(document.querySelector('dialog')).not.toBeNull();
+	});
+
+	it('with two triggers the dialog opens in the host of the one that was pressed, and the focus returns to it', () => {
+		render(() => (
+			<Dialog.Root>
+				<section data-testid='host-a'>
+					<Dialog.Trigger>Open A</Dialog.Trigger>
+				</section>
+				<section data-testid='host-b'>
+					<Dialog.Trigger>Open B</Dialog.Trigger>
+				</section>
+				<Dialog.Content>
+					<button type='button'>inside</button>
+				</Dialog.Content>
+			</Dialog.Root>
+		));
+		const triggerA = screen.getByRole('button', { name: 'Open A' });
+		triggerA.focus();
+		fireEvent.click(triggerA);
+		expect(screen.getByTestId('host-a').contains(getDialog())).toBe(true);
+		expect(screen.getByTestId('host-b').contains(getDialog())).toBe(false);
+		screen.getByRole('button', { name: 'inside' }).focus();
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(document.activeElement).toBe(triggerA);
 	});
 
 	it('mounts the dialog next to the trigger, not inside a label around it', () => {
@@ -696,6 +774,10 @@ export function createDialogLayer(options: DialogLayerOptions): void {
 }
 ```
 
+- [ ] **Step 3a: Тип `isolationHandlers` для любого элемента**
+
+Изоляция из части 1 типизирована под `HTMLDivElement`, а `<dialog>` получает те же обработчики через spread. В `src/internal/floating-panel/panel-isolation.ts` заменить `Pick<JSX.HTMLAttributes<HTMLDivElement>, IsolatedEventProp>` на `Pick<JSX.HTMLAttributes<HTMLElement>, IsolatedEventProp>`: обработчик, принимающий `HTMLElement`, подходит и `div`, и `dialog`. `pnpm typecheck` на `FloatingPanel` (корень `div`) остаётся зелёным.
+
 - [ ] **Step 4: Root**
 
 Создать `src/components/dialog/dialog-root.tsx`:
@@ -784,12 +866,17 @@ export function DialogTrigger(props: DialogTriggerProps): JSX.Element {
 	const context = useDialogContext('Dialog.Trigger');
 	const [local, rest] = splitProps(props, ['render', 'onClick', 'ref']);
 
+	// у корня может быть несколько инициаторов: общий якорь принадлежит тому, которым диалог открыт
+	let own: HTMLElement | undefined;
 	onCleanup(() => {
-		context.setAnchor(undefined);
+		if (context.anchor() === own) {
+			context.setAnchor(undefined);
+		}
 	});
 
 	const attributes: DialogTriggerAttributes = {
 		ref: (element) => {
+			own = element;
 			context.setAnchor(element);
 			// публичный ref Button не теряется: компилятор Solid передаёт любой ref дочернему компоненту функцией
 			if (typeof local.ref === 'function') {
@@ -807,6 +894,10 @@ export function DialogTrigger(props: DialogTriggerProps): JSX.Element {
 		onClick: (event) => {
 			local.onClick?.(event);
 			if (!event.defaultPrevented) {
+				if (!context.open()) {
+					// хост диалога и возврат фокуса считаются от инициатора, по которому нажали, а не от последнего смонтированного
+					context.setAnchor(event.currentTarget);
+				}
 				context.setOpen(!context.open());
 			}
 		}
@@ -983,16 +1074,17 @@ export function DialogContent(props: DialogContentProps): JSX.Element {
 	});
 	createFocusRestore({ panel: dialog, anchor: opener, open });
 
-	// закрытие, пришедшее не от нас (`<form method="dialog">`): синхронизируем состояние
-	const handleClose = (): void => {
-		if (!context.open()) {
-			// закрытие вызвано очисткой слоя: состояние уже `false`
+	// закрытие, пришедшее не от нас (`<form method="dialog">`): синхронизируем состояние. Браузер доставляет `close` отдельной
+	// задачей, поэтому событие может прийти от уже удалённого экземпляра (очистка слоя вызвала `close()`, затем диалог открыт снова
+	// или размонтирован): такие события игнорируются, иначе новый диалог закрылся бы чужим событием
+	const handleClose = (event: Event): void => {
+		const element = dialog();
+		if (!element?.isConnected || event.currentTarget !== element || !context.open()) {
 			return;
 		}
 		context.setOpen(false);
 		// контролируемый режим: родитель оставил `open`, DOM-диалог уже закрыт, поэтому открываем снова
-		const element = dialog();
-		if (context.open() && element && !element.open) {
+		if (context.open() && !element.open) {
 			element.showModal();
 		}
 	};
@@ -1028,7 +1120,9 @@ export function DialogContent(props: DialogContentProps): JSX.Element {
 							// страховка для источников, минующих keydown (close watcher); основной путь это стек слоёв
 							event.preventDefault();
 						}}
-						onClose={handleClose}
+						onClose={(event) => {
+							handleClose(event);
+						}}
 						onPointerDown={(event) => {
 							event.stopPropagation();
 							pressedOnBackdrop = isBackdropEvent(event);
@@ -1118,15 +1212,15 @@ import { stubDialogApi } from '../../internal/testing/stub-dialog-api';
 
 import { Dialog } from './index';
 
-let restoreDialogApi: () => void = () => {};
+let dialogApi = stubDialogApi();
 
 beforeEach(() => {
-	restoreDialogApi = stubDialogApi();
+	dialogApi = stubDialogApi();
 });
 
 afterEach(() => {
 	cleanup();
-	restoreDialogApi();
+	dialogApi.restore();
 });
 
 function getDialog(): HTMLDialogElement {
