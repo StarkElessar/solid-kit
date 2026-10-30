@@ -23,7 +23,7 @@
 - Коммиты оканчиваются трейлерами: `export TRAILERS=$'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_017cEinKKFDiYmGrLaaKPqZu'`, затем `git commit -m "msg" -m "$TRAILERS"`.
 - Dev-серверы убивать только по PID после проверки cwd (`lsof -a -p <PID> -d cwd -Fn`), никогда `pkill` по имени. Порт 5173 может быть занят чужим процессом: брать порт из вывода Vite.
 - Браузерные проверки в Chrome. Страница проверок запускается с клавиатуры (сфокусировать кнопку «Запустить проверки» через JS и нажать Enter) или сменой темы через переключатель; после смены темы ждать 1,5–2 с (переходы цвета дают ложные FAIL). Координаты скриншота (1505 px) отличаются от CSS-пикселей страницы: делить `getBoundingClientRect` на `innerWidth / 1505`; прокрутку делать `scrollIntoView({behavior:'instant'})` и снимать скриншот перед щелчком. JS-инструмент иногда возвращает `[BLOCKED: Cookie/query string data]`: повторить коротким строковым результатом. Firefox и Safari не проверяются.
-- Тесты, которым нужен Popover API, подменяют его в `beforeEach`: `HTMLElement.prototype.showPopover = vi.fn(); HTMLElement.prototype.hidePopover = vi.fn();` (jsdom его не реализует).
+- Тесты, которым нужен Popover API, подменяют его в `beforeEach`: `HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) { this.removeAttribute('popover'); }); HTMLElement.prototype.hidePopover = vi.fn();` (jsdom его не реализует, а содержимое закрытого `[popover]` считает нефокусируемым, поэтому «показ» снимает атрибут; без этого тесты фокуса падают).
 - Начало плана: `git status` чистый, `pnpm check` зелёный (записать число тестов: оно будет базой для итогов).
 
 ---
@@ -1198,8 +1198,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Popover, usePopover } from './index';
 
 beforeEach(() => {
-	// jsdom не реализует Popover API
-	HTMLElement.prototype.showPopover = vi.fn();
+	// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
+	HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
+		this.removeAttribute('popover');
+	});
 	HTMLElement.prototype.hidePopover = vi.fn();
 });
 

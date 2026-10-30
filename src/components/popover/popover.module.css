@@ -1,0 +1,27 @@
+/*
+ * Компонентные токены Popover (публичный API кастомизации):
+ *   --s-kit-popover-bg, --s-kit-popover-padding, --s-kit-popover-min-width, --s-kit-popover-max-width, --s-kit-popover-radius
+ * Сброс свойств, тень и размытие приходят из основы панелей (src/internal/floating-panel/panel-base.module.css).
+ */
+
+.content {
+    composes: panel material from "../../internal/floating-panel/panel-base.module.css";
+
+    user-select: text;
+
+    min-inline-size: var(--s-kit-popover-min-width, 0);
+    max-inline-size: var(--s-kit-popover-max-width, min(90vw, 480px));
+    padding: var(--s-kit-popover-padding, 12px);
+    border-radius: var(--s-kit-popover-radius, calc(var(--s-kit-radius) * 1.5));
+
+    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
+    background: var(--s-kit-popover-bg, var(--s-kit-color-surface));
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        .content {
+            background: var(--s-kit-popover-bg, var(--s-kit-color-panel));
+        }
+    }
+}
