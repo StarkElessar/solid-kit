@@ -35,5 +35,5 @@ export default {
 			{ ignore: ['consecutive-duplicates', 'consecutive-duplicates-with-different-syntaxes'] }
 		]
 	},
-	overrides: [{ files: ['src/components/**/*.css', 'src/styles/**/*.module.css'], rules: componentRules }]
+	overrides: [{ files: ['src/components/**/*.css', 'src/internal/**/*.css', 'src/styles/**/*.module.css'], rules: componentRules }]
 };

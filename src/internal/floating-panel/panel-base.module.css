@@ -1,0 +1,53 @@
+/*
+ * Общая основа плавающих панелей (спек этапа 2, раздел 3.3): сброс UA-стилей [popover] и наследуемых свойств (зонтичный, раздел 8.2),
+ * материал панели (раздел 4.3). Подключается через composes: `panel` задаёт сброс, `material` тень и размытие.
+ * Фон, отступы, ширину и скругление задаёт компонент своими токенами.
+ * Базовые правила обёрнуты в :where() (специфичность 0), как основа контролов: в dev-режиме Vite кладёт копию основы
+ * в стиль каждого подключающего компонента, и порядок правил не должен иметь значения.
+ */
+
+:where(.panel) {
+    /* предок хоста может быть под оверлеем загрузки или в заблокированном блоке */
+    pointer-events: auto;
+    cursor: auto;
+
+    /* сброс UA-стилей [popover]; позицию задаёт Floating UI inline-стилями */
+    inset: auto;
+
+    overflow: auto;
+
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    /* сброс наследуемых свойств с предков хоста; токены --s-kit-* и color-scheme намеренно не сбрасываются */
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-font-size);
+    font-weight: 400;
+    font-style: normal;
+    line-height: var(--s-kit-line-height);
+    color: var(--s-kit-color-text);
+    text-align: start;
+    text-indent: 0;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    white-space: normal;
+
+    visibility: visible;
+}
+
+:where(.material) {
+    box-shadow: var(--s-kit-shadow-popover);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        :where(.material) {
+            -webkit-backdrop-filter: blur(var(--s-kit-panel-blur));
+            backdrop-filter: blur(var(--s-kit-panel-blur));
+        }
+    }
+}

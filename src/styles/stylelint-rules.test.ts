@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 // пути относительно корня репозитория: тесты запускаются оттуда
 const COMPONENT_FILE = 'src/components/example/example.module.css';
+const INTERNAL_FILE = 'src/internal/example/example.module.css';
 const TOKENS_FILE = 'src/styles/tokens.css';
 const CONFIG_FILE = 'stylelint.config.js';
 
@@ -60,5 +61,9 @@ describe('stylelint rules of the kit', () => {
 	it('allows literals in the token layer', async () => {
 		const rules = await lint(':root {\n    --s-kit-color-primary: light-dark(#0071e3, #4da3ff);\n}\n', TOKENS_FILE);
 		expect(rules).not.toContain('color-no-hex');
+	});
+
+	it('applies the component rules to src/internal as well', async () => {
+		expect(await lint('.a {\n    color: #fff;\n}\n', INTERNAL_FILE)).toContain('color-no-hex');
 	});
 });
