@@ -1,27 +1,10 @@
 import { contrastRatio, type Rgb } from '../../src/utils/color-math';
 
+import { frames, required } from './check-helpers';
 import { type CheckResult, resolveColor, type Rgba } from './theme-checks';
 
 function rgb([red, green, blue]: Rgba): Rgb {
 	return [red, green, blue];
-}
-
-async function frames(count = 2): Promise<void> {
-	for (let index = 0; index < count; index++) {
-		await new Promise<void>((resolve) => {
-			requestAnimationFrame(() => {
-				resolve();
-			});
-		});
-	}
-}
-
-function required(root: ParentNode, selector: string): HTMLElement {
-	const found = root.querySelector<HTMLElement>(selector);
-	if (!found) {
-		throw new Error(`Playground element is missing: ${selector}`);
-	}
-	return found;
 }
 
 /** Высота резервного отступа в пикселях: `--s-kit-focus-space` это calc(), поэтому читается через вычисленный padding пробного элемента. */

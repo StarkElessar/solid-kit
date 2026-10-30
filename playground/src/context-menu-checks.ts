@@ -1,35 +1,14 @@
 import { blend, contrastRatio, type Rgb } from '../../src/utils/color-math';
 
+import { closeWithEscape, frames, required } from './check-helpers';
 import { type CheckResult, resolveColor, type Rgba } from './theme-checks';
 
 function rgb([red, green, blue]: Rgba): Rgb {
 	return [red, green, blue];
 }
 
-async function frames(count = 3): Promise<void> {
-	for (let index = 0; index < count; index++) {
-		await new Promise<void>((resolve) => {
-			requestAnimationFrame(() => {
-				resolve();
-			});
-		});
-	}
-}
-
-function required(root: ParentNode, selector: string): HTMLElement {
-	const found = root.querySelector<HTMLElement>(selector);
-	if (!found) {
-		throw new Error(`Playground element is missing: ${selector}`);
-	}
-	return found;
-}
-
 function openAt(area: HTMLElement, x: number, y: number): void {
 	area.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y }));
-}
-
-function closeWithEscape(): void {
-	document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 }
 
 /**
