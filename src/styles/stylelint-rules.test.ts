@@ -66,4 +66,9 @@ describe('stylelint rules of the kit', () => {
 	it('applies the component rules to src/internal as well', async () => {
 		expect(await lint('.a {\n    color: #fff;\n}\n', INTERNAL_FILE)).toContain('color-no-hex');
 	});
+
+	it('allows :global() in component CSS modules', async () => {
+		const code = ':global(html):has(.a) {\n    overflow: hidden;\n}\n';
+		expect(await lint(code, COMPONENT_FILE)).not.toContain('selector-pseudo-class-no-unknown');
+	});
 });
