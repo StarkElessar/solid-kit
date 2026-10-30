@@ -245,4 +245,21 @@ describe('Popover', () => {
 		expect(() => render(() => <CloseButton/>)).toThrow('usePopover must be used inside Popover.Root');
 		silence.mockRestore();
 	});
+
+	it('with two triggers the panel opens in the host of the one that was pressed', () => {
+		render(() => (
+			<Popover.Root>
+				<section data-testid='host-a'>
+					<Popover.Trigger>Open A</Popover.Trigger>
+				</section>
+				<section data-testid='host-b'>
+					<Popover.Trigger>Open B</Popover.Trigger>
+				</section>
+				<Popover.Content>content</Popover.Content>
+			</Popover.Root>
+		));
+		fireEvent.click(screen.getByRole('button', { name: 'Open A' }));
+		expect(screen.getByTestId('host-a').contains(screen.getByText('content'))).toBe(true);
+		expect(screen.getByTestId('host-b').contains(screen.getByText('content'))).toBe(false);
+	});
 });

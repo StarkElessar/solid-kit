@@ -1,0 +1,85 @@
+/*
+ * Компонентные токены Dialog (публичный API кастомизации):
+ *   --s-kit-dialog-bg, --s-kit-dialog-width, --s-kit-dialog-padding, --s-kit-dialog-radius, --s-kit-dialog-backdrop
+ * Сброс наследуемых свойств приходит из основы панелей (src/internal/floating-panel/panel-base.module.css): диалог тоже
+ * монтируется в хост, у предков которого могут быть чужие шрифт, регистр и цвет.
+ */
+
+.dialog {
+    composes: panel from "../../internal/floating-panel/panel-base.module.css";
+
+    user-select: text;
+
+    /* центрирование: основа панелей сбрасывает inset и margin под позиционирование Floating UI */
+    inset: 0;
+
+    /* прокручивается только Dialog.Body, поэтому сам диалог не прокручивается */
+    overflow: hidden;
+    flex-direction: column;
+    gap: 12px;
+
+    inline-size: var(--s-kit-dialog-width, 480px);
+    max-inline-size: calc(100vw - 2 * 16px);
+    max-block-size: calc(100dvh - 2 * 16px);
+    margin: auto;
+    padding: var(--s-kit-dialog-padding, 20px);
+    border-radius: var(--s-kit-dialog-radius, calc(var(--s-kit-radius) * 2));
+
+    /* плотный слой данных: сплошной фон, материал панелей ему не подходит */
+    background: var(--s-kit-dialog-bg, var(--s-kit-color-surface));
+    box-shadow: var(--s-kit-shadow-popover);
+}
+
+/* display: flex только у открытого диалога: иначе закрытый `<dialog>` стал бы видимым */
+.dialog[open] {
+    display: flex;
+}
+
+.dialog::backdrop {
+    background: var(--s-kit-dialog-backdrop, color-mix(in oklch, var(--s-kit-color-text) 40%, transparent));
+}
+
+/* страница под модальным диалогом не прокручивается; gutter не даёт вёрстке прыгать при исчезновении полосы */
+:global(html):has(.dialog:modal) {
+    scrollbar-gutter: stable;
+    overflow: hidden;
+}
+
+.title {
+    flex: none;
+
+    margin: 0;
+
+    font-size: calc(var(--s-kit-font-size) * 1.25);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.description {
+    flex: none;
+    margin: 0;
+    color: var(--s-kit-color-muted);
+}
+
+/*
+ * Тело прокручивается и резервирует вокруг содержимого отступ, равный пространству внешнего кольца фокуса
+ * (зонтичный, раздел 5.1): иначе overflow обрезал бы кольцо контролов, стоящих вплотную к краю. Отрицательный margin
+ * возвращает содержимому прежнее положение относительно заголовка и подвала.
+ */
+.body {
+    overflow: auto;
+    overscroll-behavior: contain;
+    flex: 1 1 auto;
+
+    min-block-size: 0;
+    margin: calc(-1 * var(--s-kit-focus-space));
+    padding: var(--s-kit-focus-space);
+}
+
+.footer {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}

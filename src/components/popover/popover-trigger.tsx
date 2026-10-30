@@ -23,12 +23,17 @@ export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
 	const context = usePopoverContext('Popover.Trigger');
 	const [local, rest] = splitProps(props, ['render', 'onClick', 'ref']);
 
+	// у корня может быть несколько инициаторов: общий якорь принадлежит тому, которым панель открыта
+	let own: HTMLElement | undefined;
 	onCleanup(() => {
-		context.setAnchor(undefined);
+		if (context.anchor() === own) {
+			context.setAnchor(undefined);
+		}
 	});
 
 	const attributes: PopoverTriggerAttributes = {
 		ref: (element) => {
+			own = element;
 			context.setAnchor(element);
 			// публичный ref Button не теряется: компилятор Solid передаёт любой ref дочернему компоненту функцией
 			if (typeof local.ref === 'function') {
@@ -45,6 +50,10 @@ export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
 		onClick: (event) => {
 			local.onClick?.(event);
 			if (!event.defaultPrevented) {
+				if (!context.open()) {
+					// хост панели и возврат фокуса считаются от инициатора, по которому нажали, а не от последнего смонтированного
+					context.setAnchor(event.currentTarget);
+				}
 				context.setOpen(!context.open());
 			}
 		}

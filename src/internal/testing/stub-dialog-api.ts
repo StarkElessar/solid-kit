@@ -1,8 +1,11 @@
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 export interface DialogApiStub {
 	/** Возвращает прототип в исходное состояние и сбрасывает очередь событий. */
 	restore: () => void;
+	/** Шпионы на подменённые методы: `expect(stub.showModal).toHaveBeenCalled()`. */
+	showModal: Mock;
+	close: Mock;
 	/** Доставляет накопленные события `close`: браузер шлёт их отдельной задачей позже вызова `close()`. */
 	flush: () => void;
 }
@@ -19,21 +22,25 @@ export function stubDialogApi(): DialogApiStub {
 	const original = { showModal: prototype.showModal, close: prototype.close };
 	let queue: HTMLDialogElement[] = [];
 
-	prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+	const showModal = vi.fn(function (this: HTMLDialogElement) {
 		if (!this.isConnected || this.hasAttribute('open')) {
 			throw new DOMException('The dialog cannot be shown modally', 'InvalidStateError');
 		}
 		this.setAttribute('open', '');
 	});
-	prototype.close = vi.fn(function (this: HTMLDialogElement) {
+	const close = vi.fn(function (this: HTMLDialogElement) {
 		if (!this.hasAttribute('open')) {
 			return;
 		}
 		this.removeAttribute('open');
 		queue.push(this);
 	});
+	prototype.showModal = showModal;
+	prototype.close = close;
 
 	return {
+		showModal,
+		close,
 		restore: () => {
 			prototype.showModal = original.showModal;
 			prototype.close = original.close;

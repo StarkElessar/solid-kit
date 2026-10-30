@@ -20,7 +20,7 @@ function stop(event: Event): void {
  * Делегированные обработчики Solid (не нативные): обработчики внутри панели срабатывают раньше, а обработчики логических предков нет.
  * Нативный stopPropagation на корне запрещён: он лишил бы событие пути до слушателя Solid на document (зонтичный, раздел 8.3).
  */
-export const isolationHandlers: Pick<JSX.HTMLAttributes<HTMLDivElement>, IsolatedEventProp> = {
+export const isolationHandlers: Pick<JSX.HTMLAttributes<HTMLElement>, IsolatedEventProp> = {
 	onClick: stop,
 	onDblClick: stop,
 	onContextMenu: stop,
