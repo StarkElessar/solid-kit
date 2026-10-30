@@ -103,7 +103,8 @@ grep -lq -- '--s-kit-radio-size' dist/assets/*.css && ok "RadioGroup styles are 
 grep -lq -- '--s-kit-switch-width' dist/assets/*.css && ok "Switch styles are in the built CSS" || fail "Switch styles are missing from the built CSS"
 grep -lq -- '--s-kit-tabs-indicator-width' dist/assets/*.css && ok "Tabs styles are in the built CSS" || fail "Tabs styles are missing from the built CSS"
 grep -lq 'must be used inside Popover.Root' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
-grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
+grep -lq 'must be used inside Dialog.Root' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
+grep -lq -- '--s-kit-dialog-width' dist/assets/*.css && fail "not imported component styles leaked into the built CSS" || ok "not imported component styles are not in the built CSS"
 
 echo
 echo "Browser step (manual): run 'cd $WORK && ./node_modules/.bin/vite' and 'vite preview';"
