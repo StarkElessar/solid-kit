@@ -70,7 +70,7 @@ DEV_PID=""
 # --- vite build: стили и токены на месте, неимпортированного компонента в бандле нет
 if pnpm exec vite build >build.log 2>&1; then ok "vite build"; else fail "vite build (see $WORK/build.log)"; fi
 grep -lq -- '--s-kit-color-primary' dist/assets/*.css && ok "tokens are in the built CSS" || fail "tokens are missing from the built CSS"
-grep -lq -- '--s-kit-probe-radius' dist/assets/*.css && ok "Probe styles are in the built CSS" || fail "Probe styles are missing from the built CSS"
+grep -lq -- '--s-kit-popover-padding' dist/assets/*.css && ok "Popover styles are in the built CSS" || fail "Popover styles are missing from the built CSS"
 grep -lq -- '--s-kit-button-radius' dist/assets/*.css && ok "Button styles are in the built CSS" || fail "Button styles are missing from the built CSS"
 # composes: основа контролов (класс _control_) обёрнута в :where() и имеет нулевую специфичность, поэтому порядок правил в CSS не важен:
 # сборка оставляет одну копию основы после правил всех компонентов, и без :where() она перекрыла бы границу Input и радиус Button
@@ -102,11 +102,11 @@ grep -lq -- '--s-kit-checkbox-radius' dist/assets/*.css && ok "Checkbox styles a
 grep -lq -- '--s-kit-radio-size' dist/assets/*.css && ok "RadioGroup styles are in the built CSS" || fail "RadioGroup styles are missing from the built CSS"
 grep -lq -- '--s-kit-switch-width' dist/assets/*.css && ok "Switch styles are in the built CSS" || fail "Switch styles are missing from the built CSS"
 grep -lq -- '--s-kit-tabs-indicator-width' dist/assets/*.css && ok "Tabs styles are in the built CSS" || fail "Tabs styles are missing from the built CSS"
-grep -lq 'marker-used' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
+grep -lq 'must be used inside Popover.Root' dist/assets/*.js && ok "imported component is in the bundle" || fail "imported component is missing from the bundle"
 grep -lq 'marker-unused' dist/assets/*.js && fail "not imported component leaked into the bundle" || ok "not imported component is not in the bundle"
 
 echo
 echo "Browser step (manual): run 'cd $WORK && ./node_modules/.bin/vite' and 'vite preview';"
-echo "expect #scope = probe-scope and #app = app in both (one solid-js copy), no console errors."
+echo "expect #scope = popover-open and #app = app in both (one solid-js copy), no console errors."
 echo "consumer project kept at: $WORK"
 exit "$FAILED"

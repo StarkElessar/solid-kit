@@ -69,14 +69,14 @@ export function runThemeChecks(root: ParentNode): CheckResult[] {
 
 	// вложенные области: тёмная обёртка sm с переопределённым primary, форма с компонентным токеном, панель в top layer
 	const nested = required(root, '[data-scenario="nested"]');
-	const panel = required(nested, '[data-probe-panel]');
+	const panel = required(nested, '[data-s-kit-popover-content]');
 	const chip = required(panel, '[data-chip]');
 
 	check('панель показана в top layer', panel.matches(':popover-open'), `:popover-open = ${String(panel.matches(':popover-open'))}`);
 
 	const panelBackground = background(panel);
 	check(
-		'панель получила компонентный токен формы (--s-kit-probe-panel-bg)',
+		'панель получила компонентный токен формы (--s-kit-popover-bg)',
 		panelBackground[0] === 255 && panelBackground[1] === 232 && panelBackground[2] === 204,
 		`фон панели rgb(${panelBackground[0]} ${panelBackground[1]} ${panelBackground[2]}), ожидался rgb(255 232 204)`
 	);
@@ -137,7 +137,7 @@ export function runThemeChecks(root: ParentNode): CheckResult[] {
 
 	// материал панели: контраст текста не ниже 4.5:1 на самых неблагоприятных фонах под панелью (раздел 4.3)
 	for (const theme of ['light', 'dark']) {
-		const material = required(root, `[data-scenario="${theme}"] [data-probe-panel]`);
+		const material = required(root, `[data-scenario="${theme}"] [data-s-kit-popover-content]`);
 		const style = getComputedStyle(material);
 		const fill = resolveColor(style.backgroundColor);
 		const text = rgb(resolveColor(style.color));

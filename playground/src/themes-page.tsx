@@ -1,4 +1,4 @@
-import { Probe } from '@stark/solid-kit/probe';
+import { Popover } from '@stark/solid-kit/popover';
 import { createEffect, createSignal, For, type JSX, onMount } from 'solid-js';
 
 import { DerivedSwatches } from './derived-swatches';
@@ -89,10 +89,16 @@ export function ThemesPage(): JSX.Element {
 				</p>
 				<div class='boxes'>
 					<div class='box' data-scenario='light' data-s-kit-theme='light'>
-						<Probe defaultOpen>Светлая обёртка</Probe>
+						<Popover.Root open>
+							<Popover.Trigger>Popover</Popover.Trigger>
+							<Popover.Content>Светлая обёртка</Popover.Content>
+						</Popover.Root>
 					</div>
 					<div class='box' data-scenario='dark' data-s-kit-theme='dark'>
-						<Probe defaultOpen>Тёмная обёртка</Probe>
+						<Popover.Root open>
+							<Popover.Trigger>Popover</Popover.Trigger>
+							<Popover.Content>Тёмная обёртка</Popover.Content>
+						</Popover.Root>
 					</div>
 				</div>
 			</section>
@@ -112,15 +118,18 @@ export function ThemesPage(): JSX.Element {
 					style={{ '--s-kit-color-primary': 'light-dark(#7c3aed, #a78bfa)' }}
 				>
 					<form
-						style={{ '--s-kit-probe-panel-bg': '#ffe8cc' }}
+						style={{ '--s-kit-popover-bg': '#ffe8cc' }}
 						onSubmit={(event) => {
 							event.preventDefault();
 						}}
 					>
-						<Probe defaultOpen>
-							<i class='chip' data-chip/>
-							Содержимое панели
-						</Probe>
+						<Popover.Root open>
+							<Popover.Trigger>Popover</Popover.Trigger>
+							<Popover.Content>
+								<i class='chip' data-chip/>
+								Содержимое панели
+							</Popover.Content>
+						</Popover.Root>
 					</form>
 				</div>
 			</section>
@@ -131,7 +140,10 @@ export function ThemesPage(): JSX.Element {
 					Открыть dialog
 				</button>
 				<dialog ref={dialog} data-s-kit-theme='dark' data-s-kit-size='sm' class='dialog'>
-					<Probe>Панель над dialog</Probe>
+					<Popover.Root>
+						<Popover.Trigger>Панель над dialog</Popover.Trigger>
+						<Popover.Content>Содержимое над dialog</Popover.Content>
+					</Popover.Root>
 					<button type='button' onClick={() => dialog?.close()}>
 						Закрыть
 					</button>

@@ -7,7 +7,7 @@ import { Field } from '@stark/solid-kit/field';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
 import { NumericInput } from '@stark/solid-kit/numeric-input';
-import { Probe, ProbeScope } from '@stark/solid-kit/probe';
+import { Popover, usePopover } from '@stark/solid-kit/popover';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
 import { Tabs } from '@stark/solid-kit/tabs';
@@ -18,11 +18,11 @@ import { render } from 'solid-js/web';
 const AppContext = createContext('app-default');
 
 function ScopeReader() {
-	const scope = useContext(ProbeScope);
+	const popover = usePopover();
 	const app = useContext(AppContext);
 	return (
 		<>
-			<output id="scope">{scope.label}</output>
+			<output id="scope">{popover.open() ? 'popover-open' : 'popover-closed'}</output>
 			<output id="app">{app}</output>
 		</>
 	);
@@ -36,9 +36,12 @@ if (!root) {
 render(
 	() => (
 		<AppContext.Provider value="app">
-			<Probe defaultOpen>
-				<ScopeReader />
-			</Probe>
+			<Popover.Root defaultOpen>
+				<Popover.Trigger>Popover</Popover.Trigger>
+				<Popover.Content>
+					<ScopeReader />
+				</Popover.Content>
+			</Popover.Root>
 			<Button id="btn" variant="danger">Удалить</Button>
 			<IconButton id="icon-btn" aria-label="Закрыть" variant="tinted">×</IconButton>
 			<Input id="field" aria-label="Имя" defaultValue="Анна" aria-invalid="true" />

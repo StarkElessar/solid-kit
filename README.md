@@ -13,7 +13,7 @@
 
 ```ts
 import '@stark/solid-kit/tokens.css'; // один раз в точке входа
-import { Probe } from '@stark/solid-kit/probe';
+import { Popover } from '@stark/solid-kit/popover';
 ```
 
 Требования: Vite 8, `vite-plugin-solid` 2.11+, `solid-js` ^1.9, шрифт IBM Plex Sans (кит его не поставляет).
