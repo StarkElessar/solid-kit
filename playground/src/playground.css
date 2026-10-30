@@ -219,3 +219,14 @@ h2 {
     gap: 24px;
     align-items: flex-start;
 }
+
+.dialog-demos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* высота страницы нужна, чтобы проверять блокировку прокрутки под диалогом */
+.page-filler {
+    block-size: 120vh;
+}
