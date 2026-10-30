@@ -6,6 +6,7 @@ import { DemoDialogs } from './demo-dialogs';
 import { DemoPopoverScenarios } from './demo-popover-scenarios';
 import { runDialogChecks } from './dialog-checks';
 import { pick } from './pick';
+import { runPopoverScenarioChecks } from './popover-checks';
 import type { CheckResult } from './theme-checks';
 
 type Theme = 'system' | 'light' | 'dark';
@@ -35,7 +36,8 @@ export function PanelsPage(): JSX.Element {
 			void (async () => {
 				const dialog = await runDialogChecks(root);
 				const menu = await runContextMenuChecks(root);
-				setResults([...dialog, ...menu]);
+				const scenarios = await runPopoverScenarioChecks(root);
+				setResults([...dialog, ...menu, ...scenarios]);
 			})();
 		}
 	};

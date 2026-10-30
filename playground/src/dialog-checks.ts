@@ -74,6 +74,20 @@ export async function runDialogChecks(page: HTMLElement): Promise<CheckResult[]>
 			`отступ ${padding} px, кольцо ${reserved} px`
 		);
 
+		// критерий 7 для тела диалога: внешнее кольцо первого и последнего контрола целиком внутри области обрезки тела
+		const bodyBox = body.getBoundingClientRect();
+		const controls = Array.from(body.children);
+		const first = controls[0]?.getBoundingClientRect();
+		const last = controls.at(-1)?.getBoundingClientRect();
+		check(
+			'Dialog.Body: кольцо первого и последнего контрола не обрезано телом',
+			first !== undefined && last !== undefined
+				&& first.left - reserved >= bodyBox.left && first.top - reserved >= bodyBox.top
+				&& last.right + reserved <= bodyBox.right && last.bottom + reserved <= bodyBox.bottom,
+			`кольцо ${reserved} px; слева ${((first?.left ?? 0) - bodyBox.left).toFixed(1)}, `
+				+ `сверху ${((first?.top ?? 0) - bodyBox.top).toFixed(1)}, снизу ${(bodyBox.bottom - (last?.bottom ?? 0)).toFixed(1)}`
+		);
+
 		const surface = resolveColor(getComputedStyle(dialog).backgroundColor);
 		for (const [name, element] of [['заголовка', title], ['описания', description]] as const) {
 			if (!element) {
