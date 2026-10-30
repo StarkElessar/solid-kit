@@ -28,6 +28,11 @@
     }
 }
 
+/* фокус на самом меню (открытие мышью) не рисует кольцо UA: кольцо только у пунктов; прозрачная обводка остаётся видимой в forced-colors */
+.content:focus-visible {
+    outline: var(--s-kit-focus-width) solid transparent;
+}
+
 .item {
     cursor: default;
 
