@@ -4,9 +4,12 @@ import { getLayerCount, registerLayer } from './layer-stack';
 
 const unregisters: Array<() => void> = [];
 
-function addLayer(contains: (target: Node) => boolean = () => false): { close: () => void; unregister: () => void } {
+function addLayer(
+	contains: (target: Node) => boolean = () => false,
+	modal = false
+): { close: ReturnType<typeof vi.fn>; unregister: () => void } {
 	const close = vi.fn();
-	const unregister = registerLayer({ contains, close });
+	const unregister = registerLayer({ contains, close, modal });
 	unregisters.push(unregister);
 	return { close, unregister };
 }
@@ -51,11 +54,11 @@ describe('layer stack', () => {
 		expect(layer.close).not.toHaveBeenCalled();
 	});
 
-	it('pointerdown outside the top layer closes it, inside does not', () => {
+	it('pointerdown outside the top layer closes it, inside does not; a lower layer holding the target stays open', () => {
 		const inside = document.createElement('div');
 		const outside = document.createElement('div');
 		document.body.append(inside, outside);
-		const lower = addLayer();
+		const lower = addLayer((target) => outside.contains(target));
 		const upper = addLayer((target) => inside.contains(target));
 		pointerDownOn(inside);
 		expect(upper.close).not.toHaveBeenCalled();
@@ -81,5 +84,74 @@ describe('layer stack', () => {
 		const event = pressEscape();
 		expect(event.defaultPrevented).toBe(false);
 		expect(layer.close).not.toHaveBeenCalled();
+	});
+
+	it('pointerdown outside every layer closes all of them from the top down', () => {
+		const outside = document.createElement('div');
+		document.body.append(outside);
+		const lower = addLayer();
+		const upper = addLayer();
+		pointerDownOn(outside);
+		expect(upper.close).toHaveBeenCalledOnce();
+		expect(lower.close).toHaveBeenCalledOnce();
+		expect(upper.close.mock.invocationCallOrder[0]).toBeLessThan(lower.close.mock.invocationCallOrder[0] ?? 0);
+		outside.remove();
+	});
+
+	it('the cascade stops at the first layer that holds the target', () => {
+		const inMiddle = document.createElement('div');
+		document.body.append(inMiddle);
+		const bottom = addLayer();
+		const middle = addLayer((target) => inMiddle.contains(target));
+		const top = addLayer();
+		pointerDownOn(inMiddle);
+		expect(top.close).toHaveBeenCalledOnce();
+		expect(middle.close).not.toHaveBeenCalled();
+		expect(bottom.close).not.toHaveBeenCalled();
+		inMiddle.remove();
+	});
+
+	it('a modal layer is never closed by the stack and stops the cascade', () => {
+		const outside = document.createElement('div');
+		document.body.append(outside);
+		const bottom = addLayer();
+		const modal = addLayer(() => false, true);
+		const top = addLayer();
+		pointerDownOn(outside);
+		expect(top.close).toHaveBeenCalledOnce();
+		expect(modal.close).not.toHaveBeenCalled();
+		expect(bottom.close).not.toHaveBeenCalled();
+		outside.remove();
+	});
+
+	it('does not call close() of a lower layer that the upper layer has just unregistered', () => {
+		const outside = document.createElement('div');
+		document.body.append(outside);
+		const lower = addLayer();
+		const upper = addLayer();
+		upper.close.mockImplementation(() => {
+			lower.unregister();
+			upper.unregister();
+		});
+		pointerDownOn(outside);
+		expect(upper.close).toHaveBeenCalledOnce();
+		expect(lower.close).not.toHaveBeenCalled();
+		outside.remove();
+	});
+
+	it('survives a layer that unregisters itself while being closed', () => {
+		const outside = document.createElement('div');
+		document.body.append(outside);
+		const lower = addLayer();
+		let unregisterUpper = (): void => {};
+		const upperClose = vi.fn(() => {
+			unregisterUpper();
+		});
+		unregisterUpper = registerLayer({ contains: () => false, close: upperClose });
+		unregisters.push(unregisterUpper);
+		pointerDownOn(outside);
+		expect(upperClose).toHaveBeenCalledOnce();
+		expect(lower.close).toHaveBeenCalledOnce();
+		outside.remove();
 	});
 });

@@ -1,9 +1,14 @@
-/** Открытый слой (панель или диалог). Раздел 8 спека: Esc и клик снаружи обрабатывает только верхний слой. */
+/**
+ * Открытый слой (панель или диалог). Раздел 8 спека: Esc обрабатывает только верхний слой,
+ * клик снаружи каскадно закрывает слои сверху вниз.
+ */
 export interface Layer {
 	/** Принадлежит ли цель события слою (его панель или его инициатор). */
 	contains: (target: Node) => boolean;
 	/** Запрос закрытия; регистрацию снимает владелец слоя. */
 	close: () => void;
+	/** Модальный слой (Dialog): стек его по клику снаружи не закрывает и дальше вниз не идёт. */
+	modal?: boolean;
 }
 
 const layers: Layer[] = [];
@@ -21,11 +26,21 @@ function onKeyDown(event: KeyboardEvent): void {
 }
 
 function onPointerDown(event: PointerEvent): void {
-	const top = layers.at(-1);
-	if (!top || !(event.target instanceof Node) || top.contains(event.target)) {
+	if (!(event.target instanceof Node)) {
 		return;
 	}
-	top.close();
+	const target = event.target;
+	// обход по копии: close() слоя может синхронно снять регистрацию и изменить стек
+	for (const layer of [...layers].reverse()) {
+		// слой мог быть снят закрытием вышележащего слоя: уже не зарегистрированному close() не вызываем
+		if (!layers.includes(layer)) {
+			continue;
+		}
+		if (layer.contains(target) || layer.modal) {
+			return;
+		}
+		layer.close();
+	}
 }
 
 function startListening(): void {

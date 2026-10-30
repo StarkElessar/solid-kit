@@ -9,13 +9,13 @@ export interface AnchoredPositionOptions {
 	floating: Accessor<HTMLElement | undefined>;
 	open: Accessor<boolean>;
 	/** По умолчанию `bottom-start`. */
-	placement?: Placement;
+	placement?: Placement | undefined;
 	/** Зазор между якорем и панелью, по умолчанию 4. */
-	gap?: number;
+	gap?: number | undefined;
 	/** Отступ от краёв вьюпорта для flip/shift/size, по умолчанию 8. */
-	padding?: number;
+	padding?: number | undefined;
 	/** Ширина панели равна ширине якоря (разделы 6.2 и 8 спека). */
-	matchAnchorWidth?: boolean;
+	matchAnchorWidth?: boolean | undefined;
 }
 
 /**
