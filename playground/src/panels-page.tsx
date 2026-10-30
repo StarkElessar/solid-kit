@@ -1,5 +1,7 @@
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
+import { runContextMenuChecks } from './context-menu-checks';
+import { DemoContextMenus } from './demo-context-menus';
 import { DemoDialogs } from './demo-dialogs';
 import { runDialogChecks } from './dialog-checks';
 import { pick } from './pick';
@@ -9,7 +11,7 @@ type Theme = 'system' | 'light' | 'dark';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 
-/** Страница «Панели» (раздел 8 зонтичного спека, критерий 6): наращивается частями этапа 2. Сейчас: Dialog. */
+/** Страница «Панели» (раздел 8 зонтичного спека, критерий 6): наращивается частями этапа 2. Сейчас: Dialog и ContextMenu. */
 export function PanelsPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
 	const [results, setResults] = createSignal<readonly CheckResult[]>([]);
@@ -28,7 +30,12 @@ export function PanelsPage(): JSX.Element {
 
 	const runChecks = (): void => {
 		if (page) {
-			void runDialogChecks(page).then(setResults);
+			const root = page;
+			void (async () => {
+				const dialog = await runDialogChecks(root);
+				const menu = await runContextMenuChecks(root);
+				setResults([...dialog, ...menu]);
+			})();
 		}
 	};
 
@@ -54,7 +61,17 @@ export function PanelsPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>2. Проверки</h2>
+				<h2>2. ContextMenu</h2>
+				<p>
+					Ручная приёмка настоящими клавишами: правый клик открывает меню в точке; Shift+F10 на кнопке внутри области
+					открывает у кнопки, фокус на первом пункте; стрелки, Home, End, Enter, Space; ArrowRight и ArrowLeft в подменю;
+					Esc закрывает по уровню; в диалоге Esc три раза закрывает подменю, меню и диалог.
+				</p>
+				<DemoContextMenus/>
+			</section>
+
+			<section>
+				<h2>3. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>

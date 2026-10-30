@@ -226,6 +226,26 @@ h2 {
     gap: 12px;
 }
 
+.menu-demos {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.menu-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+
+    box-sizing: border-box;
+    inline-size: min(100%, 480px);
+    padding: 24px;
+    border: 1px dashed var(--s-kit-color-border);
+    border-radius: var(--s-kit-radius);
+}
+
 /* высота страницы нужна, чтобы проверять блокировку прокрутки под диалогом */
 .page-filler {
     block-size: 120vh;
