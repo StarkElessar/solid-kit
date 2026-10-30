@@ -141,7 +141,7 @@ export function createFocusOnOpen(options: FocusOnOpenOptions): void {
 - в `FloatingPanelProps` заменить `initialFocus?: InitialFocus | undefined;` на `initialFocus?: InitialFocusMode | undefined;` и после `dismissExempt` добавить:
 
 ```ts
-	/** Кому вернуть фокус при закрытии; по умолчанию инициатор (`anchorElement`). Меню возвращает фокус тому, кто держал его до открытия. */
+	/** Кому вернуть фокус при закрытии; по умолчанию инициатор (`anchorElement`). Меню возвращает фокус тому, кто держал его раньше. */
 	restoreFocusTo?: Accessor<Element | undefined> | undefined;
 ```
 

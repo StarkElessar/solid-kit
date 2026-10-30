@@ -1,5 +1,8 @@
 export type InitialFocus = 'first' | 'panel' | 'none';
 
+/** Куда переносится фокус при открытии: готовый режим или своя функция (меню фокусирует пункт, а не первый табулируемый элемент). */
+export type InitialFocusMode = InitialFocus | ((panel: HTMLElement) => void);
+
 const TABBABLE = [
 	'a[href]',
 	'button',

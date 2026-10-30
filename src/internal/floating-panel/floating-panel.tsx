@@ -8,7 +8,7 @@ import { PanelPortal } from '../panel/panel-portal';
 import { blocksImplicitSubmit } from './blocks-implicit-submit';
 import { createFocusOnOpen } from './create-focus-on-open';
 import { createFocusRestore } from './create-focus-restore';
-import type { InitialFocus } from './focus-initial';
+import type { InitialFocusMode } from './focus-initial';
 import { type IsolatedEventProp, isolationHandlers } from './panel-isolation';
 
 /** Атрибуты корня панели, которые компонент может принять от пользователя: события, занятые изоляцией, и `ref` исключены. */
@@ -30,12 +30,14 @@ export interface FloatingPanelProps extends FloatingPanelAttributes {
 	 * ContextMenu передаёт `() => undefined`: его область вызова не часть меню, клик по ней закрывает меню.
 	 */
 	dismissExempt?: Accessor<Element | undefined> | undefined;
+	/** Кому вернуть фокус при закрытии; по умолчанию инициатор (`anchorElement`). Меню возвращает фокус тому, кто держал его раньше. */
+	restoreFocusTo?: Accessor<Element | undefined> | undefined;
 	placement?: Placement | undefined;
 	gap?: number | undefined;
 	matchAnchorWidth?: boolean | undefined;
 	size?: 'sm' | 'md' | 'lg' | undefined;
 	/** Куда переносится фокус при открытии, по умолчанию на первый табулируемый элемент. */
-	initialFocus?: InitialFocus | undefined;
+	initialFocus?: InitialFocusMode | undefined;
 	/** Вызывается раньше изоляции: меню обрабатывает навигацию здесь. */
 	onKeyDown?: ((event: KeyboardEvent & { currentTarget: HTMLDivElement }) => void) | undefined;
 	panelRef?: ((element: HTMLDivElement) => void) | undefined;
@@ -55,6 +57,7 @@ export function FloatingPanel(props: FloatingPanelProps): JSX.Element {
 		'anchor',
 		'anchorElement',
 		'dismissExempt',
+		'restoreFocusTo',
 		'placement',
 		'gap',
 		'matchAnchorWidth',
@@ -102,7 +105,7 @@ export function FloatingPanel(props: FloatingPanelProps): JSX.Element {
 		}
 	});
 	createFocusOnOpen({ panel, open, mode: () => local.initialFocus ?? 'first' });
-	createFocusRestore({ panel, anchor: anchorElement, open });
+	createFocusRestore({ panel, anchor: () => (local.restoreFocusTo ? local.restoreFocusTo() : anchorElement()), open });
 
 	return (
 		<Show when={local.open()}>
