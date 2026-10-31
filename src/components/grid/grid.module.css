@@ -108,8 +108,17 @@
 
 @media (hover: hover) {
     .row:hover > .cell {
-        background: var(--s-kit-grid-row-hover, var(--s-kit-color-hover));
+        --s-kit-grid-fill: var(--s-kit-grid-row-hover, var(--s-kit-color-hover));
+
+        background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
     }
+}
+
+/* заливка слоем-градиентом поверх фона ячейки: sticky-ячейки остаются непрозрачными даже при полупрозрачном токене */
+.row[data-selected] > .cell {
+    --s-kit-grid-fill: var(--s-kit-color-row-selected);
+
+    background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
 }
 
 .spacer {

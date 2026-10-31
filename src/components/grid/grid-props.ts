@@ -11,6 +11,14 @@ export interface GridProps<T> {
 	columns: readonly GridColumn<T>[];
 	/** Колонка чекбоксов: первая, всегда закреплённая; клик по строке переключает выбор. */
 	selectable?: boolean | undefined;
+	selectedKeys?: ReadonlySet<RowKey> | undefined;
+	defaultSelectedKeys?: ReadonlySet<RowKey> | undefined;
+	/** Новый `Set` на каждое изменение; прежний не мутируется. Выбор не сбрасывается при смене `rows`. */
+	onSelectedKeysChange?: ((keys: ReadonlySet<RowKey>) => void) | undefined;
+	/** Подпись главного чекбокса ('Выбрать все строки'). */
+	selectAllLabel?: string | undefined;
+	/** Подпись чекбокса строки ('Выбрать строку'). */
+	selectRowLabel?: string | undefined;
 	columnWidths?: Readonly<Record<string, number>> | undefined;
 	defaultColumnWidths?: Readonly<Record<string, number>> | undefined;
 	/** Один раз по окончании ресайза; в аргументе полный словарь переопределённых ширин. */

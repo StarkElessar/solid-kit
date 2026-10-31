@@ -5,6 +5,7 @@ import type { RenderWindow } from '../../utils/render-window';
 import type { RowIndex } from './build-row-index';
 import type { ColumnLayout } from './column-layout';
 import type { GridColumn } from './grid-column';
+import type { SelectionState } from './selection-state';
 
 export interface GridContextValue<T> {
 	rows: Accessor<readonly T[]>;
@@ -13,6 +14,14 @@ export interface GridContextValue<T> {
 	/** Видимые колонки в порядке показа. Список не пересоздаётся при смене ширин: шапка и ячейки живут между ресайзами. */
 	columns: Accessor<readonly GridColumn<T>[]>;
 	selectable: Accessor<boolean>;
+	/** Выбрана ли строка с индексом `index`. */
+	isRowSelected: (index: number) => boolean;
+	toggleRow: (index: number) => void;
+	/** Главный чекбокс: выбрать (`true`) или снять (`false`) все ключи загруженных строк. */
+	toggleAll: (checked: boolean) => void;
+	selectionState: Accessor<SelectionState>;
+	selectAllLabel: Accessor<string>;
+	selectRowLabel: Accessor<string>;
 	/** Число колонок таблицы с колонкой чекбоксов: `aria-colcount` и `colspan` spacer-строк. */
 	columnCount: Accessor<number>;
 	/** Индекс последней закреплённой колонки (правый разделитель закрепа), -1 если закреплённых нет. */

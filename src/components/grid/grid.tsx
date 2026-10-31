@@ -15,12 +15,15 @@ import { createGridResize } from './create-grid-resize';
 import { GridContext, type GridContextValue } from './grid-context';
 import type { GridProps } from './grid-props';
 import { GridTable } from './grid-table';
+import type { RowKey } from './row-key';
 import { sameItems } from './same-items';
+import { clearKeys, selectAllKeys, selectionOf, toggleKey } from './selection-state';
 
 const FALLBACK_ROW_HEIGHT = 32;
 const DEFAULT_OVERSCAN = 12;
 const INITIAL_WINDOW_HEIGHT = 512;
 const DEFAULT_SELECT_WIDTH = 44;
+const NO_KEYS: ReadonlySet<RowKey> = new Set();
 
 /**
  * Грид: «глупая» таблица с закреплённой шапкой, закреплёнными колонками и ресайзом колонок. Данные, ширины и (в следующих частях)
@@ -33,6 +36,12 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		defaultValue: () => props.defaultColumnWidths ?? {},
 		onChange: (next) => props.onColumnWidthsChange?.(next)
 	});
+	const [selected, setSelected] = createControllableSignal<ReadonlySet<RowKey>>({
+		name: 'Grid',
+		value: () => props.selectedKeys,
+		defaultValue: () => props.defaultSelectedKeys ?? NO_KEYS,
+		onChange: (next) => props.onSelectedKeysChange?.(next)
+	});
 	const [selectWidth, setSelectWidth] = createSignal(DEFAULT_SELECT_WIDTH);
 	const selectable = (): boolean => props.selectable === true;
 	const layoutOptions = createMemo(() => ({ selectable: selectable(), selectWidth: selectWidth() }));
@@ -40,6 +49,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
 	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
+	const selectionState = createMemo(() => selectionOf(selected(), rowIndex().keys));
 
 	const [scroller, setScroller] = createSignal<HTMLElement | undefined>(undefined);
 	const [headerHeight, setHeaderHeight] = createSignal(0);
@@ -99,6 +109,22 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		rowIndex,
 		layout,
 		selectable,
+		isRowSelected: (index) => {
+			const key = rowIndex().keys[index];
+			return key !== undefined && selected().has(key);
+		},
+		toggleRow: (index) => {
+			const key = rowIndex().keys[index];
+			if (key !== undefined) {
+				setSelected(toggleKey(selected(), key));
+			}
+		},
+		toggleAll: (checked) => {
+			setSelected(checked ? selectAllKeys(selected(), rowIndex().keys) : clearKeys(selected(), rowIndex().keys));
+		},
+		selectionState,
+		selectAllLabel: () => props.selectAllLabel ?? 'Выбрать все строки',
+		selectRowLabel: () => props.selectRowLabel ?? 'Выбрать строку',
 		columnCount: () => columns().length + (selectable() ? 1 : 0),
 		columns,
 		lastStickyIndex,

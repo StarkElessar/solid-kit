@@ -28,10 +28,12 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			class={styles['row']}
 			data-index={props.index}
 			data-row-key={grid.rowIndex().keys[props.index]}
+			data-selected={grid.isRowSelected(props.index) ? '' : undefined}
+			aria-selected={grid.isRowSelected(props.index) ? true : undefined}
 			aria-rowindex={props.index + 2}
 		>
 			<Show when={grid.selectable()}>
-				<GridSelectCell/>
+				<GridSelectCell index={props.index}/>
 			</Show>
 			<For each={grid.columns()}>{(column, index) => <GridCell column={column} index={index()} row={row()}/>}</For>
 		</tr>

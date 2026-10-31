@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@solidjs/testing-library';
+import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
 import { createSignal } from 'solid-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -511,5 +511,119 @@ describe('Grid: колонка чекбоксов', () => {
 		expect(tableVar('--s-kit-grid-left-1')).toBe('224px');
 		expect((table().parentElement as HTMLElement).style.getPropertyValue('scroll-padding-inline-start')).toBe('304px');
 		handle.dispatchEvent(pointer('pointerup', 180));
+	});
+});
+
+function rowBoxes(): HTMLInputElement[] {
+	return screen.getAllByRole<HTMLInputElement>('checkbox', { name: 'Выбрать строку' });
+}
+
+function allBox(): HTMLInputElement {
+	return screen.getByRole<HTMLInputElement>('checkbox', { name: 'Выбрать все строки' });
+}
+
+describe('Grid: выбор строк', () => {
+	it('у чекбоксов строк и главного есть имена по умолчанию, свои подписи заменяют их', () => {
+		renderGrid({ selectable: true });
+		expect(rowBoxes()).toHaveLength(3);
+		expect(allBox()).toBeTruthy();
+		cleanup();
+		renderGrid({ selectable: true, selectAllLabel: 'Все', selectRowLabel: 'Строка' });
+		expect(screen.getByRole('checkbox', { name: 'Все' })).toBeTruthy();
+		expect(screen.getAllByRole('checkbox', { name: 'Строка' })).toHaveLength(3);
+	});
+
+	it('клик по чекбоксу строки сообщает новый Set, не меняя прежний, строка получает data-selected и aria-selected', () => {
+		const initial = new Set<number>();
+		const onChange = vi.fn();
+		renderGrid({ selectable: true, defaultSelectedKeys: initial, onSelectedKeysChange: onChange });
+		fireEvent.click(rowBoxes()[1] as HTMLElement);
+		expect(onChange).toHaveBeenCalledTimes(1);
+		const next = onChange.mock.calls[0]?.[0] as ReadonlySet<number>;
+		expect([...next]).toEqual([2]);
+		expect(next).not.toBe(initial);
+		expect(initial.size).toBe(0);
+		expect(bodyRows()[1]?.hasAttribute('data-selected')).toBe(true);
+		expect(bodyRows()[1]?.getAttribute('aria-selected')).toBe('true');
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+		expect(bodyRows()[0]?.hasAttribute('aria-selected')).toBe(false);
+		fireEvent.click(rowBoxes()[1] as HTMLElement);
+		expect(bodyRows()[1]?.hasAttribute('data-selected')).toBe(false);
+	});
+
+	it('главный чекбокс отражает none, some, all', () => {
+		renderGrid({ selectable: true, defaultSelectedKeys: new Set([1]) });
+		expect(allBox().checked).toBe(false);
+		expect(allBox().indeterminate).toBe(true);
+		fireEvent.click(rowBoxes()[1] as HTMLElement);
+		fireEvent.click(rowBoxes()[2] as HTMLElement);
+		expect(allBox().checked).toBe(true);
+		expect(allBox().indeterminate).toBe(false);
+		fireEvent.click(allBox());
+		expect(allBox().checked).toBe(false);
+		expect(allBox().indeterminate).toBe(false);
+		expect(rowBoxes().every((box) => !box.checked)).toBe(true);
+	});
+
+	it('главный чекбокс при частичном выборе выбирает все, при полном убирает только ключи загрузки', () => {
+		const onChange = vi.fn();
+		renderGrid({ selectable: true, defaultSelectedKeys: new Set([1, 999]), onSelectedKeysChange: onChange });
+		fireEvent.click(allBox());
+		expect([...(onChange.mock.calls[0]?.[0] as ReadonlySet<number>)].sort((a, b) => a - b)).toEqual([1, 2, 3, 999]);
+		fireEvent.click(allBox());
+		expect([...(onChange.mock.calls[1]?.[0] as ReadonlySet<number>)]).toEqual([999]);
+		expect(allBox().checked).toBe(false);
+	});
+
+	it('controlled: если родитель не принял выбор, чекбокс остаётся прежним', () => {
+		const onChange = vi.fn();
+		renderGrid({ selectable: true, selectedKeys: new Set<number>(), onSelectedKeysChange: onChange });
+		fireEvent.click(rowBoxes()[0] as HTMLElement);
+		expect(onChange).toHaveBeenCalledTimes(1);
+		expect(rowBoxes()[0]?.checked).toBe(false);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+	});
+
+	it('controlled: принятый родителем выбор отображается', () => {
+		const [keys, setKeys] = createSignal<ReadonlySet<number>>(new Set());
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				selectable
+				selectedKeys={keys()}
+				onSelectedKeysChange={setKeys}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		fireEvent.click(rowBoxes()[2] as HTMLElement);
+		expect(rowBoxes()[2]?.checked).toBe(true);
+		expect(bodyRows()[2]?.getAttribute('aria-selected')).toBe('true');
+	});
+
+	it('выбор сохраняется при замене rows, ключи отсутствующих строк не теряются', () => {
+		const [rows, setRows] = createSignal<readonly Person[]>(ROWS);
+		const onChange = vi.fn();
+		render(() => (
+			<Grid
+				rows={rows()}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				selectable
+				defaultSelectedKeys={new Set([1])}
+				onSelectedKeysChange={onChange}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		setRows([{ id: 5, name: 'Глеб', age: 20, note: null }]);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+		expect(allBox().checked).toBe(false);
+		fireEvent.click(allBox());
+		expect([...(onChange.mock.calls[0]?.[0] as ReadonlySet<number>)].sort()).toEqual([1, 5]);
+		setRows(ROWS);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(true);
 	});
 });
