@@ -1,4 +1,6 @@
+import { ContextMenu } from '@stark/solid-kit/context-menu';
 import { Grid, type GridColumn, type GridSort, type RowKey } from '@stark/solid-kit/grid';
+import { Select } from '@stark/solid-kit/select';
 import { createMemo, createSignal, For, type JSX } from 'solid-js';
 
 import { pick } from './pick';
@@ -59,6 +61,21 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		cell: (row) => <button type='button' class='grid-action' data-grid-action>{row.team}</button>
 	},
 	{
+		id: 'edit-status',
+		title: 'Изменить статус',
+		value: (row) => row.status,
+		width: 170,
+		cell: (row) => (
+			<Select<string>
+				items={STATUSES}
+				getKey={(status) => status}
+				getLabel={(status) => status}
+				defaultValue={row.status}
+				aria-label={`Статус ${row.name}`}
+			/>
+		)
+	},
+	{
 		id: 'status',
 		title: 'Статус',
 		value: (row) => row.status,
@@ -104,6 +121,41 @@ function sortRows(rows: readonly Order[], sort: GridSort | null): readonly Order
 	return [...rows].sort((first, second) => sign * compareValues(column.value(first), column.value(second)));
 }
 
+/** Пункты контекстного меню строки: простые пункты, разделитель и подменю; выбранное пишется в журнал страницы. */
+function RowMenu(props: { row: Order; log: (text: string) => void }): JSX.Element {
+	return (
+		<>
+			<ContextMenu.Item
+				data-grid-menu-item='open'
+				onSelect={() => {
+					props.log(`Открыть ${props.row.name}`);
+				}}
+			>Открыть</ContextMenu.Item>
+			<ContextMenu.Item
+				data-grid-menu-item='copy'
+				onSelect={() => {
+					props.log(`Копировать номер ${props.row.id}`);
+				}}
+			>Копировать номер</ContextMenu.Item>
+			<ContextMenu.Separator/>
+			<ContextMenu.Sub>
+				<ContextMenu.SubTrigger>Статус</ContextMenu.SubTrigger>
+				<ContextMenu.SubContent>
+					<For each={['в работе', 'готов']}>
+						{(status) => (
+							<ContextMenu.Item
+								onSelect={() => {
+									props.log(`Статус ${props.row.name}: ${status}`);
+								}}
+							>{status}</ContextMenu.Item>
+						)}
+					</For>
+				</ContextMenu.SubContent>
+			</ContextMenu.Sub>
+		</>
+	);
+}
+
 /** Демонстрация Grid (страница «Грид»): число строк и виртуализация переключаются, последняя запись ширин видна. */
 export function DemoGrid(): JSX.Element {
 	const [count, setCount] = createSignal<(typeof ROW_COUNTS)[number]>('100000');
@@ -113,7 +165,11 @@ export function DemoGrid(): JSX.Element {
 	const [selected, setSelected] = createSignal<ReadonlySet<RowKey>>(new Set());
 	const [widthsLog, setWidthsLog] = createSignal('ещё не менялись');
 	const [doubleLog, setDoubleLog] = createSignal('ещё не было');
-	const rows = createMemo(() => sortRows(ALL_ORDERS.slice(0, Number(count())), sort()));
+	const [loading, setLoading] = createSignal(false);
+	const [empty, setEmpty] = createSignal(false);
+	const [menuEnabled, setMenuEnabled] = createSignal(true);
+	const [menuLog, setMenuLog] = createSignal('ещё не было');
+	const rows = createMemo(() => (empty() ? [] : sortRows(ALL_ORDERS.slice(0, Number(count())), sort())));
 
 	return (
 		<div class='grid-demo'>
@@ -142,6 +198,33 @@ export function DemoGrid(): JSX.Element {
 					/>
 					Выбор строк
 				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-menu
+						checked={menuEnabled()}
+						onChange={(event) => setMenuEnabled(event.currentTarget.checked)}
+					/>
+					Меню строки
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-loading
+						checked={loading()}
+						onChange={(event) => setLoading(event.currentTarget.checked)}
+					/>
+					Загрузка
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-empty
+						checked={empty()}
+						onChange={(event) => setEmpty(event.currentTarget.checked)}
+					/>
+					Пусто
+				</label>
 			</div>
 			<div class='grid-frame' data-grid-demo>
 				<Grid<Order>
@@ -155,6 +238,10 @@ export function DemoGrid(): JSX.Element {
 					sort={sort()}
 					onSortChange={setSort}
 					onRowDoubleClick={(row) => setDoubleLog(row.name)}
+					loading={loading()}
+					emptyHint='Измените условия поиска или сбросьте фильтры.'
+					onEmptyReset={() => setEmpty(false)}
+					rowContextMenu={menuEnabled() ? (row) => <RowMenu row={row} log={setMenuLog}/> : undefined}
 					aria-label='Заказы'
 					onColumnWidthsChange={(widths) => setWidthsLog(JSON.stringify(widths))}
 				/>
@@ -162,7 +249,8 @@ export function DemoGrid(): JSX.Element {
 			<p>
 				Выбрано строк: <output data-grid-selected-count>{selected().size}</output>. Последний <code>onRowDoubleClick</code>:{' '}
 				<output data-grid-dblclick>{doubleLog()}</output>. Последний <code>onColumnWidthsChange</code>:{' '}
-				<output data-grid-widths>{widthsLog()}</output>
+				<output data-grid-widths>{widthsLog()}</output>. Последний пункт меню строки:{' '}
+				<output data-grid-menu-log>{menuLog()}</output>
 			</p>
 		</div>
 	);

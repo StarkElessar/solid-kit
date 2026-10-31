@@ -1,6 +1,6 @@
 import { readControlHeight } from '../../src/utils/read-control-height';
 
-import { frames, required } from './check-helpers';
+import { closeWithEscape, frames, required } from './check-helpers';
 import type { CheckResult } from './theme-checks';
 
 const OVERSCAN = 12;
@@ -316,6 +316,110 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 		'Grid: прокрутка в самый конец показывает последнюю строку впритык к нижнему краю, без пустого хвоста',
 		tailLast?.dataset['index'] === '99999' && Math.abs(tailBottom - scrollerBottom) <= 1.5,
 		`последняя строка ${tailLast?.dataset['index'] ?? '—'}, зазор снизу ${(scrollerBottom - tailBottom).toFixed(1)} px`
+	);
+	scroller.scrollTop = 0;
+	await frames(8);
+
+	const gridRoot = frame.firstElementChild as HTMLElement;
+	const selectedNow = (): string => required(page, '[data-grid-selected-count]').textContent;
+	const menuLog = (): string => required(page, '[data-grid-menu-log]').textContent;
+	const doubleNow = (): string => required(page, '[data-grid-dblclick]').textContent;
+	const openMenu = (): HTMLElement | null => document.querySelector<HTMLElement>('[role="menu"]');
+	const toggle = async (selector: string): Promise<void> => {
+		required(page, selector).click();
+		await frames(6);
+	};
+	const menuRow = (): HTMLTableRowElement => bodyRows(table)[0] as HTMLTableRowElement;
+
+	const cellForMenu = required(menuRow(), '[data-grid-action]').parentElement as HTMLElement;
+	const prevented = !cellForMenu.dispatchEvent(
+		new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 200 })
+	);
+	await frames(4);
+	const mouseMenu = openMenu();
+	const itemLabels = mouseMenu === null ? [] : [...mouseMenu.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent);
+	check(
+		'Grid: правый клик по строке открывает меню в корне грида, а не внутри таблицы, браузерное меню отменено',
+		prevented && mouseMenu !== null && gridRoot.contains(mouseMenu) && !table.contains(mouseMenu)
+			&& itemLabels.join('|') === 'Открыть|Копировать номер|Статус',
+		`отменено ${String(prevented)}, пункты ${itemLabels.join(', ')}`
+	);
+	closeWithEscape();
+	await frames(4);
+
+	const menuBox = required(menuRow(), 'input[type="checkbox"]') as HTMLInputElement;
+	menuBox.focus();
+	const keyOpened = !menuBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true, bubbles: true, cancelable: true }));
+	await frames(4);
+	const keyMenu = openMenu();
+	const firstItem = keyMenu?.querySelector('[role="menuitem"]') ?? null;
+	check(
+		'Grid: Shift+F10 на чекбоксе строки открывает меню, фокус на первом пункте',
+		keyOpened && keyMenu !== null && document.activeElement === firstItem && firstItem?.textContent === 'Открыть',
+		`открыто ${String(keyMenu !== null)}, фокус на «${document.activeElement?.textContent ?? '—'}»`
+	);
+
+	const selectedBefore = selectedNow();
+	const copyItem = required(keyMenu ?? document.body, '[data-grid-menu-item="copy"]');
+	copyItem.click();
+	await frames(6);
+	check(
+		'Grid: клик по пункту меню пишет журнал, закрывает меню, не меняет выбор и возвращает фокус на чекбокс',
+		menuLog().startsWith('Копировать номер') && openMenu() === null && selectedNow() === selectedBefore
+			&& document.activeElement === menuBox,
+		`журнал «${menuLog()}», меню ${openMenu() === null ? 'закрыто' : 'открыто'}, выбрано ${selectedNow()}, фокус ${
+			document.activeElement === menuBox ? 'на чекбоксе' : 'не на чекбоксе'
+		}`
+	);
+
+	const statusSelect = required(menuRow(), '[role="combobox"]');
+	statusSelect.click();
+	await frames(6);
+	const listbox = document.querySelector<HTMLElement>('[role="listbox"]');
+	const doubleBefore = doubleNow();
+	const selectedAround = selectedNow();
+	const option = listbox?.querySelector<HTMLElement>('[role="option"]') ?? null;
+	const listboxInRoot = listbox !== null && gridRoot.contains(listbox) && !table.contains(listbox);
+	option?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+	option?.click();
+	await frames(6);
+	check(
+		'Grid: Select из ячейки открывается в корне грида; клик и двойной клик по опции не выбирают строку и не зовут onRowDoubleClick',
+		listboxInRoot && option !== null && selectedNow() === selectedAround && doubleNow() === doubleBefore,
+		`список в корне ${String(listboxInRoot)}, выбрано ${selectedNow()} (было ${selectedAround}), двойной клик «${doubleNow()}»`
+	);
+	closeWithEscape();
+	await frames(4);
+
+	await toggle('[data-grid-loading]');
+	const skeletonRows = table.querySelectorAll('tbody > tr[aria-hidden="true"]').length;
+	const loadingOk = gridRoot.getAttribute('aria-busy') === 'true' && bodyRows(table).length === 0
+		&& skeletonRows >= 5 && skeletonRows <= 20 && gridRoot.querySelector('[role="progressbar"][aria-label]') !== null;
+	const busy = gridRoot.getAttribute('aria-busy') ?? '—';
+	const loadingDetail = `aria-busy ${busy}, заглушек ${skeletonRows}, строк данных ${bodyRows(table).length}`;
+	await toggle('[data-grid-loading]');
+	const liveText = required(page, '[aria-live="polite"]').textContent;
+	check(
+		'Grid: загрузка: заглушки, progressbar, aria-busy; после загрузки строки на месте и объявлено число записей',
+		loadingOk && bodyRows(table).length > 0 && gridRoot.getAttribute('aria-busy') === null && liveText === 'Найдено 100000 записей',
+		`${loadingDetail}; после: строк ${bodyRows(table).length}, объявлено «${liveText}»`
+	);
+
+	await toggle('[data-grid-empty]');
+	const emptyShown = required(table, 'tbody').textContent.includes('Ничего не найдено') && bodyRows(table).length === 0;
+	await toggle('[data-grid-loading]');
+	await toggle('[data-grid-loading]');
+	const emptyAnnounced = required(page, '[aria-live="polite"]').textContent;
+	const resetButton = [...table.querySelectorAll<HTMLButtonElement>('tbody button')].find(
+		(button) => button.textContent === 'Сбросить фильтры'
+	);
+	resetButton?.click();
+	await frames(8);
+	check(
+		'Grid: пусто: блок со сбросом, объявление «Ничего не найдено», сброс возвращает строки',
+		emptyShown && emptyAnnounced === 'Ничего не найдено' && resetButton !== undefined && bodyRows(table).length > 0,
+		`блок ${String(emptyShown)}, объявлено «${emptyAnnounced}», кнопка ${resetButton === undefined ? 'нет' : 'есть'}, `
+			+ `строк после сброса ${bodyRows(table).length}`
 	);
 	scroller.scrollTop = 0;
 	await frames();
