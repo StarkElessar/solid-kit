@@ -15,6 +15,8 @@ export interface GridProps<T> {
 	defaultSelectedKeys?: ReadonlySet<RowKey> | undefined;
 	/** Новый `Set` на каждое изменение; прежний не мутируется. Выбор не сбрасывается при смене `rows`. */
 	onSelectedKeysChange?: ((keys: ReadonlySet<RowKey>) => void) | undefined;
+	/** Двойной клик по неинтерактивной части строки; выбор при этом не откатывается (раздел 7 спека). */
+	onRowDoubleClick?: ((row: T) => void) | undefined;
 	/** Подпись главного чекбокса ('Выбрать все строки'). */
 	selectAllLabel?: string | undefined;
 	/** Подпись чекбокса строки ('Выбрать строку'). */

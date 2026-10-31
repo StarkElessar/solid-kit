@@ -627,3 +627,130 @@ describe('Grid: выбор строк', () => {
 		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(true);
 	});
 });
+
+describe('Grid: клики по строке', () => {
+	const CONTROL_COLUMNS: readonly GridColumn<Person>[] = [
+		{ id: 'name', title: 'Имя', value: (row) => row.name },
+		{
+			id: 'controls',
+			title: 'Контролы',
+			value: () => '',
+			cell: () => (
+				<>
+					<button type='button' data-t='button'>Кнопка</button>
+					<a href='#x' data-t='link'>Ссылка</a>
+					<input data-t='input'/>
+					<select data-t='select'><option>1</option></select>
+					<span role='combobox' aria-expanded='false' aria-controls='x' tabindex='0' data-t='combobox'>Выбор</span>
+					<label data-t='label'>Подпись</label>
+					<span data-grid-no-select data-t='no-select'>Свой клик</span>
+				</>
+			)
+		}
+	];
+
+	function clickable(overrides: Partial<Parameters<typeof Grid<Person>>[0]> = {}) {
+		return renderGrid({ selectable: true, columns: CONTROL_COLUMNS, ...overrides });
+	}
+
+	function firstRowTarget(name: string): HTMLElement {
+		return (bodyRows()[0] as HTMLTableRowElement).querySelector(`[data-t="${name}"]`) as HTMLElement;
+	}
+
+	it('клик по тексту ячейки переключает выбор, второй клик снимает', () => {
+		const onChange = vi.fn();
+		clickable({ onSelectedKeysChange: onChange });
+		const cell = (bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement;
+		fireEvent.click(cell);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(true);
+		fireEvent.click(cell);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+		expect(onChange).toHaveBeenCalledTimes(2);
+	});
+
+	it('клик по интерактивной цели внутри ячейки выбор не меняет', () => {
+		const onChange = vi.fn();
+		clickable({ onSelectedKeysChange: onChange });
+		for (const name of ['button', 'link', 'input', 'select', 'combobox', 'label', 'no-select']) {
+			fireEvent.click(firstRowTarget(name));
+		}
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it('клик по чекбоксу строки переключает ровно один раз', () => {
+		const onChange = vi.fn();
+		clickable({ onSelectedKeysChange: onChange });
+		fireEvent.click(rowBoxes()[0] as HTMLElement);
+		expect(onChange).toHaveBeenCalledTimes(1);
+	});
+
+	it('клик по spacer-строке ничего не выбирает', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		const onChange = vi.fn();
+		renderGrid({
+			selectable: true,
+			rows: manyRows(1000),
+			virtualized: true,
+			rowHeight: 20,
+			overscan: 2,
+			onSelectedKeysChange: onChange
+		});
+		fireEvent.click(table().querySelector('tbody > tr[aria-hidden="true"] > td') as HTMLElement);
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it('без selectable клик по строке ничего не вызывает', () => {
+		const onChange = vi.fn();
+		clickable({ selectable: false, onSelectedKeysChange: onChange });
+		fireEvent.click((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		expect(onChange).not.toHaveBeenCalled();
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+	});
+
+	it('dblclick по тексту зовёт onRowDoubleClick с объектом строки', () => {
+		const onDouble = vi.fn();
+		clickable({ onRowDoubleClick: onDouble });
+		fireEvent.dblClick((bodyRows()[1] as HTMLTableRowElement).cells[1] as HTMLElement);
+		expect(onDouble).toHaveBeenCalledExactlyOnceWith(ROWS[1]);
+	});
+
+	it('dblclick по интерактивной цели не зовёт onRowDoubleClick', () => {
+		const onDouble = vi.fn();
+		clickable({ onRowDoubleClick: onDouble });
+		fireEvent.dblClick(firstRowTarget('button'));
+		fireEvent.dblClick(firstRowTarget('no-select'));
+		expect(onDouble).not.toHaveBeenCalled();
+	});
+
+	it('click, click, dblclick оставляют выбор прежним: колбэк выбора дважды, onRowDoubleClick один раз', () => {
+		const onChange = vi.fn();
+		const onDouble = vi.fn();
+		clickable({ onSelectedKeysChange: onChange, onRowDoubleClick: onDouble });
+		const cell = (bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement;
+		fireEvent.click(cell);
+		fireEvent.click(cell);
+		fireEvent.dblClick(cell);
+		expect(bodyRows()[0]?.hasAttribute('data-selected')).toBe(false);
+		expect(onChange).toHaveBeenCalledTimes(2);
+		expect(onDouble).toHaveBeenCalledTimes(1);
+	});
+
+	it('после замены rows клик переключает ключ новой строки с тем же индексом', () => {
+		const [rows, setRows] = createSignal<readonly Person[]>(ROWS);
+		const onChange = vi.fn();
+		render(() => (
+			<Grid
+				rows={rows()}
+				getRowKey={(row) => row.id}
+				columns={CONTROL_COLUMNS}
+				selectable
+				onSelectedKeysChange={onChange}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		setRows([{ id: 77, name: 'Новый', age: 1, note: null }]);
+		fireEvent.click((bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement);
+		expect([...(onChange.mock.calls[0]?.[0] as ReadonlySet<number>)]).toEqual([77]);
+	});
+});

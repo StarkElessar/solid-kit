@@ -17,6 +17,8 @@ export interface GridContextValue<T> {
 	/** Выбрана ли строка с индексом `index`. */
 	isRowSelected: (index: number) => boolean;
 	toggleRow: (index: number) => void;
+	/** Двойной клик по строке `index`: `onRowDoubleClick(row)`. */
+	activateRow: (index: number) => void;
 	/** Главный чекбокс: выбрать (`true`) или снять (`false`) все ключи загруженных строк. */
 	toggleAll: (checked: boolean) => void;
 	selectionState: Accessor<SelectionState>;

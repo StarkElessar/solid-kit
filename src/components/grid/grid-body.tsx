@@ -4,7 +4,17 @@ import { createMemo, For, type JSX, Show } from 'solid-js';
 
 import { useGrid } from './grid-context';
 import { GridRow } from './grid-row';
+import { isInteractiveTarget } from './is-interactive-target';
 import { sameItems } from './same-items';
+
+/** Строка тела, в которую попало событие: `undefined` для spacer-строк и целей вне строки. */
+function rowOfEvent(event: Event): { tr: HTMLTableRowElement; index: number } | undefined {
+	const tr = event.target instanceof Element ? event.target.closest<HTMLTableRowElement>('tr[data-index]') : null;
+	if (tr === null || isInteractiveTarget(event.target, tr)) {
+		return undefined;
+	}
+	return { tr, index: Number(tr.dataset['index']) };
+}
 
 /**
  * Строки окна рендера между двумя spacer-строками (спек 4а, раздел 5). Строки ключуются индексом, а не элементом окна: окно создаёт
@@ -21,7 +31,20 @@ export function GridBody(): JSX.Element {
 	};
 	const columnCount = (): number => grid.columnCount();
 	return (
-		<tbody>
+		<tbody
+			onClick={(event) => {
+				const hit = grid.selectable() ? rowOfEvent(event) : undefined;
+				if (hit !== undefined) {
+					grid.toggleRow(hit.index);
+				}
+			}}
+			onDblClick={(event) => {
+				const hit = rowOfEvent(event);
+				if (hit !== undefined) {
+					grid.activateRow(hit.index);
+				}
+			}}
+		>
 			<Show when={topSpace() > 0}>
 				<tr aria-hidden='true' role='presentation'>
 					<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${topSpace()}px` }}/>

@@ -113,6 +113,11 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			const key = rowIndex().keys[index];
 			return key !== undefined && selected().has(key);
 		},
+		activateRow: (index) => {
+			if (index < props.rows.length) {
+				props.onRowDoubleClick?.(props.rows[index] as T);
+			}
+		},
 		toggleRow: (index) => {
 			const key = rowIndex().keys[index];
 			if (key !== undefined) {
