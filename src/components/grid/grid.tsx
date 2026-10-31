@@ -81,27 +81,6 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	let rootElement: HTMLDivElement | undefined;
 	let scrollerElement: HTMLDivElement | undefined;
 	let header: HTMLTableSectionElement | undefined;
-	onMount(() => {
-		setScroller(scrollerElement);
-		if (rootElement !== undefined) {
-			setSelectWidth(readTokenPx(rootElement, ['--s-kit-grid-select-width'], DEFAULT_SELECT_WIDTH));
-		}
-		if (header === undefined) {
-			return;
-		}
-		const element = header;
-		setHeaderHeight(element.offsetHeight);
-		if (typeof ResizeObserver === 'undefined') {
-			return;
-		}
-		const observer = new ResizeObserver(() => {
-			setHeaderHeight(element.offsetHeight);
-		});
-		observer.observe(element);
-		onCleanup(() => {
-			observer.disconnect();
-		});
-	});
 
 	const resize = createGridResize({
 		columns: () => props.columns,
@@ -152,6 +131,34 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			header = element;
 		}
 	};
+
+	onMount(() => {
+		setScroller(scrollerElement);
+
+		if (rootElement !== undefined) {
+			setSelectWidth(readTokenPx(rootElement, ['--s-kit-grid-select-width'], DEFAULT_SELECT_WIDTH));
+		}
+
+		if (header === undefined) {
+			return;
+		}
+
+		setHeaderHeight(header.offsetHeight);
+
+		if (typeof ResizeObserver === 'undefined') {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			setHeaderHeight(header?.offsetHeight ?? 0);
+		});
+
+		observer.observe(header);
+
+		onCleanup(() => {
+			observer.disconnect();
+		});
+	});
 
 	return (
 		<GridContext.Provider value={context as unknown as GridContextValue<unknown>}>

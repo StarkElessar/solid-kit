@@ -1,3 +1,5 @@
+import { readControlHeight } from '../../src/utils/read-control-height';
+
 import { frames, required } from './check-helpers';
 import type { CheckResult } from './theme-checks';
 
@@ -165,6 +167,14 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 		'Grid: двойной клик по ручке возвращает исходную ширину',
 		Math.abs(widthReset - widthBefore) <= 1 && !required(page, '[data-grid-widths]').textContent.includes('"city"'),
 		`ширина ${widthReset.toFixed(0)}, было ${widthBefore.toFixed(0)}`
+	);
+
+	const controlHeight = readControlHeight(scroller);
+	const firstRowHeight = (bodyRows(table)[0] as HTMLElement).getBoundingClientRect().height;
+	check(
+		'Grid: строка с чекбоксом одной высоты с контролом (чекбокс не раздувает строку)',
+		Math.abs(firstRowHeight - controlHeight) <= 0.5,
+		`строка ${firstRowHeight} px, контрол ${controlHeight} px`
 	);
 
 	scroller.scrollTop = 0;

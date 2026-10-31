@@ -218,3 +218,12 @@
 .sort-button[data-active] .sort-arrow {
     opacity: 1;
 }
+
+/* чекбокс не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают каждую строку на 1 px, и строки уходят с оценки окна */
+.cell.select-cell > [data-s-kit] {
+    block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
+}
+
+.head-cell.select-cell > [data-s-kit] {
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 1px);
+}
