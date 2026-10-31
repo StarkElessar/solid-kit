@@ -4,9 +4,11 @@ import { runContextMenuChecks } from './context-menu-checks';
 import { DemoContextMenus } from './demo-context-menus';
 import { DemoDialogs } from './demo-dialogs';
 import { DemoPopoverScenarios } from './demo-popover-scenarios';
+import { DemoSelectScenarios } from './demo-select-scenarios';
 import { runDialogChecks } from './dialog-checks';
 import { pick } from './pick';
 import { runPopoverScenarioChecks } from './popover-checks';
+import { runSelectScenarioChecks } from './select-scenario-checks';
 import type { CheckResult } from './theme-checks';
 
 type Theme = 'system' | 'light' | 'dark';
@@ -37,7 +39,8 @@ export function PanelsPage(): JSX.Element {
 				const dialog = await runDialogChecks(root);
 				const menu = await runContextMenuChecks(root);
 				const scenarios = await runPopoverScenarioChecks(root);
-				setResults([...dialog, ...menu, ...scenarios]);
+				const selectScenarios = await runSelectScenarioChecks(root);
+				setResults([...dialog, ...menu, ...scenarios, ...selectScenarios]);
 			})();
 		}
 	};
@@ -84,7 +87,17 @@ export function PanelsPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>4. Проверки</h2>
+				<h2>4. Сценарии списков (критерии 4 и 5 этапа 3, Select)</h2>
+				<p>
+					Те же сценарии на Select: список под предком с pointer-events: none кликабелен, клик и двойной клик по опции не
+					доходят до label и карточки, Enter не отправляет форму, предки с transform, filter, contain и overflow не обрезают
+					список; кольцо активной опции видно целиком у краёв и не прячется под липким заголовком группы.
+				</p>
+				<DemoSelectScenarios/>
+			</section>
+
+			<section>
+				<h2>5. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>
