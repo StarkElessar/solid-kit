@@ -36,7 +36,7 @@ const CHIP_GAP = 4;
 /** Место под шеврон, внутренние отступы оболочки и минимальную ширину поля ввода, px. */
 const SHELL_RESERVE = 80;
 /** Резерв под счётчик «+N» в основной кнопке, px. */
-const COUNTER_WIDTH = 36;
+const COUNTER_WIDTH = 48;
 
 export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.Element {
 	const context = useMultiSelectContext('MultiSelect.Trigger');
@@ -133,9 +133,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 			return;
 		}
 		if (!context.open()) {
-			const arrow = event.key === 'ArrowDown' || event.key === 'ArrowUp';
-			const press = !context.searchable() && (event.key === 'Enter' || event.key === ' ');
-			if (arrow || press) {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 				event.preventDefault();
 				context.setOpen(true, 'keyboard');
 			}
@@ -160,7 +158,6 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 			data-s-kit-size={context.size()}
 			data-multiselect-overflow={context.chipsOverflow()}
 			data-disabled={context.disabled() ? '' : undefined}
-			data-multiselect-readonly={context.searchable() ? undefined : ''}
 			aria-invalid={rest['aria-invalid']}
 			class={local.class ? `${styles['shell']} ${local.class}` : styles['shell']}
 			style={local.style}
@@ -216,7 +213,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 				</div>
 			</Show>
 			<Show when={counterText() !== ''}>
-				<span class={styles['counter']} data-multiselect-counter>{counterText()}</span>
+				<span class={`${styles['chip']} ${styles['counter']}`} data-multiselect-counter>{counterText()}</span>
 			</Show>
 			<input
 				{...rest}
@@ -229,12 +226,11 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 				type='text'
 				role='combobox'
 				autocomplete='off'
-				aria-autocomplete={context.searchable() ? 'list' : undefined}
+				aria-autocomplete='list'
 				aria-haspopup='listbox'
 				aria-expanded={context.open()}
 				aria-controls={context.open() ? context.listId : undefined}
 				aria-activedescendant={context.open() ? context.controller.activeId() : undefined}
-				readOnly={!context.searchable()}
 				disabled={context.disabled()}
 				placeholder={context.count() === 0 ? local.placeholder : undefined}
 				value={context.query()}
@@ -247,11 +243,8 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 					if (event.defaultPrevented || context.disabled()) {
 						return;
 					}
-					// поле для чтения ведёт себя как кнопка, печатаемое только открывает список (повторный клик ставит курсор)
-					if (!context.searchable()) {
-						context.setOpen(!context.open(), 'pointer');
-					}
-					else if (!context.open()) {
+					// клик открывает закрытый список; при открытом списке клик только ставит курсор
+					if (!context.open()) {
 						context.setOpen(true, 'pointer');
 					}
 				}}

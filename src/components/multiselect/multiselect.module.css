@@ -47,10 +47,6 @@
     opacity: var(--s-kit-disabled-opacity);
 }
 
-.shell[data-multiselect-readonly] {
-    cursor: pointer;
-}
-
 .chips {
     overflow: hidden;
     display: flex;
@@ -131,8 +127,7 @@
 }
 
 .counter {
-    flex: none;
-    color: var(--s-kit-color-muted);
+    padding-inline: 8px;
     white-space: nowrap;
 }
 
@@ -152,10 +147,6 @@
 
     /* кольцо рисует оболочка (.shell:has); outline-style: auto даже с прозрачным цветом рисует светлую подложку поверх рамки */
     outline: var(--s-kit-focus-width) solid transparent;
-}
-
-.input:read-only {
-    cursor: pointer;
 }
 
 .input::placeholder {

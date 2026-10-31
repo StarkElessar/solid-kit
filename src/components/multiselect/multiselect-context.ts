@@ -31,7 +31,6 @@ export interface MultiSelectContextValue {
 	clearAll: () => void;
 	allLabel: Accessor<JSX.Element>;
 	chipsOverflow: Accessor<ChipsOverflow>;
-	searchable: Accessor<boolean>;
 	query: Accessor<string>;
 	/** Пользователь печатает: запрос меняется, список открывается и подсвечивает первую доступную опцию. */
 	handleInput: (text: string) => void;

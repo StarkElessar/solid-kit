@@ -35,7 +35,6 @@ const ROOT_KEYS = [
 	'disabled',
 	'size',
 	'total',
-	'searchable',
 	'allKey',
 	'allLabel',
 	'chipsOverflow'

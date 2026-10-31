@@ -181,20 +181,13 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 		`чипов видно ${visibleChips(narrow).length} из 5, счётчик «${counter}»`
 	);
 	const summary = required(page, '[data-multiselect="summary"]');
+	const summaryCounter = shellOf(summary).querySelector<HTMLElement>('[data-multiselect-counter]');
 	check(
-		'MultiSelect: summary показывает «N из M»',
-		counterOf(summary) === '3 из 60' && visibleChips(summary).length === 0,
+		'MultiSelect: summary показывает «N из M» чипом без крестика',
+		counterOf(summary) === '3 из 60' && visibleChips(summary).length === 0 && summaryCounter?.querySelector('button') === null
+			&& !summaryCounter.hasAttribute('hidden'),
 		`«${counterOf(summary)}»`
 	);
-
-	const plain = required(page, '[data-multiselect="plain"]');
-	await open(plain);
-	check(
-		'MultiSelect: без searchable поле только для чтения, фокус остаётся в нём',
-		(plain as HTMLInputElement).readOnly && document.activeElement === plain,
-		document.activeElement === plain ? 'фокус в поле' : 'фокус ушёл'
-	);
-	await close();
 
 	const huge = required(page, '[data-multiselect="huge"]');
 	huge.focus();

@@ -90,7 +90,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MultiSelect: поле и ARIA', () => {
-	it('закрытый: поле role=combobox с плейсхолдером, шеврон вне табуляции, списка нет', () => {
+	it('закрытый: поле ввода role=combobox с плейсхолдером, шеврон вне табуляции, списка нет', () => {
 		render(() => <Basic/>);
 		expect(field().tagName).toBe('INPUT');
 		expect(field().getAttribute('aria-haspopup')).toBe('listbox');
@@ -273,25 +273,15 @@ describe('MultiSelect: ввод в поле триггера', () => {
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 
-	it('Enter в закрытом поле не перехватывается (форма отправится)', () => {
+	it('Enter и Space в закрытом поле не открывают список', () => {
 		render(() => <Basic/>);
-		expect(press('Enter')).toBe(true);
+		expect(press(' ')).toBe(true);
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 
-	it('searchable={false}: поле только для чтения, typeahead и Enter, клик переключает список', () => {
-		const onValueChange = vi.fn();
-		render(() => <Basic searchable={false} onValueChange={onValueChange}/>);
-		expect(field().readOnly).toBe(true);
-		expect(field().hasAttribute('aria-autocomplete')).toBe(false);
-		openList();
-		press('Г');
-		expect(document.querySelector('[data-active]')?.textContent).toBe('Глеб');
-		expect(field().getAttribute('aria-activedescendant')).toBe(document.querySelector('[data-active]')?.id);
-		press('Enter');
-		expect(onValueChange).toHaveBeenCalledWith([gleb]);
-		expect(screen.getByRole('listbox')).toBeTruthy();
-		fireEvent.click(field());
+	it('Enter в закрытом поле не перехватывается (форма отправится)', () => {
+		render(() => <Basic/>);
+		expect(press('Enter')).toBe(true);
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 });
@@ -351,12 +341,6 @@ describe('MultiSelect: Backspace', () => {
 describe('MultiSelect: клавиши закрытого поля', () => {
 	it.each(['ArrowDown', 'ArrowUp'])('%s открывает список', (key) => {
 		render(() => <Basic/>);
-		expect(press(key)).toBe(false);
-		expect(field().getAttribute('aria-expanded')).toBe('true');
-	});
-
-	it.each(['Enter', ' '])('searchable={false}: %s открывает список', (key) => {
-		render(() => <Basic searchable={false}/>);
 		expect(press(key)).toBe(false);
 		expect(field().getAttribute('aria-expanded')).toBe('true');
 	});
@@ -459,6 +443,13 @@ describe('MultiSelect: чипы и счётчик', () => {
 		render(() => <Basic items={many} defaultValue={many}/>);
 		expect(document.querySelectorAll('[data-multiselect-chip]')).toHaveLength(24);
 		expect(counter()).toBe('+6');
+	});
+
+	it('счётчик оформлен как чип без кнопки ×', () => {
+		render(() => <Basic defaultValue={[anna, boris]} chipsOverflow='summary'/>);
+		const element = document.querySelector('[data-multiselect-counter]');
+		expect(element?.className).toContain('chip');
+		expect(element?.querySelector('button')).toBeNull();
 	});
 
 	it('summary: чипов нет, рядом с полем «N из M»', () => {

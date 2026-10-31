@@ -176,20 +176,6 @@ export function DemoMultiSelects(): JSX.Element {
 				)}
 			</Field>
 
-			<Field label='Без ввода: поле только для чтения (typeahead)'>
-				{(control) => (
-					<MultiSelect<Employee>
-						{...control}
-						data-multiselect='plain'
-						items={SHORT}
-						getKey={getKey}
-						getLabel={getLabel}
-						searchable={false}
-						placeholder='Выберите'
-					/>
-				)}
-			</Field>
-
 			<Field label='В форме (Enter в поле поиска не отправляет форму)'>
 				{() => (
 					<form

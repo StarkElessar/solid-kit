@@ -49,8 +49,6 @@ export interface MultiSelectRootProps<T> {
 	size?: MultiSelectSize | undefined;
 	/** «из M» в счётчике; без него число элементов `items`. */
 	total?: number | undefined;
-	/** Можно печатать в поле триггера и фильтровать список, по умолчанию `true`; без него поле только для чтения (typeahead). */
-	searchable?: boolean | undefined;
 	/** Ключ строки «Все» (например `-1`); строка появляется вместе с `allLabel`. Значение при выбранном «Все» равно этому ключу. */
 	allKey?: ListKey | undefined;
 	/** Подпись строки «Все» и её чипа. */
@@ -84,7 +82,6 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 	const [anchor, setAnchor] = createSignal<HTMLElement>();
 	const [input, setInput] = createSignal<HTMLInputElement>();
 
-	const searchable = (): boolean => props.searchable ?? true;
 	const getLabel = (item: T): string => props.getLabel(item);
 	const valueContext = (): { getKey: (item: T) => ListKey; allKey: ListKey | undefined } => ({
 		getKey: (item) => props.getKey(item),
@@ -96,8 +93,8 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 	const isAll = createMemo(() => isAllValue(value(), props.allKey));
 	const total = (): number => props.total ?? props.items.length;
 	const count = createMemo(() => selectedCount(value(), props.allKey, total()));
-	const visibleItems = createMemo(() => filterItems(props.items, searchable() ? query() : '', props.filter, getLabel));
-	const filtered = (): boolean => searchable() && query() !== '';
+	const visibleItems = createMemo(() => filterItems(props.items, query(), props.filter, getLabel));
+	const filtered = (): boolean => query() !== '';
 	const allChecked = createMemo(() => isAllChecked(value(), visibleItems(), valueContext(), isDisabled));
 
 	const selectedKeys = createMemo(() => {
@@ -155,9 +152,7 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 		get overscan() {
 			return props.overscan;
 		},
-		get keys() {
-			return searchable() ? { typeahead: false, space: false, homeEnd: false } : undefined;
-		}
+		keys: { typeahead: false, space: false, homeEnd: false }
 	});
 
 	const setOpen = (next: boolean, source: ActiveSource = 'keyboard'): void => {
@@ -204,7 +199,6 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 		},
 		allLabel: () => props.allLabel ?? 'Все',
 		chipsOverflow: () => props.chipsOverflow ?? 'collapse',
-		searchable,
 		query,
 		handleInput: (text) => {
 			setQuery(text);
