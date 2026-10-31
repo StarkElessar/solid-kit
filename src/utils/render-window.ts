@@ -28,6 +28,11 @@ export interface RenderWindowOptions {
 	overscan: number;
 	/** Высота липкого заголовка группы: учитывается при прокрутке к строке. */
 	scrollPaddingStart?: Accessor<number> | undefined;
+	/**
+	 * Расстояние от начала скроллера до начала списка, px: у грида это липкая шапка в том же скроллере. `start` строк и `totalSize()`
+	 * по-прежнему отсчитываются от начала списка. Полное окно его игнорирует.
+	 */
+	scrollMargin?: Accessor<number> | undefined;
 	/** Отступ снизу скроллера (его padding): без него опция у нижнего края прокручивается внахлёст на padding. */
 	scrollPaddingEnd?: Accessor<number> | undefined;
 	/** Высота окна до первого измерения скроллера, px: первый кадр не рендерит пустой список. Полное окно игнорирует. */

@@ -97,4 +97,41 @@ describe('createVirtualWindow', () => {
 		expect(scroller.scrollTop).toBe(924);
 		dispose();
 	});
+
+	it('scrollMargin: start и totalSize отсчитываются от начала списка, а не скроллера', () => {
+		createRoot((dispose) => {
+			const scroller = makeScroller(100);
+			const window = createVirtualWindow({
+				count: () => 1000,
+				scroller: () => scroller,
+				estimateSize: () => 20,
+				overscan: 0,
+				scrollMargin: () => 60
+			});
+			// шапка 60 px занимает часть окна: видны строки списка с 0 по 1 (20 + 20 = 40 px после шапки)
+			expect(window.items().map((item) => item.index)).toEqual([0, 1]);
+			expect(window.items()[0]).toMatchObject({ index: 0, start: 0, size: 20 });
+			expect(window.items()[1]).toMatchObject({ index: 1, start: 20, size: 20 });
+			expect(window.totalSize()).toBe(20000);
+			dispose();
+		});
+	});
+
+	it('scrollMargin: прокрутка на высоту шапки начинает список с нулевого смещения', () => {
+		createRoot((dispose) => {
+			const scroller = makeScroller(100);
+			const window = createVirtualWindow({
+				count: () => 1000,
+				scroller: () => scroller,
+				estimateSize: () => 20,
+				overscan: 0,
+				scrollMargin: () => 60
+			});
+			scroller.scrollTop = 60;
+			scroller.dispatchEvent(new Event('scroll'));
+			expect(window.items()[0]).toMatchObject({ index: 0, start: 0 });
+			expect(window.items()).toHaveLength(5);
+			dispose();
+		});
+	});
 });
