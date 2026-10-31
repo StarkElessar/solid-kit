@@ -13,6 +13,8 @@
     --s-kit-grid-z-head: 2;
     --s-kit-grid-z-corner: 3;
 
+    position: relative;
+
     overflow: clip;
     display: flex;
     flex-direction: column;
@@ -83,8 +85,8 @@
         text-align: center;
     }
 
-    /* чекбокс не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают каждую строку на 1 px, и строки уходят с оценки окна */
-    &.select-cell > [data-s-kit] {
+    /* контрол не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают строку на 1 px, и она уходит с оценки окна */
+    & > [data-s-kit] {
         block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
     }
 }
@@ -182,6 +184,11 @@
         background: transparent;
     }
 
+    &[data-disabled] {
+        pointer-events: none;
+        cursor: default;
+    }
+
     @media (hover: hover) {
         &:hover::after {
             background: var(--s-kit-color-border-strong);
@@ -241,4 +248,116 @@
     inline-size: 14px;
     block-size: 14px;
     opacity: 0.4;
+}
+
+.skeleton-bar {
+    display: block;
+
+    inline-size: 60%;
+    block-size: 12px;
+    border-radius: 4px;
+
+    background: var(--s-kit-color-tint);
+
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+.empty-cell {
+    padding: 0;
+    border: 0;
+}
+
+/* блок «пусто» прижат к левому краю видимой области и занимает её ширину: при горизонтальной прокрутке он не уезжает */
+.empty {
+    position: sticky;
+    inset-inline-start: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    inline-size: var(--s-kit-grid-view-w, 100%);
+    min-block-size: 160px;
+    padding: 24px 16px;
+
+    text-align: center;
+}
+
+.empty-text {
+    margin: 0;
+    font-weight: 500;
+}
+
+.empty-hint {
+    color: var(--s-kit-color-muted);
+}
+
+/* неопределённая полоса под шапкой: высоту шапки корень отдаёт переменной --s-kit-grid-header-h */
+.progress {
+    pointer-events: none;
+
+    position: absolute;
+    z-index: var(--s-kit-grid-z-corner);
+    inset-block-start: var(--s-kit-grid-header-h, 0);
+    inset-inline: 0;
+
+    overflow: hidden;
+
+    block-size: 2px;
+}
+
+.progress-bar {
+    display: block;
+
+    inline-size: 40%;
+    block-size: 100%;
+
+    background: var(--s-kit-color-primary);
+
+    animation: progress-slide 1.2s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        inline-size: 100%;
+        opacity: 0.5;
+        animation: none;
+    }
+}
+
+.visually-hidden {
+    position: absolute;
+
+    overflow: hidden;
+
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+
+    white-space: nowrap;
+
+    clip-path: inset(50%);
+}
+
+@keyframes skeleton-pulse {
+    50% {
+        opacity: 0.45;
+    }
+}
+
+@keyframes progress-slide {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(250%);
+    }
 }
