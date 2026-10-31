@@ -296,6 +296,58 @@ describe('MultiSelect: ввод в поле триггера', () => {
 	});
 });
 
+describe('MultiSelect: Backspace', () => {
+	it('в пустом поле убирает последний выбранный чип, фокус остаётся в поле', () => {
+		const onValueChange = vi.fn();
+		render(() => <Basic defaultValue={[anna, boris, gleb]} onValueChange={onValueChange}/>);
+		field().focus();
+		expect(press('Backspace')).toBe(false);
+		expect(onValueChange).toHaveBeenLastCalledWith([anna, boris]);
+		press('Backspace');
+		expect(onValueChange).toHaveBeenLastCalledWith([anna]);
+		expect(chipLabels()).toEqual(['Анна']);
+		expect(document.activeElement).toBe(field());
+	});
+
+	it('убирает последний чип и при открытом списке', () => {
+		render(() => <Basic defaultValue={[anna, boris]}/>);
+		openList();
+		press('Backspace');
+		expect(chipLabels()).toEqual(['Анна']);
+		expect(screen.getByRole('listbox')).toBeTruthy();
+	});
+
+	it('при непустом тексте стирает символ, значение не трогает', () => {
+		const onValueChange = vi.fn();
+		render(() => <Basic defaultValue={[anna]} onValueChange={onValueChange}/>);
+		type('Бо');
+		expect(press('Backspace')).toBe(true);
+		expect(onValueChange).not.toHaveBeenCalled();
+		expect(chipLabels()).toEqual(['Анна']);
+	});
+
+	it('без выбранных ничего не делает', () => {
+		const onValueChange = vi.fn();
+		render(() => <Basic onValueChange={onValueChange}/>);
+		expect(press('Backspace')).toBe(true);
+		expect(onValueChange).not.toHaveBeenCalled();
+	});
+
+	it('при «Все» снимает «Все»', () => {
+		const onValueChange = vi.fn();
+		render(() => <Basic allKey={-1} allLabel='Все' defaultValue={-1} onValueChange={onValueChange}/>);
+		press('Backspace');
+		expect(onValueChange).toHaveBeenLastCalledWith([]);
+	});
+
+	it('в disabled не срабатывает', () => {
+		const onValueChange = vi.fn();
+		render(() => <Basic disabled defaultValue={[anna]} onValueChange={onValueChange}/>);
+		press('Backspace');
+		expect(onValueChange).not.toHaveBeenCalled();
+	});
+});
+
 describe('MultiSelect: клавиши закрытого поля', () => {
 	it.each(['ArrowDown', 'ArrowUp'])('%s открывает список', (key) => {
 		render(() => <Basic/>);

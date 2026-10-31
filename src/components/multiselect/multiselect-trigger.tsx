@@ -120,6 +120,18 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 		if (event.defaultPrevented || context.disabled()) {
 			return;
 		}
+		// Backspace в пустом поле убирает последний выбранный чип (в состоянии «Все» снимает «Все»)
+		if (event.key === 'Backspace' && context.query() === '' && context.count() > 0 && !event.isComposing) {
+			event.preventDefault();
+			const last = context.selectedItems().at(-1);
+			if (last === undefined) {
+				context.clearAll();
+			}
+			else {
+				context.removeItem(last);
+			}
+			return;
+		}
 		if (!context.open()) {
 			const arrow = event.key === 'ArrowDown' || event.key === 'ArrowUp';
 			const press = !context.searchable() && (event.key === 'Enter' || event.key === ' ');
