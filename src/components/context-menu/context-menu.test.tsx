@@ -1,4 +1,5 @@
 import { cleanup, createEvent, fireEvent, render, screen } from '@solidjs/testing-library';
+import { createSignal } from 'solid-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContextMenu } from './index';
@@ -89,6 +90,70 @@ describe('ContextMenu opening', () => {
 			</ContextMenu.Root>
 		));
 		expect(screen.getByRole('menu')).toBeTruthy();
+	});
+
+	it('anchorSource keyboard puts the focus on the first item of an externally anchored menu', () => {
+		render(() => (
+			<ContextMenu.Root open anchorPoint={{ x: 10, y: 20 }} anchorSource='keyboard'>
+				<ContextMenu.Content>
+					<ContextMenu.Item>Один</ContextMenu.Item>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
+		));
+		expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Один' }));
+	});
+
+	it('an externally anchored menu without anchorSource takes the focus itself', () => {
+		render(() => (
+			<ContextMenu.Root open anchorPoint={{ x: 10, y: 20 }}>
+				<ContextMenu.Content>
+					<ContextMenu.Item>Один</ContextMenu.Item>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
+		));
+		expect(document.activeElement).toBe(screen.getByRole('menu'));
+	});
+
+	it('anchorArea receives the focus on close when the element that held it has left the document', () => {
+		const area = document.createElement('div');
+		area.tabIndex = -1;
+		document.body.append(area);
+		const opener = document.createElement('button');
+		document.body.append(opener);
+		opener.focus();
+		const [open, setOpen] = createSignal(true);
+		render(() => (
+			<ContextMenu.Root open={open()} onOpenChange={setOpen} anchorPoint={{ x: 1, y: 1 }} anchorArea={area}>
+				<ContextMenu.Content>
+					<ContextMenu.Item>Один</ContextMenu.Item>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
+		));
+		opener.remove();
+		setOpen(false);
+		expect(document.activeElement).toBe(area);
+		area.remove();
+	});
+
+	it('the element that held the focus gets it back, not anchorArea, while it is in the document', () => {
+		const area = document.createElement('div');
+		area.tabIndex = -1;
+		document.body.append(area);
+		const opener = document.createElement('button');
+		document.body.append(opener);
+		opener.focus();
+		const [open, setOpen] = createSignal(true);
+		render(() => (
+			<ContextMenu.Root open={open()} onOpenChange={setOpen} anchorPoint={{ x: 1, y: 1 }} anchorArea={area}>
+				<ContextMenu.Content>
+					<ContextMenu.Item>Один</ContextMenu.Item>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
+		));
+		setOpen(false);
+		expect(document.activeElement).toBe(opener);
+		area.remove();
+		opener.remove();
 	});
 
 	it('shows nothing while it is open but has no point', () => {

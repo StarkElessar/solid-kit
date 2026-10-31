@@ -11,6 +11,10 @@ export interface ContextMenuRootProps {
 	onOpenChange?: ((open: boolean) => void) | undefined;
 	/** Точка, заданная снаружи (контекстное меню строки грида): тогда `ContextMenu.Trigger` не нужен. Без точки меню не показывается. */
 	anchorPoint?: ContextMenuPoint | null | undefined;
+	/** Чем открыто меню с внешней точкой: с клавиатуры фокус уходит на первый пункт, иначе на само меню. */
+	anchorSource?: MenuOpenSource | undefined;
+	/** Область вызова без `ContextMenu.Trigger`: от неё считается хост панели, она получает фокус, если прежний владелец фокуса ушёл. */
+	anchorArea?: HTMLElement | undefined;
 	children?: JSX.Element;
 }
 
@@ -46,8 +50,8 @@ export function ContextMenuRoot(props: ContextMenuRootProps): JSX.Element {
 			setOpen(true);
 		},
 		point: () => props.anchorPoint ?? ownPoint(),
-		source,
-		area,
+		source: () => props.anchorSource ?? source(),
+		area: () => props.anchorArea ?? area(),
 		setArea: (element) => {
 			setArea(element);
 		},

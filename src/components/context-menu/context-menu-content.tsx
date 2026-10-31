@@ -39,7 +39,11 @@ export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element 
 			onDismiss={close}
 			anchor={anchor}
 			anchorElement={context.area}
-			restoreFocusTo={() => context.opener() ?? context.area()}
+			restoreFocusTo={() => {
+				// строка грида с инициатором могла выйти из документа: тогда фокус получает область вызова
+				const opener = context.opener();
+				return opener?.isConnected === true ? opener : context.area();
+			}}
 			// область вызова не часть меню: клик в другом месте области закрывает меню (раздел 3.3 спека)
 			dismissExempt={() => undefined}
 			placement='bottom-start'
