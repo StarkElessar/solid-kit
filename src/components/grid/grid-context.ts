@@ -40,6 +40,18 @@ export interface GridContextValue<T> {
 	beginResize: (index: number, event: PointerEvent) => void;
 	/** Двойной клик по ручке: возврат к `GridColumn.width`. */
 	resetWidth: (columnId: string) => void;
+	loading: Accessor<boolean>;
+	loadingLabel: Accessor<string>;
+	/** Строк нет и загрузки нет. */
+	isEmpty: Accessor<boolean>;
+	emptyText: Accessor<string>;
+	emptyHint: Accessor<JSX.Element>;
+	emptyResetLabel: Accessor<string>;
+	onEmptyReset: Accessor<(() => void) | undefined>;
+	/** Число заглушек строк на время загрузки: строки, помещающиеся в скроллер, от 5 до 20. */
+	skeletonCount: Accessor<number>;
+	/** Текст скрытой live-области. */
+	liveMessage: Accessor<string>;
 	/** Корень грида: хост панелей, область вызова меню строки и запасной получатель фокуса. */
 	rootElement: Accessor<HTMLElement | undefined>;
 	hasRowMenu: Accessor<boolean>;

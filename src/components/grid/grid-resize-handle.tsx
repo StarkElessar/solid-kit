@@ -18,12 +18,17 @@ export function GridResizeHandle(props: GridResizeHandleProps): JSX.Element {
 			role='separator'
 			aria-orientation='vertical'
 			data-grid-resize
+			data-disabled={grid.loading() ? '' : undefined}
 			class={styles['resize-handle']}
 			onPointerDown={(event) => {
-				grid.beginResize(props.index, event);
+				if (!grid.loading()) {
+					grid.beginResize(props.index, event);
+				}
 			}}
 			onDblClick={() => {
-				grid.resetWidth(props.columnId);
+				if (!grid.loading()) {
+					grid.resetWidth(props.columnId);
+				}
 			}}
 		/>
 	);

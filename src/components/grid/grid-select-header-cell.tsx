@@ -23,6 +23,7 @@ export function GridSelectHeaderCell(): JSX.Element {
 				aria-label={grid.selectAllLabel()}
 				checked={grid.selectionState() === 'all'}
 				indeterminate={grid.selectionState() === 'some'}
+				disabled={grid.loading()}
 				onCheckedChange={(checked) => {
 					grid.toggleAll(checked);
 				}}

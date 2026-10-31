@@ -33,6 +33,19 @@ export interface GridProps<T> {
 	defaultColumnWidths?: Readonly<Record<string, number>> | undefined;
 	/** Один раз по окончании ресайза; в аргументе полный словарь переопределённых ширин. */
 	onColumnWidthsChange?: ((widths: Readonly<Record<string, number>>) => void) | undefined;
+	/** Идёт загрузка: тело заменено заглушками, корень получает `aria-busy`, главный чекбокс и ручки ресайза отключены. */
+	loading?: boolean | undefined;
+	/** Имя полосы прогресса ('Загрузка'). */
+	loadingLabel?: string | undefined;
+	/** Текст состояния «пусто» ('Ничего не найдено'). */
+	emptyText?: string | undefined;
+	emptyHint?: JSX.Element;
+	/** Кнопка сброса в состоянии «пусто» показывается только если колбэк передан. */
+	onEmptyReset?: (() => void) | undefined;
+	/** Подпись кнопки сброса ('Сбросить фильтры'). */
+	emptyResetLabel?: string | undefined;
+	/** Объявление результата после окончания загрузки ('Найдено N записей' с русским склонением). */
+	foundText?: ((count: number) => string) | undefined;
 	/** Стартовая оценка высоты строки, px; по умолчанию высота контрола. */
 	rowHeight?: number | undefined;
 	/** Сколько строк рендерить за пределами видимой области (12). */

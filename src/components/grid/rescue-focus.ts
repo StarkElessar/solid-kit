@@ -6,12 +6,16 @@ export function rescueFocus(container: Element, fallback: () => HTMLElement | un
 	if (!container.contains(document.activeElement)) {
 		return;
 	}
+
 	queueMicrotask(() => {
 		const active = document.activeElement;
+
 		if (active !== null && active !== document.body) {
 			return;
 		}
+
 		const target = fallback();
+
 		if (target?.isConnected === true) {
 			target.focus({ preventScroll: true });
 		}

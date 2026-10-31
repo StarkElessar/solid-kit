@@ -1,12 +1,14 @@
 import styles from './grid.module.css';
 
-import { createMemo, For, type JSX, Show } from 'solid-js';
+import { createMemo, For, type JSX, Match, Show, Switch } from 'solid-js';
 
 import { elementPoint } from '../context-menu/menu-point-anchor';
 
 import { closestRow } from './closest-row';
 import { useGrid } from './grid-context';
+import { GridEmpty } from './grid-empty';
 import { GridRow } from './grid-row';
+import { GridSkeleton } from './grid-skeleton';
 import { isInteractiveTarget } from './is-interactive-target';
 import { sameItems } from './same-items';
 
@@ -62,17 +64,27 @@ export function GridBody(): JSX.Element {
 				}
 			}}
 		>
-			<Show when={topSpace() > 0}>
-				<tr aria-hidden='true' role='presentation'>
-					<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${topSpace()}px` }}/>
-				</tr>
-			</Show>
-			<For each={indexes()}>{(index) => <GridRow index={index}/>}</For>
-			<Show when={bottomSpace() > 0}>
-				<tr aria-hidden='true' role='presentation'>
-					<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${bottomSpace()}px` }}/>
-				</tr>
-			</Show>
+			<Switch>
+				<Match when={grid.loading()}>
+					<GridSkeleton/>
+				</Match>
+				<Match when={grid.isEmpty()}>
+					<GridEmpty/>
+				</Match>
+				<Match when={true}>
+					<Show when={topSpace() > 0}>
+						<tr aria-hidden='true' role='presentation'>
+							<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${topSpace()}px` }}/>
+						</tr>
+					</Show>
+					<For each={indexes()}>{(index) => <GridRow index={index}/>}</For>
+					<Show when={bottomSpace() > 0}>
+						<tr aria-hidden='true' role='presentation'>
+							<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${bottomSpace()}px` }}/>
+						</tr>
+					</Show>
+				</Match>
+			</Switch>
 		</tbody>
 	);
 }

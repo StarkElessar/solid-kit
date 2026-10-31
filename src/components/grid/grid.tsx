@@ -1,6 +1,6 @@
 import styles from './grid.module.css';
 
-import { createMemo, createSignal, type JSX, onCleanup, onMount, untrack } from 'solid-js';
+import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, untrack } from 'solid-js';
 
 import { PanelHostContext } from '../../internal/panel/panel-host';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
@@ -15,7 +15,10 @@ import type { MenuOpenSource } from '../context-menu/context-menu-context';
 import { buildRowIndex } from './build-row-index';
 import { computeColumnLayout } from './column-layout';
 import { createGridResize } from './create-grid-resize';
+import { foundText as defaultFoundText } from './found-text';
 import { GridContext, type GridContextValue } from './grid-context';
+import { GridLiveRegion } from './grid-live-region';
+import { GridProgress } from './grid-progress';
 import type { GridProps } from './grid-props';
 import { GridRowMenu } from './grid-row-menu';
 import type { GridSort } from './grid-sort';
@@ -30,6 +33,8 @@ const FALLBACK_ROW_HEIGHT = 32;
 const DEFAULT_OVERSCAN = 12;
 const INITIAL_WINDOW_HEIGHT = 512;
 const DEFAULT_SELECT_WIDTH = 44;
+const MIN_SKELETON_ROWS = 5;
+const MAX_SKELETON_ROWS = 20;
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
 
 /**
@@ -71,6 +76,33 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		const element = scroller();
 		return props.rowHeight ?? (element === undefined ? FALLBACK_ROW_HEIGHT : readControlHeight(element));
 	});
+
+	const [viewWidth, setViewWidth] = createSignal(0);
+	const loading = (): boolean => props.loading === true;
+	const isEmpty = (): boolean => !loading() && props.rows.length === 0;
+	const emptyText = (): string => props.emptyText ?? 'Ничего не найдено';
+	// число заглушек считается в момент начала загрузки: строки, помещающиеся в скроллер, но не меньше 5 и не больше 20
+	const skeletonCount = createMemo(() => {
+		if (!loading()) {
+			return 0;
+		}
+		const element = scroller();
+		const fit = element === undefined ? 0 : Math.floor(element.clientHeight / estimate());
+		return Math.min(Math.max(fit, MIN_SKELETON_ROWS), MAX_SKELETON_ROWS);
+	});
+	const [liveMessage, setLiveMessage] = createSignal('');
+
+	// объявляется только окончание загрузки; при начале загрузки область очищается, чтобы повтор того же текста прозвучал снова
+	createEffect(
+		on(loading, (now, was) => {
+			if (now) {
+				setLiveMessage('');
+			}
+			else if (was === true) {
+				setLiveMessage(props.rows.length === 0 ? emptyText() : (props.foundText ?? defaultFoundText)(props.rows.length));
+			}
+		})
+	);
 
 	const windowOptions: RenderWindowOptions = {
 		count: () => props.rows.length,
@@ -128,6 +160,15 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			setSelected(checked ? selectAllKeys(selected(), rowIndex().keys) : clearKeys(selected(), rowIndex().keys));
 		},
 		selectionState,
+		loading,
+		loadingLabel: () => props.loadingLabel ?? 'Загрузка',
+		isEmpty,
+		emptyText,
+		emptyHint: () => props.emptyHint,
+		emptyResetLabel: () => props.emptyResetLabel ?? 'Сбросить фильтры',
+		onEmptyReset: () => props.onEmptyReset,
+		skeletonCount,
+		liveMessage,
 		rootElement: root,
 		hasRowMenu: () => props.rowContextMenu !== undefined,
 		rowMenu,
@@ -165,12 +206,18 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		}
 
 		setHeaderHeight(header.offsetHeight);
+		setViewWidth(scrollerElement?.clientWidth ?? 0);
 
 		const observer = new ResizeObserver(() => {
 			setHeaderHeight(header?.offsetHeight ?? 0);
+			setViewWidth(scrollerElement?.clientWidth ?? 0);
 		});
 
 		observer.observe(header);
+
+		if (scrollerElement !== undefined) {
+			observer.observe(scrollerElement);
+		}
 
 		onCleanup(() => {
 			observer.disconnect();
@@ -189,11 +236,15 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					data-s-kit-focus-inset
 					tabindex='-1'
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
+					aria-busy={loading() ? 'true' : undefined}
 					style={{
 						...props.style,
-						'--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px`
+						'--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px`,
+						'--s-kit-grid-header-h': `${headerHeight()}px`,
+						'--s-kit-grid-view-w': viewWidth() > 0 ? `${viewWidth()}px` : undefined
 					}}
 				>
+					<GridProgress/>
 					<div
 						ref={scrollerElement}
 						class={styles['scroller']}
@@ -206,6 +257,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					</div>
 					<GridRowMenu/>
 				</div>
+				<GridLiveRegion/>
 			</PanelHostContext.Provider>
 		</GridContext.Provider>
 	);

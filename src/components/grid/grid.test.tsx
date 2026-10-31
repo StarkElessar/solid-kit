@@ -1117,3 +1117,156 @@ describe('Grid: панели из ячеек и фокус при уходе с�
 		expect(document.activeElement).toBe(document.body);
 	});
 });
+
+describe('Grid: состояния', () => {
+	function root(container: HTMLElement): HTMLElement {
+		return container.firstElementChild as HTMLElement;
+	}
+
+	function live(container: HTMLElement): HTMLElement {
+		return container.querySelector('[aria-live="polite"]') as HTMLElement;
+	}
+
+	it('загрузка: вместо строк заглушки, progressbar с именем, aria-busy только на время загрузки', () => {
+		const [loading, setLoading] = createSignal(true);
+		const { container } = render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				loading={loading()}
+				loadingLabel='Идёт загрузка'
+				selectable
+				aria-label='Люди'
+			/>
+		));
+		expect(bodyRows()).toHaveLength(0);
+		const skeleton = table().querySelectorAll('tbody > tr');
+		expect(skeleton).toHaveLength(5);
+		expect([...skeleton].every((row) => row.getAttribute('aria-hidden') === 'true')).toBe(true);
+		expect((skeleton[0] as HTMLTableRowElement).cells).toHaveLength(5);
+		const bar = screen.getByRole('progressbar', { name: 'Идёт загрузка' });
+		expect(bar.hasAttribute('aria-valuenow')).toBe(false);
+		expect(root(container).getAttribute('aria-busy')).toBe('true');
+		setLoading(false);
+		expect(screen.queryByRole('progressbar')).toBeNull();
+		expect(root(container).hasAttribute('aria-busy')).toBe(false);
+		expect(bodyRows()).toHaveLength(3);
+	});
+
+	it('подпись progressbar по умолчанию «Загрузка»', () => {
+		renderGrid({ loading: true });
+		expect(screen.getByRole('progressbar', { name: 'Загрузка' })).toBeTruthy();
+	});
+
+	it('загрузка: главный чекбокс отключён, сортировка работает, ручка ресайза не реагирует', () => {
+		const onSortChange = vi.fn();
+		const columns: GridColumn<Person>[] = [
+			{ id: 'name', title: 'Имя', value: (row) => row.name, width: 150, sortable: true },
+			{ id: 'age', title: 'Возраст', value: (row) => row.age, width: 100 }
+		];
+		renderGrid({ loading: true, selectable: true, columns, onSortChange });
+		expect((table().querySelector('thead input[type="checkbox"]') as HTMLInputElement).disabled).toBe(true);
+		fireEvent.click(table().querySelector('thead th button') as HTMLElement);
+		expect(onSortChange).toHaveBeenCalledTimes(1);
+		const handle = handleOf('Возраст');
+		expect(handle.hasAttribute('data-disabled')).toBe(true);
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 160));
+		expect(tableVar('--s-kit-grid-w-1')).toBe('100px');
+	});
+
+	it('загрузка началась, пока фокус был в строке: после микрозадачи фокус на корне', async () => {
+		const [loading, setLoading] = createSignal(false);
+		const { container } = render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				loading={loading()}
+				selectable
+				aria-label='Люди'
+			/>
+		));
+		(bodyRows()[1]?.querySelector('input[type="checkbox"]') as HTMLInputElement).focus();
+		setLoading(true);
+		await Promise.resolve();
+		expect(document.activeElement).toBe(root(container));
+	});
+
+	it('пусто: текст по умолчанию, подсказка, шапка на месте, кнопки нет без onEmptyReset', () => {
+		renderGrid({ rows: [], emptyHint: <span data-hint>Измените фильтры</span> });
+		expect(screen.getByText('Ничего не найдено')).toBeTruthy();
+		expect(screen.getByText('Измените фильтры')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Сбросить фильтры' })).toBeNull();
+		expect(table().querySelectorAll('thead th').length).toBeGreaterThan(0);
+		expect(bodyRows()).toHaveLength(0);
+	});
+
+	it('пусто: кнопка сброса есть только с onEmptyReset, подпись настраивается, клик зовёт колбэк один раз', () => {
+		const onEmptyReset = vi.fn();
+		renderGrid({ rows: [], onEmptyReset, emptyText: 'Нет людей' });
+		expect(screen.getByText('Нет людей')).toBeTruthy();
+		fireEvent.click(screen.getByRole('button', { name: 'Сбросить фильтры' }));
+		expect(onEmptyReset).toHaveBeenCalledTimes(1);
+	});
+
+	it('пусто: colspan блока учитывает колонку чекбоксов', () => {
+		renderGrid({ rows: [], selectable: true });
+		expect(table().querySelector('tbody td')?.getAttribute('colspan')).toBe('5');
+	});
+
+	it('при загрузке и пустых rows показываются заглушки, а не блок «пусто»', () => {
+		renderGrid({ rows: [], loading: true });
+		expect(screen.queryByText('Ничего не найдено')).toBeNull();
+		expect(table().querySelectorAll('tbody > tr[aria-hidden="true"]')).toHaveLength(5);
+	});
+
+	it('live-область соседствует с корнем, в первый рендер пуста и не объявляет смену rows без смены loading', () => {
+		const [rows, setRows] = createSignal(ROWS);
+		const { container } = render(() => (
+			<Grid rows={rows()} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} aria-label='Люди'/>
+		));
+		expect(live(container).textContent).toBe('');
+		expect(root(container).contains(live(container))).toBe(false);
+		setRows([]);
+		expect(live(container).textContent).toBe('');
+	});
+
+	it('после окончания загрузки объявляется число записей, при начале загрузки область очищается', () => {
+		const [loading, setLoading] = createSignal(true);
+		const { container } = render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} loading={loading()} aria-label='Люди'/>
+		));
+		expect(live(container).textContent).toBe('');
+		setLoading(false);
+		expect(live(container).textContent).toBe('Найдено 3 записи');
+		setLoading(true);
+		expect(live(container).textContent).toBe('');
+	});
+
+	it('после загрузки с пустым результатом объявляется emptyText; foundText можно заменить', () => {
+		const [loading, setLoading] = createSignal(true);
+		const [rows, setRows] = createSignal<readonly Person[]>(ROWS);
+		const { container } = render(() => (
+			<Grid
+				rows={rows()}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				loading={loading()}
+				foundText={(count) => `Всего: ${count}`}
+				emptyText='Пусто'
+				aria-label='Люди'
+			/>
+		));
+		setLoading(false);
+		expect(live(container).textContent).toBe('Всего: 3');
+		setLoading(true);
+		setRows([]);
+		setLoading(false);
+		expect(live(container).textContent).toBe('Пусто');
+	});
+});
