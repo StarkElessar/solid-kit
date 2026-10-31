@@ -4,6 +4,7 @@ import { createMemo, createSignal, type JSX, onCleanup, onMount, untrack } from 
 
 import { createControllableSignal } from '../../utils/create-controllable-signal';
 import { createFullWindow } from '../../utils/create-full-window';
+import { createVirtualWindow } from '../../utils/create-virtual-window';
 import { readControlHeight } from '../../utils/read-control-height';
 import type { RenderWindowOptions } from '../../utils/render-window';
 
@@ -16,6 +17,7 @@ import { sameItems } from './same-items';
 
 const FALLBACK_ROW_HEIGHT = 32;
 const DEFAULT_OVERSCAN = 12;
+const INITIAL_WINDOW_HEIGHT = 512;
 
 /**
  * Грид: «глупая» таблица с закреплённой шапкой, закреплёнными колонками и ресайзом колонок. Данные, ширины и (в следующих частях)
@@ -46,9 +48,10 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		estimateSize: () => estimate(),
 		overscan: untrack(() => props.overscan) ?? DEFAULT_OVERSCAN,
 		scrollPaddingStart: headerHeight,
-		scrollMargin: headerHeight
+		scrollMargin: headerHeight,
+		initialHeight: () => INITIAL_WINDOW_HEIGHT
 	};
-	const window = createFullWindow(windowOptions);
+	const window = untrack(() => props.virtualized) === false ? createFullWindow(windowOptions) : createVirtualWindow(windowOptions);
 
 	// скроллер отдаётся окну рендера после вставки в документ: виртуализатор пропускает ещё не вставленный элемент
 	let scrollerElement: HTMLDivElement | undefined;

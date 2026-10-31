@@ -12,7 +12,15 @@ export interface GridRowProps {
 
 export function GridRow(props: GridRowProps): JSX.Element {
 	const grid = useGrid();
-	const row = (): unknown => grid.rows()[props.index];
+	// при сокращении rows Solid может пересчитать ячейки раньше, чем окно уберёт эту строку: до удаления она держит последнюю строку
+	let lastRow: unknown;
+	const row = (): unknown => {
+		const rows = grid.rows();
+		if (props.index < rows.length) {
+			lastRow = rows[props.index];
+		}
+		return lastRow;
+	};
 	return (
 		<tr
 			ref={grid.window.measure}

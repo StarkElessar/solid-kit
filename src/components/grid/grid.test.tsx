@@ -207,3 +207,81 @@ describe('Grid: строки', () => {
 		expect(cell.mock.calls.length).toBe(cellCalls);
 	});
 });
+
+// В jsdom нет раскладки: высоту окна виртуализатору даёт clientHeight скроллера, высоту строки offsetHeight строки.
+function mockGeometry(options: { windowHeight: number; rowHeight: number; headerHeight?: number }): void {
+	vi.spyOn(Element.prototype, 'clientHeight', 'get').mockReturnValue(options.windowHeight);
+	vi.spyOn(Element.prototype, 'clientWidth', 'get').mockReturnValue(400);
+	vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function offsetHeight(this: HTMLElement) {
+		if (this.tagName === 'TR') {
+			return options.rowHeight;
+		}
+		return this.tagName === 'THEAD' ? (options.headerHeight ?? 0) : 0;
+	});
+}
+
+function manyRows(count: number): Person[] {
+	return Array.from({ length: count }, (_, index) => ({ id: index, name: `Имя ${index}`, age: index, note: null }));
+}
+
+function spacerHeights(): number[] {
+	const cells = table().querySelectorAll<HTMLTableCellElement>('tbody > tr[aria-hidden="true"] > td');
+	return [...cells].map((cell) => parseFloat(cell.style.height));
+}
+
+describe('Grid: виртуализация', () => {
+	it('рендерит окно плюс overscan между двумя spacer-строками, сумма высот равна totalSize', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		renderGrid({ rows: manyRows(1000), virtualized: true, rowHeight: 20, overscan: 2 });
+		const rows = bodyRows();
+		expect(rows.length).toBeGreaterThanOrEqual(5);
+		expect(rows.length).toBeLessThanOrEqual(5 + 2 * 2);
+		const spacers = table().querySelectorAll('tbody > tr[aria-hidden="true"]');
+		expect(spacers).toHaveLength(1);
+		expect(spacers[0]?.getAttribute('role')).toBe('presentation');
+		expect(spacers[0]?.querySelector('td')?.getAttribute('colspan')).toBe('4');
+		const [bottom] = spacerHeights();
+		expect((bottom ?? 0) + rows.length * 20).toBe(1000 * 20);
+	});
+
+	it('после прокрутки есть оба spacer, а первая строка окна учитывает высоту шапки (scrollMargin)', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20, headerHeight: 36 });
+		renderGrid({ rows: manyRows(1000), virtualized: true, rowHeight: 20, overscan: 2 });
+		const scroller = table().parentElement as HTMLElement;
+		scroller.scrollTop = 2000;
+		scroller.dispatchEvent(new Event('scroll'));
+		const rows = bodyRows();
+		const first = Number(rows[0]?.dataset['index']);
+		// первая видимая строка: 36 + 20k > 2000 даёт k = 98, минус overscan 2
+		expect(first).toBe(96);
+		const [top, bottom] = spacerHeights();
+		expect(top).toBe(96 * 20);
+		expect((top ?? 0) + rows.length * 20 + (bottom ?? 0)).toBe(1000 * 20);
+	});
+
+	it('смена rows меняет число строк, при малом числе spacer нет', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		const [rows, setRows] = createSignal<readonly Person[]>(manyRows(1000));
+		render(() => (
+			<Grid rows={rows()} getRowKey={(row) => row.id} columns={COLUMNS} rowHeight={20} overscan={2} aria-label='Люди'/>
+		));
+		expect(table().querySelector('tbody > tr[aria-hidden="true"]')).not.toBeNull();
+		setRows(manyRows(3));
+		expect(bodyRows()).toHaveLength(3);
+		expect(table().querySelector('tbody > tr[aria-hidden="true"]')).toBeNull();
+	});
+
+	it('scroll-padding скроллера равен высоте шапки и ширине закреплённых колонок', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20, headerHeight: 36 });
+		renderGrid({ rows: manyRows(10), virtualized: true, rowHeight: 20 });
+		const scroller = table().parentElement as HTMLElement;
+		expect(scroller.style.getPropertyValue('scroll-padding-block-start')).toBe('36px');
+		expect(scroller.style.getPropertyValue('scroll-padding-inline-start')).toBe('230px');
+	});
+
+	it('virtualized по умолчанию включён: тысяча строк не попадает в DOM целиком', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		render(() => <Grid rows={manyRows(1000)} getRowKey={(row) => row.id} columns={COLUMNS} rowHeight={20} aria-label='Люди'/>);
+		expect(bodyRows().length).toBeLessThan(40);
+	});
+});
