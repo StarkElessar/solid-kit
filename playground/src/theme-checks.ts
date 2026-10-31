@@ -150,5 +150,28 @@ export function runThemeChecks(root: ParentNode): CheckResult[] {
 		check(`${theme}: контраст текста панели на любом фоне под ней`, worst >= 4.5, `минимум ${worst.toFixed(2)}:1 (нужно 4.5:1)`);
 	}
 
+	// Select: токен формы --s-kit-select-bg доходит до панели, текст опций читаем на ней в обеих темах
+	for (const [theme, expected] of [
+		['light', [255, 232, 204]],
+		['dark', [58, 42, 20]]
+	] as const) {
+		const trigger = required(root, `[data-scenario="select-${theme}"] [data-select-theme]`);
+		const list = document.getElementById(trigger.getAttribute('aria-controls') ?? '');
+		const selectPanel = list?.closest<HTMLElement>('[data-s-kit]');
+		if (!list || !selectPanel) {
+			check(`Select (${theme}): панель в DOM`, false, 'список или панель не найдены');
+			continue;
+		}
+		const fill = background(selectPanel);
+		check(
+			`Select (${theme}): панель получила токен формы (--s-kit-select-bg)`,
+			selectPanel.matches(':popover-open') && fill[0] === expected[0] && fill[1] === expected[1] && fill[2] === expected[2],
+			`фон панели rgb(${fill[0]} ${fill[1]} ${fill[2]}), ожидался rgb(${expected.join(' ')})`
+		);
+		const option = required(list, '[role="option"]');
+		const ratio = contrastRatio(rgb(resolveColor(getComputedStyle(option).color)), rgb(fill));
+		check(`Select (${theme}): текст опции на панели читаем (4.5:1)`, ratio >= 4.5, `контраст ${ratio.toFixed(2)}:1`);
+	}
+
 	return results;
 }

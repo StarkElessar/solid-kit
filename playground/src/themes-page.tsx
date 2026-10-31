@@ -1,6 +1,9 @@
 import { Popover } from '@stark/solid-kit/popover';
+import { Select } from '@stark/solid-kit/select';
 import { createEffect, createSignal, For, type JSX, onMount } from 'solid-js';
 
+import { getEmployeeKey, getEmployeeLabel, ROW_EMPLOYEES } from './demo-controls';
+import type { Employee } from './demo-selects';
 import { DerivedSwatches } from './derived-swatches';
 import { PALETTE_NAMES, type PaletteName, PALETTES } from './palettes';
 import { pick } from './pick';
@@ -131,6 +134,34 @@ export function ThemesPage(): JSX.Element {
 							</Popover.Content>
 						</Popover.Root>
 					</form>
+				</div>
+			</section>
+
+			<section>
+				<h2>3б. Select: токен формы --s-kit-select-bg доходит до открытой панели в обеих темах</h2>
+				<div class='boxes'>
+					<For each={['light', 'dark'] as const}>
+						{(boxTheme) => (
+							<div class='box' data-scenario={`select-${boxTheme}`} data-s-kit-theme={boxTheme}>
+								<form
+									style={{ '--s-kit-select-bg': 'light-dark(#ffe8cc, #3a2a14)' }}
+									onSubmit={(event) => {
+										event.preventDefault();
+									}}
+								>
+									<Select<Employee>
+										data-select-theme={boxTheme}
+										aria-label='Сотрудник'
+										items={ROW_EMPLOYEES}
+										defaultValue={ROW_EMPLOYEES[1]}
+										getKey={getEmployeeKey}
+										getLabel={getEmployeeLabel}
+										open
+									/>
+								</form>
+							</div>
+						)}
+					</For>
 				</div>
 			</section>
 
