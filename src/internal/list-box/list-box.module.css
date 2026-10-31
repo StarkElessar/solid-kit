@@ -1,0 +1,117 @@
+/*
+ * Разметка списка (спек этапа 3, раздел 5.3). Внутренний компонент: токены кастомизации читаются с фолбэком
+ *   --s-kit-listbox-max-height, --s-kit-listbox-padding, --s-kit-listbox-item-radius
+ * Подсветка активной опции это [data-active] (фокус остаётся у владельца списка); кольцо рисуется только при клавиатурной
+ * модальности (data-active-source="keyboard"), при наведении мыши опция получает один фон. Корень ставит data-s-kit-focus-inset,
+ * поэтому кольцо лежит внутри рамки опции.
+ */
+
+.scroller {
+    overflow: auto;
+    overscroll-behavior: contain;
+    flex: 1 1 auto;
+
+    box-sizing: border-box;
+    min-block-size: 0;
+    max-block-size: var(--s-kit-listbox-max-height, 320px);
+    padding: var(--s-kit-listbox-padding, 4px);
+}
+
+.option,
+.group {
+    box-sizing: border-box;
+    min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-inline: 10px;
+}
+
+.option {
+    cursor: default;
+    user-select: none;
+
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    border-radius: var(--s-kit-listbox-item-radius, var(--s-kit-radius));
+
+    color: var(--s-kit-color-text);
+}
+
+.option[data-selected] {
+    background: var(--s-kit-color-row-selected);
+}
+
+.option[data-active] {
+    background: var(--s-kit-color-tint);
+}
+
+.scroller[data-active-source="keyboard"] .option[data-active] {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+}
+
+.option[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: var(--s-kit-disabled-opacity);
+}
+
+/* место под отметку выбранной опции занято всегда: подписи не прыгают при выборе */
+.check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+
+    inline-size: 14px;
+    block-size: 14px;
+}
+
+.label {
+    overflow: hidden;
+    flex: 1 1 auto;
+
+    min-inline-size: 0;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group {
+    cursor: default;
+    user-select: none;
+
+    display: flex;
+    align-items: center;
+
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    font-weight: 600;
+    color: var(--s-kit-color-muted);
+}
+
+/* липкий заголовок: нулевая высота в потоке, чтобы не сдвигать строки; сам блок лежит поверх них */
+.sticky-wrap {
+    position: sticky;
+    z-index: 1;
+    inset-block-start: 0;
+
+    overflow: visible;
+
+    block-size: 0;
+}
+
+.sticky {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+
+    border-radius: var(--s-kit-listbox-item-radius, var(--s-kit-radius));
+
+    background: var(--s-kit-color-surface);
+}
+
+.message {
+    box-sizing: border-box;
+    min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding: 8px 10px;
+    color: var(--s-kit-color-muted);
+}
