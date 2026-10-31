@@ -1,0 +1,118 @@
+/*
+ * Токены Grid (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-grid-bg, --s-kit-grid-border, --s-kit-grid-radius, --s-kit-grid-header-bg, --s-kit-grid-max-height, --s-kit-grid-row-hover
+ * Высота корня: block-size 100% родителя, но не больше --s-kit-grid-max-height (32rem); страница с более высокой областью ставит
+ * токен в none. Внутренние переменные меняет код, а не потребитель: --s-kit-grid-w-<i>, --s-kit-grid-left-<i>, --s-kit-grid-table-w
+ * (на <table>), --s-kit-grid-row-height (на корне, из rowHeight) и слои --s-kit-grid-z-*.
+ * Тело это <table> с table-layout: fixed и border-collapse: separate: границы ячеек едут вместе со sticky-ячейками (спек 4а, раздел 4).
+ */
+
+.root {
+    /* слои: шапка закреплённой колонки выше шапки выше sticky-ячеек тела выше обычных */
+    --s-kit-grid-z-sticky: 1;
+    --s-kit-grid-z-head: 2;
+    --s-kit-grid-z-corner: 3;
+
+    overflow: clip;
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+    block-size: 100%;
+    min-block-size: 0;
+    max-block-size: var(--s-kit-grid-max-height, 32rem);
+    border: 1px solid var(--s-kit-grid-border, var(--s-kit-color-border-strong));
+    border-radius: var(--s-kit-grid-radius, var(--s-kit-radius));
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    line-height: 1.25;
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
+}
+
+.scroller {
+    overflow: auto;
+    flex: 1 1 auto;
+    min-block-size: 0;
+}
+
+.table {
+    table-layout: fixed;
+    border-spacing: 0;
+    border-collapse: separate;
+
+    inline-size: 100%;
+    min-inline-size: var(--s-kit-grid-table-w, 0);
+}
+
+.cell,
+.head-cell {
+    overflow: hidden;
+
+    box-sizing: border-box;
+    padding-block: 0;
+    padding-inline: 10px;
+    border-block-end: 1px solid var(--s-kit-color-hairline);
+    border-inline-end: 1px solid var(--s-kit-color-hairline);
+
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cell {
+    block-size: var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md)));
+}
+
+.head-cell {
+    position: sticky;
+    z-index: var(--s-kit-grid-z-head);
+    inset-block-start: 0;
+
+    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+
+    font-weight: 600;
+    color: var(--s-kit-color-muted);
+
+    background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
+}
+
+.cell[data-sticky],
+.head-cell[data-sticky] {
+    position: sticky;
+    z-index: var(--s-kit-grid-z-sticky);
+    background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
+}
+
+.head-cell[data-sticky] {
+    z-index: var(--s-kit-grid-z-corner);
+    background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
+}
+
+.cell[data-sticky-last],
+.head-cell[data-sticky-last] {
+    border-inline-end-color: var(--s-kit-color-border-strong);
+}
+
+.cell[data-align="end"],
+.head-cell[data-align="end"] {
+    text-align: end;
+}
+
+.cell[data-align="center"],
+.head-cell[data-align="center"] {
+    text-align: center;
+}
+
+@media (hover: hover) {
+    .row:hover > .cell {
+        background: var(--s-kit-grid-row-hover, var(--s-kit-color-hover));
+    }
+}
+
+.spacer {
+    padding: 0;
+    border: 0;
+}
