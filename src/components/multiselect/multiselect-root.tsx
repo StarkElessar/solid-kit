@@ -49,7 +49,7 @@ export interface MultiSelectRootProps<T> {
 	size?: MultiSelectSize | undefined;
 	/** «из M» в счётчике; без него число элементов `items`. */
 	total?: number | undefined;
-	/** Поле поиска в панели, по умолчанию `true`. */
+	/** Можно печатать в поле триггера и фильтровать список, по умолчанию `true`; без него поле только для чтения (typeahead). */
 	searchable?: boolean | undefined;
 	/** Ключ строки «Все» (например `-1`); строка появляется вместе с `allLabel`. Значение при выбранном «Все» равно этому ключу. */
 	allKey?: ListKey | undefined;
@@ -82,7 +82,7 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 		onChange: (next) => props.onQueryChange?.(next)
 	});
 	const [anchor, setAnchor] = createSignal<HTMLElement>();
-	const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
+	const [input, setInput] = createSignal<HTMLInputElement>();
 
 	const searchable = (): boolean => props.searchable ?? true;
 	const getLabel = (item: T): string => props.getLabel(item);
@@ -185,9 +185,9 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 		setAnchor: (element) => {
 			setAnchor(element);
 		},
-		trigger,
-		setTrigger: (element) => {
-			setTrigger(element);
+		input,
+		setInput: (element) => {
+			setInput(element);
 		},
 		isAll,
 		selectedItems: () => valueItems(value()),
@@ -206,10 +206,13 @@ export function MultiSelectRoot<T>(props: MultiSelectRootProps<T>): JSX.Element 
 		chipsOverflow: () => props.chipsOverflow ?? 'collapse',
 		searchable,
 		query,
-		handleSearch: (text) => {
+		handleInput: (text) => {
 			setQuery(text);
 			if (open()) {
 				owner.controller.resetActive('keyboard', { ignoreSelected: true });
+			}
+			else {
+				setOpen(true, 'keyboard');
 			}
 		},
 		rows: owner.rows,

@@ -11,18 +11,20 @@ import { countText } from './multiselect-value';
 
 export interface MultiSelectTriggerProps<T>
 	extends Omit<
-		JSX.ButtonHTMLAttributes<HTMLButtonElement>,
-		'class' | 'style' | 'disabled' | 'children' | 'type' | 'role' | 'value' | 'onClick' | 'onKeyDown' | 'onKeyUp'
+		JSX.InputHTMLAttributes<HTMLInputElement>,
+		'class' | 'style' | 'disabled' | 'children' | 'type' | 'role' | 'value' | 'defaultValue' | 'readOnly' | 'size'
+		| 'placeholder' | 'onInput' | 'onClick' | 'onKeyDown'
 	> {
-	onClick?: JSX.EventHandler<HTMLButtonElement, MouseEvent> | undefined;
-	onKeyDown?: JSX.EventHandler<HTMLButtonElement, KeyboardEvent> | undefined;
-	onKeyUp?: JSX.EventHandler<HTMLButtonElement, KeyboardEvent> | undefined;
-	/** Показывается приглушённым цветом, пока ничего не выбрано. */
-	placeholder?: JSX.Element;
+	onClick?: JSX.EventHandler<HTMLInputElement, MouseEvent> | undefined;
+	onKeyDown?: JSX.EventHandler<HTMLInputElement, KeyboardEvent> | undefined;
+	/** Показывается в пустом поле, пока ничего не выбрано. */
+	placeholder?: string | undefined;
 	/** По умолчанию подпись элемента. */
 	renderChip?: ((item: T) => JSX.Element) | undefined;
 	/** Доступное имя кнопки `×` чипа; по умолчанию «Убрать: подпись». */
 	removeChipLabel?: ((label: string) => string) | undefined;
+	/** Доступное имя кнопки-шеврона; по умолчанию «Показать список». */
+	toggleLabel?: string | undefined;
 	/** Класс и стиль оболочки триггера (она задаёт ширину). */
 	class?: string | undefined;
 	style?: JSX.CSSProperties | undefined;
@@ -31,8 +33,8 @@ export interface MultiSelectTriggerProps<T>
 /** Чипов в DOM не больше этого числа: остальные идут в счётчик (спек, раздел 8). */
 const MAX_CHIPS = 24;
 const CHIP_GAP = 4;
-/** Место под шеврон и внутренние отступы оболочки, px. */
-const SHELL_RESERVE = 40;
+/** Место под шеврон, внутренние отступы оболочки и минимальную ширину поля ввода, px. */
+const SHELL_RESERVE = 80;
 /** Резерв под счётчик «+N» в основной кнопке, px. */
 const COUNTER_WIDTH = 36;
 
@@ -42,12 +44,12 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 		'placeholder',
 		'renderChip',
 		'removeChipLabel',
+		'toggleLabel',
 		'class',
 		'style',
 		'ref',
 		'onClick',
-		'onKeyDown',
-		'onKeyUp'
+		'onKeyDown'
 	]);
 
 	let own: HTMLDivElement | undefined;
@@ -55,7 +57,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 		if (context.anchor() === own) {
 			context.setAnchor(undefined);
 		}
-		context.setTrigger(undefined);
+		context.setInput(undefined);
 	});
 
 	const [shellWidth, setShellWidth] = createSignal(0);
@@ -97,24 +99,32 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 	});
 	const hiddenCount = (): number => (context.isAll() ? 0 : context.selectedItems().length - visibleCount());
 	const showChips = (): boolean => context.chipsOverflow() !== 'summary' && context.count() > 0;
+	// «+N» в collapse и «N из M» в summary; в wrap счётчик нужен, только если чипов больше предела
+	const counterText = (): string => {
+		if (context.count() === 0) {
+			return '';
+		}
+		if (context.chipsOverflow() === 'summary') {
+			return countText(context.count(), context.total());
+		}
+		return hiddenCount() > 0 ? `+${hiddenCount()}` : '';
+	};
 
 	const removeLabel = (label: string): string => (local.removeChipLabel ? local.removeChipLabel(label) : `Убрать: ${label}`);
 	const afterRemove = (): void => {
-		context.trigger()?.focus();
+		context.input()?.focus();
 	};
 
-	// пробел гасится и на keyup: иначе браузер активирует кнопку кликом после того, как мы уже обработали keydown
-	let swallowSpaceUp = false;
-
-	const handleKeyDown: JSX.EventHandler<HTMLButtonElement, KeyboardEvent> = (event) => {
+	const handleKeyDown: JSX.EventHandler<HTMLInputElement, KeyboardEvent> = (event) => {
 		local.onKeyDown?.(event);
 		if (event.defaultPrevented || context.disabled()) {
 			return;
 		}
 		if (!context.open()) {
-			if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+			const arrow = event.key === 'ArrowDown' || event.key === 'ArrowUp';
+			const press = !context.searchable() && (event.key === 'Enter' || event.key === ' ');
+			if (arrow || press) {
 				event.preventDefault();
-				swallowSpaceUp = event.key === ' ';
 				context.setOpen(true, 'keyboard');
 			}
 			return;
@@ -122,9 +132,6 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 		if (event.key === 'Tab') {
 			context.setOpen(false);
 			return;
-		}
-		if (event.key === ' ') {
-			swallowSpaceUp = true;
 		}
 		if (context.controller.handleKeyDown(event)) {
 			event.preventDefault();
@@ -141,6 +148,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 			data-s-kit-size={context.size()}
 			data-multiselect-overflow={context.chipsOverflow()}
 			data-disabled={context.disabled() ? '' : undefined}
+			data-multiselect-readonly={context.searchable() ? undefined : ''}
 			aria-invalid={rest['aria-invalid']}
 			class={local.class ? `${styles['shell']} ${local.class}` : styles['shell']}
 			style={local.style}
@@ -148,7 +156,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 			onClick={(event) => {
 				if (event.target === event.currentTarget && !context.disabled()) {
 					context.setOpen(!context.open(), 'pointer');
-					context.trigger()?.focus();
+					context.input()?.focus();
 				}
 			}}
 		>
@@ -195,48 +203,65 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 					</Show>
 				</div>
 			</Show>
-			<button
+			<Show when={counterText() !== ''}>
+				<span class={styles['counter']} data-multiselect-counter>{counterText()}</span>
+			</Show>
+			<input
 				{...rest}
 				ref={(element) => {
-					context.setTrigger(element);
+					context.setInput(element);
 					if (typeof local.ref === 'function') {
 						local.ref(element);
 					}
 				}}
-				type='button'
+				type='text'
 				role='combobox'
+				autocomplete='off'
+				aria-autocomplete={context.searchable() ? 'list' : undefined}
 				aria-haspopup='listbox'
 				aria-expanded={context.open()}
 				aria-controls={context.open() ? context.listId : undefined}
-				aria-activedescendant={context.open() && !context.searchable() ? context.controller.activeId() : undefined}
+				aria-activedescendant={context.open() ? context.controller.activeId() : undefined}
+				readOnly={!context.searchable()}
 				disabled={context.disabled()}
-				class={styles['main']}
+				placeholder={context.count() === 0 ? local.placeholder : undefined}
+				value={context.query()}
+				class={styles['input']}
+				onInput={(event) => {
+					context.handleInput(event.currentTarget.value);
+				}}
 				onClick={(event) => {
 					local.onClick?.(event);
-					if (!event.defaultPrevented && !context.disabled()) {
+					if (event.defaultPrevented || context.disabled()) {
+						return;
+					}
+					// поле для чтения ведёт себя как кнопка, печатаемое только открывает список (повторный клик ставит курсор)
+					if (!context.searchable()) {
 						context.setOpen(!context.open(), 'pointer');
+					}
+					else if (!context.open()) {
+						context.setOpen(true, 'pointer');
 					}
 				}}
 				onKeyDown={handleKeyDown}
-				onKeyUp={(event) => {
-					local.onKeyUp?.(event);
-					if (event.key === ' ' && swallowSpaceUp) {
-						swallowSpaceUp = false;
-						event.preventDefault();
-					}
+			/>
+			<button
+				type='button'
+				tabindex='-1'
+				aria-label={local.toggleLabel ?? 'Показать список'}
+				aria-expanded={context.open()}
+				disabled={context.disabled()}
+				class={styles['toggle']}
+				// фокус остаётся в поле: иначе клик по шеврону считался бы уходом из поля
+				onMouseDown={(event) => {
+					event.preventDefault();
+				}}
+				onClick={() => {
+					context.setOpen(!context.open(), 'pointer');
+					context.input()?.focus();
 				}}
 			>
-				<span class={styles['value']}>
-					<Show when={context.count() > 0} fallback={<span class={styles['placeholder']}>{local.placeholder}</span>}>
-						<Show
-							when={context.chipsOverflow() === 'summary'}
-							fallback={hiddenCount() > 0 ? `+${hiddenCount()}` : ''}
-						>
-							{countText(context.count(), context.total())}
-						</Show>
-					</Show>
-				</span>
-				<svg class={styles['chevron']} viewBox='0 0 16 16' width='12' height='12' aria-hidden='true'>
+				<svg viewBox='0 0 16 16' width='12' height='12' aria-hidden='true'>
 					<path
 						d='M3 6 8 11 13 6'
 						fill='none'

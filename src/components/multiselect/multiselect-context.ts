@@ -16,9 +16,9 @@ export interface MultiSelectContextValue {
 	/** Оболочка триггера: якорь панели. */
 	anchor: Accessor<HTMLElement | undefined>;
 	setAnchor: (element: HTMLElement | undefined) => void;
-	/** Основная кнопка `combobox`: ей возвращается фокус при закрытии. */
-	trigger: Accessor<HTMLButtonElement | undefined>;
-	setTrigger: (element: HTMLButtonElement | undefined) => void;
+	/** Поле ввода `combobox` в оболочке: владелец списка, фокус всегда в нём. */
+	input: Accessor<HTMLInputElement | undefined>;
+	setInput: (element: HTMLInputElement | undefined) => void;
 	isAll: Accessor<boolean>;
 	/** Выбранные элементы (в состоянии «Все» пусто). */
 	selectedItems: Accessor<readonly unknown[]>;
@@ -33,7 +33,8 @@ export interface MultiSelectContextValue {
 	chipsOverflow: Accessor<ChipsOverflow>;
 	searchable: Accessor<boolean>;
 	query: Accessor<string>;
-	handleSearch: (text: string) => void;
+	/** Пользователь печатает: запрос меняется, список открывается и подсвечивает первую доступную опцию. */
+	handleInput: (text: string) => void;
 	rows: Accessor<readonly ListRow<unknown>[]>;
 	controller: ListBoxController;
 	window: RenderWindow;

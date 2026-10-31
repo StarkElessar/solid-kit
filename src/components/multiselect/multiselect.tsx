@@ -46,8 +46,6 @@ const CONTENT_KEYS = [
 	'renderGroupHeader',
 	'loadingText',
 	'emptyText',
-	'searchPlaceholder',
-	'searchLabel',
 	'contentClass',
 	'contentStyle'
 ] as const;
@@ -65,8 +63,6 @@ export function MultiSelectFacade<T>(props: MultiSelectProps<T>): JSX.Element {
 				renderGroupHeader={content.renderGroupHeader}
 				loadingText={content.loadingText}
 				emptyText={content.emptyText}
-				searchPlaceholder={content.searchPlaceholder}
-				searchLabel={content.searchLabel}
 				class={content.contentClass}
 				style={content.contentStyle}
 			/>

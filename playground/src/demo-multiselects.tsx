@@ -176,7 +176,7 @@ export function DemoMultiSelects(): JSX.Element {
 				)}
 			</Field>
 
-			<Field label='Без поля поиска (typeahead на кнопке)'>
+			<Field label='Без ввода: поле только для чтения (typeahead)'>
 				{(control) => (
 					<MultiSelect<Employee>
 						{...control}

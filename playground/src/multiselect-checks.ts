@@ -17,10 +17,6 @@ function option(label: string): HTMLElement {
 	return found;
 }
 
-function searchField(): HTMLInputElement | null {
-	return document.querySelector<HTMLInputElement>('input[aria-label="Поиск"]');
-}
-
 function keyDown(element: HTMLElement, key: string): KeyboardEvent {
 	const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
 	element.dispatchEvent(event);
@@ -31,6 +27,10 @@ function keyDown(element: HTMLElement, key: string): KeyboardEvent {
 function typeText(input: HTMLInputElement, text: string): void {
 	input.value = text;
 	input.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));
+}
+
+function counterOf(trigger: HTMLElement): string {
+	return shellOf(trigger).querySelector('[data-multiselect-counter]')?.textContent ?? '';
 }
 
 function shellOf(trigger: HTMLElement): HTMLElement {
@@ -76,9 +76,9 @@ async function close(): Promise<void> {
 }
 
 /**
- * Автоматические проверки MultiSelect: роли, панель остаётся открытой после выбора, поиск и выбранное вне результата, строка «Все»
- * со значением -1, кнопка `×`, режимы collapse и summary, 100 000 опций, Enter в форме. Настоящий ввод с клавиатуры, порядок
- * Tab по чипам, кольца фокуса, Esc в диалоге, сужение окна и IME проверяются вручную.
+ * Автоматические проверки MultiSelect: роли, панель остаётся открытой после выбора, ввод в поле триггера и выбранное вне
+ * результата, строка «Все» со значением -1, кнопка `×`, режимы collapse и summary, 100 000 опций, Enter в форме.
+ * Настоящий ввод с клавиатуры, порядок Tab по чипам, кольца фокуса, Esc в диалоге, сужение окна и IME проверяются вручную.
  */
 export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResult[]> {
 	const results: CheckResult[] = [];
@@ -90,15 +90,15 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	await open(short);
 	try {
 		const list = required(document, '[role="listbox"]');
-		const search = searchField();
 		check(
-			'MultiSelect: роли кнопки и списка, фокус в поле поиска',
-			short.getAttribute('role') === 'combobox'
+			'MultiSelect: роли поля и списка, фокус остаётся в поле триггера, в панели поля ввода нет',
+			short.tagName === 'INPUT' && short.getAttribute('role') === 'combobox'
 				&& short.getAttribute('aria-expanded') === 'true'
 				&& short.getAttribute('aria-controls') === list.id
 				&& list.getAttribute('aria-multiselectable') === 'true'
-				&& search !== null && document.activeElement === search && options().length === 8,
-			`опций ${options().length}, фокус ${document.activeElement === search ? 'в поле поиска' : 'не в поле'}`
+				&& document.activeElement === short && options().length === 8
+				&& list.closest('[data-s-kit]')?.querySelector('input') === null,
+			`опций ${options().length}, фокус ${document.activeElement === short ? 'в поле триггера' : 'не в поле'}`
 		);
 		option('Сотрудник 0').click();
 		await frames();
@@ -108,31 +108,29 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 				&& visibleChips(short).includes('Сотрудник 0'),
 			`чипы: ${visibleChips(short).join(', ') || 'нет'}`
 		);
-		if (search) {
-			typeText(search, 'Сотрудник 5');
-			await frames();
-			const filtered = options().map((candidate) => candidate.textContent);
-			check(
-				'MultiSelect: печать в поиске фильтрует',
-				filtered.length === 1 && filtered[0] === 'Сотрудник 5',
-				`опции: ${filtered.join(', ')}`
-			);
-			option('Сотрудник 5').click();
-			await frames();
-			check(
-				'MultiSelect: выбранное вне результата поиска остаётся в чипах',
-				allChips(short).includes('Сотрудник 0') && allChips(short).includes('Сотрудник 5'),
-				`чипы: ${allChips(short).join(', ')}`
-			);
-		}
+		typeText(short as HTMLInputElement, 'Сотрудник 5');
+		await frames();
+		const filtered = options().map((candidate) => candidate.textContent);
+		check(
+			'MultiSelect: печать в поле триггера фильтрует',
+			filtered.length === 1 && filtered[0] === 'Сотрудник 5',
+			`опции: ${filtered.join(', ')}`
+		);
+		option('Сотрудник 5').click();
+		await frames();
+		check(
+			'MultiSelect: выбранное вне результата поиска остаётся в чипах',
+			allChips(short).includes('Сотрудник 0') && allChips(short).includes('Сотрудник 5'),
+			`чипы: ${allChips(short).join(', ')}`
+		);
 	}
 	finally {
 		await close();
 	}
 	check(
-		'MultiSelect: после Esc запрос очищен, фокус на кнопке',
-		listbox() === null && document.activeElement === short,
-		document.activeElement === short ? 'фокус на кнопке' : 'фокус ушёл'
+		'MultiSelect: после Esc запрос очищен, фокус в поле',
+		listbox() === null && document.activeElement === short && (short as HTMLInputElement).value === '',
+		document.activeElement === short ? 'фокус в поле' : 'фокус ушёл'
 	);
 
 	// × убирает чип и возвращает фокус на основную кнопку
@@ -140,7 +138,7 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	removeButton?.click();
 	await frames();
 	check(
-		'MultiSelect: × убирает чип, фокус на кнопке',
+		'MultiSelect: × убирает чип, фокус в поле',
 		!allChips(short).includes('Сотрудник 0') && document.activeElement === short,
 		`чипы: ${allChips(short).join(', ') || 'нет'}`
 	);
@@ -176,7 +174,7 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	}
 
 	const narrow = required(page, '[data-multiselect="narrow"]');
-	const counter = narrow.textContent;
+	const counter = counterOf(narrow);
 	check(
 		'MultiSelect: collapse на узком контроле показывает счётчик «+N»',
 		/^\+\d+$/.test(counter) && visibleChips(narrow).length >= 1 && visibleChips(narrow).length < 5,
@@ -185,16 +183,16 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	const summary = required(page, '[data-multiselect="summary"]');
 	check(
 		'MultiSelect: summary показывает «N из M»',
-		summary.textContent === '3 из 60' && visibleChips(summary).length === 0,
-		`«${summary.textContent}»`
+		counterOf(summary) === '3 из 60' && visibleChips(summary).length === 0,
+		`«${counterOf(summary)}»`
 	);
 
 	const plain = required(page, '[data-multiselect="plain"]');
 	await open(plain);
 	check(
-		'MultiSelect: без searchable поля нет, фокус остаётся на кнопке',
-		searchField() === null && document.activeElement === plain,
-		document.activeElement === plain ? 'фокус на кнопке' : 'фокус ушёл'
+		'MultiSelect: без searchable поле только для чтения, фокус остаётся в нём',
+		(plain as HTMLInputElement).readOnly && document.activeElement === plain,
+		document.activeElement === plain ? 'фокус в поле' : 'фокус ушёл'
 	);
 	await close();
 
@@ -216,15 +214,11 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	};
 	form.addEventListener('submit', onSubmit);
 	await open(formTrigger);
-	const formSearch = searchField();
-	let enterPrevented = false;
-	if (formSearch) {
-		keyDown(formSearch, 'ArrowDown');
-		enterPrevented = keyDown(formSearch, 'Enter').defaultPrevented;
-		await frames();
-	}
+	keyDown(formTrigger, 'ArrowDown');
+	const enterPrevented = keyDown(formTrigger, 'Enter').defaultPrevented;
+	await frames();
 	check(
-		'MultiSelect: Enter в поиске выбирает опцию и не отправляет форму',
+		'MultiSelect: Enter с активной опцией выбирает её и не отправляет форму',
 		enterPrevented && !sent.submitted && listbox() !== null && visibleChips(formTrigger).length === 1,
 		`чипов ${visibleChips(formTrigger).length}, отправлено: ${sent.submitted ? 'да' : 'нет'}`
 	);
@@ -235,11 +229,8 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	server.focus();
 	server.click();
 	await frames(2);
-	const serverSearch = searchField();
-	if (serverSearch) {
-		typeText(serverSearch, 'Сотрудник 5');
-		await frames(2);
-	}
+	typeText(server as HTMLInputElement, 'Сотрудник 5');
+	await frames(2);
 	const loadingShown = document.body.textContent.includes('Загрузка');
 	const arrived = await waitFor(() => options().length > 0, 60);
 	check(

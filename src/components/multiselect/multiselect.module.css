@@ -7,7 +7,9 @@
  */
 
 .shell {
-    cursor: pointer;
+    cursor: text;
+
+    position: relative;
 
     display: flex;
     gap: 4px;
@@ -16,7 +18,7 @@
     box-sizing: border-box;
     inline-size: var(--s-kit-multiselect-width, 18rem);
     min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
-    padding-inline-start: 4px;
+    padding-inline: 4px var(--s-kit-control-height, var(--s-kit-control-height-md));
     border: 1px solid var(--s-kit-select-border, var(--s-kit-color-control-edge));
     border-radius: var(--s-kit-select-radius, var(--s-kit-radius));
 
@@ -27,7 +29,7 @@
     background: var(--s-kit-color-surface);
 }
 
-.shell:has(.main:focus-visible) {
+.shell:has(.input:focus-visible) {
     outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
     outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
 }
@@ -36,13 +38,17 @@
     border-color: var(--s-kit-color-danger);
 }
 
-.shell[aria-invalid="true"]:has(.main:focus-visible) {
+.shell[aria-invalid="true"]:has(.input:focus-visible) {
     outline-color: var(--s-kit-color-danger);
 }
 
 .shell[data-disabled] {
     cursor: not-allowed;
     opacity: var(--s-kit-disabled-opacity);
+}
+
+.shell[data-multiselect-readonly] {
+    cursor: pointer;
 }
 
 .chips {
@@ -56,12 +62,13 @@
 }
 
 .shell[data-multiselect-overflow="wrap"] {
+    flex-wrap: wrap;
     padding-block: 3px;
 }
 
+/* в режиме wrap чипы становятся элементами оболочки и переносятся вместе с полем ввода */
 .shell[data-multiselect-overflow="wrap"] .chips {
-    flex: 1 1 0;
-    flex-wrap: wrap;
+    display: contents;
 }
 
 .chip {
@@ -123,65 +130,66 @@
     cursor: not-allowed;
 }
 
-.main {
-    cursor: inherit;
+.counter {
+    flex: none;
+    color: var(--s-kit-color-muted);
+    white-space: nowrap;
+}
 
-    display: flex;
-    flex: 1 1 auto;
-    gap: 8px;
-    align-items: center;
-    justify-content: space-between;
+.input {
+    flex: 1 1 2.5rem;
 
     box-sizing: border-box;
-    min-inline-size: 3rem;
+    min-inline-size: 2.5rem;
     block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 2px);
-    padding-block: 0;
-    padding-inline: 4px var(--s-kit-control-padding-x, var(--s-kit-control-padding-x-md));
+    padding: 0 4px;
     border: 0;
 
     font: inherit;
     color: inherit;
-    text-align: start;
+
+    background: transparent;
+
+    /* кольцо рисует оболочка (.shell:has); outline-style: auto даже с прозрачным цветом рисует светлую подложку поверх рамки */
+    outline: var(--s-kit-focus-width) solid transparent;
+}
+
+.input:read-only {
+    cursor: pointer;
+}
+
+.input::placeholder {
+    color: var(--s-kit-color-muted);
+}
+
+.input:disabled {
+    cursor: not-allowed;
+}
+
+.toggle {
+    cursor: pointer;
+
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    inline-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding: 0;
+    border: 0;
+    border-radius: var(--s-kit-radius);
+
+    color: var(--s-kit-color-muted);
 
     background: transparent;
 }
 
-.shell[data-multiselect-overflow="wrap"] .main {
-    flex: none;
-    min-inline-size: 0;
-}
-
-.main:focus-visible {
-    /* кольцо рисует оболочка (.shell:has), собственное кольцо кнопки прозрачно */
-    outline-color: transparent;
-}
-
-.value {
-    overflow: hidden;
-    flex: 1 1 auto;
-
-    min-inline-size: 0;
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.placeholder {
-    color: var(--s-kit-color-muted);
-}
-
-.chevron {
-    flex: none;
-    color: var(--s-kit-color-muted);
-}
-
-.search {
-    flex: none;
-    padding: var(--s-kit-listbox-padding, 4px) var(--s-kit-listbox-padding, 4px) 0;
-}
-
-.search > * {
-    inline-size: 100%;
+.toggle:disabled {
+    cursor: not-allowed;
 }
 
 .content {

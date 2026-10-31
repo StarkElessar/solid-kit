@@ -1,10 +1,9 @@
 import styles from './multiselect.module.css';
 
-import { type JSX, Show } from 'solid-js';
+import type { JSX } from 'solid-js';
 
 import type { ListBoxProps } from '../../internal/list-box/list-box';
 import { ListBoxPanel } from '../../internal/list-box/list-box-panel';
-import { Input } from '../input';
 
 import { useMultiSelectContext } from './multiselect-context';
 
@@ -15,9 +14,6 @@ export interface MultiSelectContentProps<T> {
 	loadingText?: JSX.Element;
 	/** По умолчанию «Нет элементов для отображения». */
 	emptyText?: JSX.Element;
-	searchPlaceholder?: string | undefined;
-	/** Доступное имя поля поиска; по умолчанию «Поиск». */
-	searchLabel?: string | undefined;
 	/** Корневой элемент панели. */
 	ref?: ((element: HTMLDivElement) => void) | undefined;
 	class?: string | undefined;
@@ -35,8 +31,7 @@ export function MultiSelectContent<T>(props: MultiSelectContentProps<T>): JSX.El
 			open={context.open}
 			onDismiss={close}
 			anchor={context.anchor}
-			restoreFocusTo={context.trigger}
-			initialFocus={context.searchable() ? 'first' : 'none'}
+			restoreFocusTo={context.input}
 			size={context.size()}
 			listId={context.listId}
 			controller={context.controller}
@@ -53,35 +48,6 @@ export function MultiSelectContent<T>(props: MultiSelectContentProps<T>): JSX.El
 			panelRef={props.ref}
 			class={props.class ? `${styles['content']} ${props.class}` : styles['content']}
 			style={props.style}
-			header={(
-				<Show when={context.searchable()}>
-					<div class={styles['search']}>
-						<Input
-							role='combobox'
-							autocomplete='off'
-							aria-autocomplete='list'
-							aria-expanded={true}
-							aria-controls={context.listId}
-							aria-activedescendant={context.controller.activeId()}
-							aria-label={props.searchLabel ?? 'Поиск'}
-							placeholder={props.searchPlaceholder}
-							size={context.size()}
-							value={context.query()}
-							onValueChange={context.handleSearch}
-							onKeyDown={(event) => {
-								if (event.key === 'Tab') {
-									event.preventDefault();
-									close();
-									return;
-								}
-								if (context.controller.handleKeyDown(event)) {
-									event.preventDefault();
-								}
-							}}
-						/>
-					</div>
-				</Show>
-			)}
 		/>
 	);
 }

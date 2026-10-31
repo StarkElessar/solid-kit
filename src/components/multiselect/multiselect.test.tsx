@@ -39,16 +39,20 @@ function Basic(props: Extra): JSX.Element {
 	);
 }
 
-function trigger(): HTMLButtonElement {
-	const element = document.querySelector<HTMLButtonElement>('button[role="combobox"]');
-	if (!element) {
-		throw new Error('нет кнопки combobox');
-	}
-	return element;
+function field(): HTMLInputElement {
+	return screen.getByRole<HTMLInputElement>('combobox');
 }
 
-function search(): HTMLInputElement {
-	return screen.getByRole<HTMLInputElement>('combobox', { name: 'Поиск' });
+function counter(): string {
+	return document.querySelector('[data-multiselect-counter]')?.textContent ?? '';
+}
+
+function type(text: string): void {
+	fireEvent.input(field(), { target: { value: text } });
+}
+
+function press(key: string, init: KeyboardEventInit = {}): boolean {
+	return fireEvent.keyDown(field(), { key, ...init });
 }
 
 function optionLabels(): (string | null)[] {
@@ -62,8 +66,8 @@ function chipLabels(): string[] {
 }
 
 function openList(): void {
-	trigger().focus();
-	fireEvent.click(trigger());
+	field().focus();
+	fireEvent.click(field());
 }
 
 function option(name: string): HTMLElement {
@@ -85,14 +89,26 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('MultiSelect: триггер и ARIA', () => {
-	it('закрытый: кнопка role=combobox, плейсхолдер, списка нет', () => {
+describe('MultiSelect: поле и ARIA', () => {
+	it('закрытый: поле role=combobox с плейсхолдером, шеврон вне табуляции, списка нет', () => {
 		render(() => <Basic/>);
-		expect(trigger().getAttribute('aria-haspopup')).toBe('listbox');
-		expect(trigger().getAttribute('aria-expanded')).toBe('false');
-		expect(trigger().hasAttribute('aria-controls')).toBe(false);
-		expect(trigger().textContent).toBe('Сотрудники');
+		expect(field().tagName).toBe('INPUT');
+		expect(field().getAttribute('aria-haspopup')).toBe('listbox');
+		expect(field().getAttribute('aria-autocomplete')).toBe('list');
+		expect(field().getAttribute('aria-expanded')).toBe('false');
+		expect(field().hasAttribute('aria-controls')).toBe(false);
+		expect(field().placeholder).toBe('Сотрудники');
+		expect(field().readOnly).toBe(false);
+		expect(screen.getByRole('button', { name: 'Показать список' }).getAttribute('tabindex')).toBe('-1');
 		expect(screen.queryByRole('listbox')).toBeNull();
+	});
+
+	it('в панели нет поля ввода: фокус остаётся в поле триггера', () => {
+		render(() => <Basic/>);
+		openList();
+		expect(screen.getAllByRole('combobox')).toHaveLength(1);
+		expect(screen.getByRole('listbox').querySelector('input')).toBeNull();
+		expect(document.activeElement).toBe(field());
 	});
 
 	it('открытый: aria-multiselectable, aria-selected у опций, aria-controls на список', () => {
@@ -100,27 +116,33 @@ describe('MultiSelect: триггер и ARIA', () => {
 		openList();
 		const list = screen.getByRole('listbox');
 		expect(list.getAttribute('aria-multiselectable')).toBe('true');
-		expect(trigger().getAttribute('aria-expanded')).toBe('true');
-		expect(trigger().getAttribute('aria-controls')).toBe(list.id);
+		expect(field().getAttribute('aria-expanded')).toBe('true');
+		expect(field().getAttribute('aria-controls')).toBe(list.id);
 		expect(option('Борис').getAttribute('aria-selected')).toBe('true');
 		expect(option('Анна').getAttribute('aria-selected')).toBe('false');
 		expect(option('Вера').getAttribute('aria-disabled')).toBe('true');
 	});
 
-	it('атрибуты Field: метка указывает на кнопку', () => {
+	it('плейсхолдер пропадает, когда есть выбранные', () => {
+		render(() => <Basic defaultValue={[anna]}/>);
+		expect(field().placeholder).toBe('');
+	});
+
+	it('атрибуты Field: метка указывает на поле', () => {
 		render(() => (
 			<Field label='Сотрудники'>
 				{(control) => <Basic {...control}/>}
 			</Field>
 		));
-		expect(screen.getByLabelText('Сотрудники')).toBe(trigger());
+		expect(screen.getByLabelText('Сотрудники')).toBe(field());
 	});
 
-	it('disabled: список не открывается, × отключены', () => {
+	it('disabled: список не открывается, поле, шеврон и × отключены', () => {
 		render(() => <Basic disabled defaultValue={[anna]}/>);
-		expect(trigger().disabled).toBe(true);
+		expect(field().disabled).toBe(true);
 		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Убрать: Анна' }).disabled).toBe(true);
-		fireEvent.click(trigger());
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Показать список' }).disabled).toBe(true);
+		fireEvent.click(field());
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 });
@@ -157,7 +179,7 @@ describe('MultiSelect: значение', () => {
 		const onOpenChange = vi.fn();
 		render(() => <Basic open onOpenChange={onOpenChange}/>);
 		expect(screen.getByRole('listbox')).toBeTruthy();
-		fireEvent.click(trigger());
+		fireEvent.click(screen.getByRole('button', { name: 'Показать список' }));
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(screen.getByRole('listbox')).toBeTruthy();
 	});
@@ -171,40 +193,50 @@ describe('MultiSelect: значение', () => {
 	});
 });
 
-describe('MultiSelect: поиск в панели', () => {
-	it('searchable по умолчанию: поле поиска в панели получает фокус, кнопка остаётся с aria-expanded', () => {
+describe('MultiSelect: ввод в поле триггера', () => {
+	it('клик по полю открывает закрытый список, повторный клик его не закрывает', () => {
 		render(() => <Basic/>);
-		openList();
-		expect(document.activeElement).toBe(search());
-		expect(search().getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id);
+		fireEvent.click(field());
+		expect(field().getAttribute('aria-expanded')).toBe('true');
+		fireEvent.click(field());
+		expect(field().getAttribute('aria-expanded')).toBe('true');
 	});
 
-	it('печать фильтрует, запрос уходит в onQueryChange и очищается при закрытии', () => {
+	it('шеврон открывает и закрывает список, фокус остаётся в поле', () => {
+		render(() => <Basic/>);
+		field().focus();
+		const toggle = screen.getByRole('button', { name: 'Показать список' });
+		fireEvent.click(toggle);
+		expect(screen.getByRole('listbox')).toBeTruthy();
+		expect(document.activeElement).toBe(field());
+		fireEvent.click(toggle);
+		expect(screen.queryByRole('listbox')).toBeNull();
+	});
+
+	it('печать открывает список и фильтрует, запрос уходит в onQueryChange и очищается при закрытии', () => {
 		const onQueryChange = vi.fn();
 		render(() => <Basic onQueryChange={onQueryChange}/>);
-		openList();
-		fireEvent.input(search(), { target: { value: 'ор' } });
+		type('ор');
+		expect(screen.getByRole('listbox')).toBeTruthy();
 		expect(optionLabels()).toEqual(['Борис']);
 		expect(onQueryChange).toHaveBeenLastCalledWith('ор');
-		fireEvent.click(trigger());
+		fireEvent.click(screen.getByRole('button', { name: 'Показать список' }));
 		expect(onQueryChange).toHaveBeenLastCalledWith('');
+		expect(field().value).toBe('');
 		openList();
-		expect(search().value).toBe('');
 		expect(optionLabels()).toHaveLength(4);
 	});
 
 	it('filter={false}: список не фильтруется на клиенте', () => {
 		render(() => <Basic filter={false}/>);
-		openList();
-		fireEvent.input(search(), { target: { value: 'ор' } });
+		type('ор');
 		expect(optionLabels()).toHaveLength(4);
 	});
 
 	it('выбранное вне результата поиска остаётся в значении и в чипах', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic defaultValue={[anna]} onValueChange={onValueChange}/>);
-		openList();
-		fireEvent.input(search(), { target: { value: 'Бор' } });
+		type('Бор');
 		fireEvent.click(option('Борис'));
 		expect(onValueChange).toHaveBeenLastCalledWith([anna, boris]);
 		expect(chipLabels()).toEqual(['Анна', 'Борис']);
@@ -214,60 +246,67 @@ describe('MultiSelect: поиск в панели', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic onValueChange={onValueChange}/>);
 		openList();
-		fireEvent.keyDown(search(), { key: 'ArrowDown' });
+		press('ArrowDown');
 		const active = document.querySelector('[data-active]');
-		expect(active?.id).toBe(search().getAttribute('aria-activedescendant'));
+		expect(active?.id).toBe(field().getAttribute('aria-activedescendant'));
 		const label = active?.textContent;
-		expect(fireEvent.keyDown(search(), { key: 'Enter' })).toBe(false);
+		expect(press('Enter')).toBe(false);
 		expect(onValueChange).toHaveBeenCalledTimes(1);
 		expect(chipLabels()).toEqual([label]);
 		expect(screen.getByRole('listbox')).toBeTruthy();
 	});
 
-	it('Space в поле поиска не переключает опцию', () => {
+	it('Space и Home в поле не обрабатываются списком', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic onValueChange={onValueChange}/>);
 		openList();
-		fireEvent.keyDown(search(), { key: 'ArrowDown' });
-		expect(fireEvent.keyDown(search(), { key: ' ' })).toBe(true);
+		press('ArrowDown');
+		expect(press(' ')).toBe(true);
+		expect(press('Home')).toBe(true);
 		expect(onValueChange).not.toHaveBeenCalled();
 	});
 
-	it('Tab в поле поиска закрывает список и возвращает фокус на кнопку', () => {
+	it('Tab закрывает список, фокус остаётся для естественного перехода', () => {
 		render(() => <Basic/>);
 		openList();
-		expect(fireEvent.keyDown(search(), { key: 'Tab' })).toBe(false);
+		expect(press('Tab')).toBe(true);
 		expect(screen.queryByRole('listbox')).toBeNull();
-		expect(document.activeElement).toBe(trigger());
 	});
 
-	it('без searchable поля поиска нет, фокус остаётся на кнопке, работает typeahead и Enter', () => {
+	it('Enter в закрытом поле не перехватывается (форма отправится)', () => {
+		render(() => <Basic/>);
+		expect(press('Enter')).toBe(true);
+		expect(screen.queryByRole('listbox')).toBeNull();
+	});
+
+	it('searchable={false}: поле только для чтения, typeahead и Enter, клик переключает список', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic searchable={false} onValueChange={onValueChange}/>);
+		expect(field().readOnly).toBe(true);
+		expect(field().hasAttribute('aria-autocomplete')).toBe(false);
 		openList();
-		expect(screen.queryByRole('combobox', { name: 'Поиск' })).toBeNull();
-		expect(document.activeElement).toBe(trigger());
-		fireEvent.keyDown(trigger(), { key: 'Г' });
+		press('Г');
 		expect(document.querySelector('[data-active]')?.textContent).toBe('Глеб');
-		expect(trigger().getAttribute('aria-activedescendant')).toBe(document.querySelector('[data-active]')?.id);
-		fireEvent.keyDown(trigger(), { key: 'Enter' });
+		expect(field().getAttribute('aria-activedescendant')).toBe(document.querySelector('[data-active]')?.id);
+		press('Enter');
 		expect(onValueChange).toHaveBeenCalledWith([gleb]);
 		expect(screen.getByRole('listbox')).toBeTruthy();
+		fireEvent.click(field());
+		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 });
 
-describe('MultiSelect: клавиши закрытой кнопки', () => {
-	it.each(['ArrowDown', 'ArrowUp', 'Enter', ' '])('%s открывает список', (key) => {
+describe('MultiSelect: клавиши закрытого поля', () => {
+	it.each(['ArrowDown', 'ArrowUp'])('%s открывает список', (key) => {
 		render(() => <Basic/>);
-		expect(fireEvent.keyDown(trigger(), { key })).toBe(false);
-		expect(trigger().getAttribute('aria-expanded')).toBe('true');
+		expect(press(key)).toBe(false);
+		expect(field().getAttribute('aria-expanded')).toBe('true');
 	});
 
-	it('Tab закрывает открытый список без поиска', () => {
+	it.each(['Enter', ' '])('searchable={false}: %s открывает список', (key) => {
 		render(() => <Basic searchable={false}/>);
-		openList();
-		fireEvent.keyDown(trigger(), { key: 'Tab' });
-		expect(screen.queryByRole('listbox')).toBeNull();
+		expect(press(key)).toBe(false);
+		expect(field().getAttribute('aria-expanded')).toBe('true');
 	});
 });
 
@@ -308,7 +347,7 @@ describe('MultiSelect: строка «Все»', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic {...all} defaultValue={[anna]} onValueChange={onValueChange}/>);
 		openList();
-		fireEvent.input(search(), { target: { value: 'е' } });
+		type('е');
 		expect(optionLabels()).toEqual(['Все сотрудники', 'Вера', 'Глеб']);
 		fireEvent.click(option('Все сотрудники'));
 		expect(onValueChange).toHaveBeenLastCalledWith([anna, gleb]);
@@ -322,7 +361,7 @@ describe('MultiSelect: строка «Все»', () => {
 		render(() => <Basic {...all} onValueChange={onValueChange}/>);
 		openList();
 		expect(document.querySelector('[data-active]')?.textContent).toBe('Все сотрудники');
-		fireEvent.keyDown(search(), { key: 'Enter' });
+		press('Enter');
 		expect(onValueChange).toHaveBeenLastCalledWith(-1);
 	});
 
@@ -336,12 +375,12 @@ describe('MultiSelect: строка «Все»', () => {
 
 	it('summary при «Все» показывает «M из M»', () => {
 		render(() => <Basic {...all} defaultValue={-1} chipsOverflow='summary'/>);
-		expect(trigger().textContent).toBe('4 из 4');
+		expect(counter()).toBe('4 из 4');
 	});
 });
 
 describe('MultiSelect: чипы и счётчик', () => {
-	it('× убирает чип и возвращает фокус на кнопку; кнопка в порядке табуляции, имя с подписью', () => {
+	it('× убирает чип и возвращает фокус в поле; кнопка в порядке табуляции, имя с подписью', () => {
 		const onValueChange = vi.fn();
 		render(() => <Basic defaultValue={[anna, boris]} onValueChange={onValueChange}/>);
 		const remove = screen.getByRole<HTMLButtonElement>('button', { name: 'Убрать: Анна' });
@@ -349,7 +388,7 @@ describe('MultiSelect: чипы и счётчик', () => {
 		fireEvent.click(remove);
 		expect(onValueChange).toHaveBeenCalledWith([boris]);
 		expect(chipLabels()).toEqual(['Борис']);
-		expect(document.activeElement).toBe(trigger());
+		expect(document.activeElement).toBe(field());
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 
@@ -367,33 +406,34 @@ describe('MultiSelect: чипы и счётчик', () => {
 		const many = Array.from({ length: 30 }, (_, index) => ({ id: index, name: `Сотрудник ${index}`, team: 'Все' }));
 		render(() => <Basic items={many} defaultValue={many}/>);
 		expect(document.querySelectorAll('[data-multiselect-chip]')).toHaveLength(24);
-		expect(trigger().textContent).toBe('+6');
+		expect(counter()).toBe('+6');
 	});
 
-	it('summary: чипов нет, в кнопке «N из M»', () => {
+	it('summary: чипов нет, рядом с полем «N из M»', () => {
 		render(() => <Basic defaultValue={[anna, boris]} chipsOverflow='summary'/>);
 		expect(document.querySelectorAll('[data-multiselect-chip]')).toHaveLength(0);
-		expect(trigger().textContent).toBe('2 из 4');
+		expect(counter()).toBe('2 из 4');
 	});
 
 	it('«из M» берёт total; при N больше M «N выбрано»; при нуле плейсхолдер', () => {
 		const { unmount } = render(() => <Basic defaultValue={[anna, boris]} chipsOverflow='summary' total={10}/>);
-		expect(trigger().textContent).toBe('2 из 10');
+		expect(counter()).toBe('2 из 10');
 		unmount();
 		const { unmount: second } = render(() => <Basic defaultValue={[anna, boris, vera]} chipsOverflow='summary' total={2}/>);
-		expect(trigger().textContent).toBe('3 выбрано');
+		expect(counter()).toBe('3 выбрано');
 		second();
 		render(() => <Basic chipsOverflow='summary'/>);
-		expect(trigger().textContent).toBe('Сотрудники');
+		expect(counter()).toBe('');
+		expect(field().placeholder).toBe('Сотрудники');
 	});
 
 	it('wrap: все чипы на месте, счётчика нет', () => {
 		render(() => <Basic defaultValue={[anna, boris, gleb]} chipsOverflow='wrap'/>);
 		expect(chipLabels()).toEqual(['Анна', 'Борис', 'Глеб']);
-		expect(trigger().textContent).toBe('');
+		expect(counter()).toBe('');
 	});
 
-	it('клик по пустому месту оболочки открывает список', () => {
+	it('клик по пустому месту оболочки открывает список и переводит фокус в поле', () => {
 		render(() => <Basic defaultValue={[anna]}/>);
 		const shell = document.querySelector<HTMLElement>('[data-multiselect-overflow]');
 		if (!shell) {
@@ -401,6 +441,7 @@ describe('MultiSelect: чипы и счётчик', () => {
 		}
 		fireEvent.click(shell);
 		expect(screen.getByRole('listbox')).toBeTruthy();
+		expect(document.activeElement).toBe(field());
 	});
 });
 
@@ -422,7 +463,7 @@ describe('MultiSelect: collapse по измеренной ширине', () => {
 	beforeEach(() => {
 		vi.stubGlobal('ResizeObserver', StubResizeObserver);
 		vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
-			return this.hasAttribute('data-multiselect-overflow') ? 300 : 0;
+			return this.hasAttribute('data-multiselect-overflow') ? 340 : 0;
 		});
 		vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
 			const width = this.hasAttribute('data-multiselect-chip') ? 100 : 0;
@@ -438,12 +479,12 @@ describe('MultiSelect: collapse по измеренной ширине', () => {
 		render(() => <Basic defaultValue={[anna, boris, vera, gleb]}/>);
 		expect(chipLabels()).toEqual(['Анна', 'Борис']);
 		expect(document.querySelectorAll('[data-multiselect-chip]')).toHaveLength(4);
-		expect(trigger().textContent).toBe('+2');
+		expect(counter()).toBe('+2');
 	});
 
 	it('все помещаются: счётчика нет', () => {
 		render(() => <Basic defaultValue={[anna, boris]}/>);
 		expect(chipLabels()).toEqual(['Анна', 'Борис']);
-		expect(trigger().textContent).toBe('');
+		expect(counter()).toBe('');
 	});
 });
