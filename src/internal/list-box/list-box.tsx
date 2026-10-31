@@ -5,9 +5,10 @@ import { type Accessor, createMemo, createSignal, For, type JSX, Match, onCleanu
 import type { RenderWindow } from '../../utils/render-window';
 
 import type { ListBoxController } from './create-list-box-controller';
+import { ListBoxAllOption } from './list-box-all-option';
 import { ListBoxGroupHeader } from './list-box-group-header';
 import { ListBoxOption, type OptionState } from './list-box-option';
-import type { ListGroupRow, ListOptionRow, ListRow } from './list-row';
+import type { ListAllRow, ListGroupRow, ListOptionRow, ListRow } from './list-row';
 
 export interface ListBoxProps<T> {
 	listId: string;
@@ -22,10 +23,16 @@ export interface ListBoxProps<T> {
 	emptyText?: JSX.Element;
 	renderOption?: ((item: T, state: OptionState) => JSX.Element) | undefined;
 	renderGroupHeader?: ((label: string) => JSX.Element) | undefined;
+	/** Подпись строки «Все» (строка есть в `rows`, если её добавил владелец списка). */
+	allLabel?: JSX.Element;
 }
 
 function asOption<T>(row: ListRow<T> | undefined): ListOptionRow<T> | undefined {
 	return row?.kind === 'option' ? row : undefined;
+}
+
+function asAll<T>(row: ListRow<T> | undefined): ListAllRow | undefined {
+	return row?.kind === 'all' ? row : undefined;
 }
 
 function asGroup<T>(row: ListRow<T> | undefined): ListGroupRow | undefined {
@@ -125,6 +132,18 @@ export function ListBox<T>(props: ListBoxProps<T>): JSX.Element {
 												controller={props.controller}
 												measure={props.window.measure}
 												renderOption={props.renderOption}
+											/>
+										)}
+									</Match>
+									<Match when={asAll(row())}>
+										{(all) => (
+											<ListBoxAllOption
+												listId={props.listId}
+												row={all()}
+												index={item.index}
+												controller={props.controller}
+												measure={props.window.measure}
+												label={props.allLabel ?? 'Все'}
 											/>
 										)}
 									</Match>

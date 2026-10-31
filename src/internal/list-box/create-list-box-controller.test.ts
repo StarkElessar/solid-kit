@@ -37,7 +37,7 @@ interface Setup {
 
 function setup(
 	rows: readonly ListRow<string>[],
-	extra: Partial<Pick<ListBoxControllerOptions<string>, 'keys' | 'pageSize'>> = {}
+	extra: Partial<Pick<ListBoxControllerOptions<string>, 'keys' | 'pageSize' | 'onActivateAll'>> = {}
 ): Setup {
 	return createRoot((dispose) => {
 		const [rowsSignal, setRows] = createSignal(rows);
@@ -319,6 +319,41 @@ describe('createListBoxController: resetActive, clearActive, данные', () =
 		setSelected(['C']);
 		expect(controller.isSelected('C')).toBe(true);
 		expect(controller.isSelected('A')).toBe(false);
+		dispose();
+	});
+});
+
+describe('createListBoxController: строка «Все»', () => {
+	const withAll = buildRows(['=Все', 'A', '!B', 'C']);
+
+	it('Enter и Space на строке «Все» вызывают onActivateAll, а не onActivate', () => {
+		const onActivateAll = vi.fn();
+		const { controller, activated, dispose } = setup(withAll, { onActivateAll });
+		controller.handleKeyDown(press('Home'));
+		expect(controller.activeKey()).toBe('Все');
+		expect(controller.handleKeyDown(press('Enter'))).toBe(true);
+		expect(controller.handleKeyDown(press(' '))).toBe(true);
+		expect(onActivateAll).toHaveBeenCalledTimes(2);
+		expect(activated).toEqual([]);
+		dispose();
+	});
+
+	it('activate по ключу «Все» вызывает onActivateAll', () => {
+		const onActivateAll = vi.fn();
+		const { controller, dispose } = setup(withAll, { onActivateAll });
+		controller.activate('Все');
+		expect(onActivateAll).toHaveBeenCalledTimes(1);
+		dispose();
+	});
+
+	it('стрелки проходят через «Все» и пропускают отключённую опцию', () => {
+		const { controller, dispose } = setup(withAll);
+		controller.handleKeyDown(press('ArrowDown'));
+		expect(controller.activeKey()).toBe('Все');
+		controller.handleKeyDown(press('ArrowDown'));
+		expect(controller.activeKey()).toBe('A');
+		controller.handleKeyDown(press('ArrowDown'));
+		expect(controller.activeKey()).toBe('C');
 		dispose();
 	});
 });

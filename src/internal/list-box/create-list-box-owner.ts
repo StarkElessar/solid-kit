@@ -27,6 +27,9 @@ export interface ListBoxOwnerOptions<T> {
 	anchor: Accessor<HTMLElement | undefined>;
 	selectedKeys: Accessor<ReadonlySet<ListKey>>;
 	onActivate: (item: T) => void;
+	/** Ключ строки «Все» (MultiSelect): если задан и есть опции, она идёт первой. */
+	allKey?: ListKey | undefined;
+	onActivateAll?: (() => void) | undefined;
 	/** Читается один раз; по умолчанию `true`. */
 	virtualized: boolean | undefined;
 	/** Читается один раз; по умолчанию 6. */
@@ -64,7 +67,8 @@ export function createListBoxOwner<T>(options: ListBoxOwnerOptions<T>): ListBoxO
 		getKey: options.getKey,
 		getLabel: options.getLabel,
 		groupBy: options.groupBy,
-		isItemDisabled: options.isItemDisabled
+		isItemDisabled: options.isItemDisabled,
+		allKey: options.allKey
 	}));
 	const hasGroups = createMemo(() => rows().some((row) => row.kind === 'group'));
 
@@ -99,6 +103,7 @@ export function createListBoxOwner<T>(options: ListBoxOwnerOptions<T>): ListBoxO
 		rows,
 		selectedKeys: options.selectedKeys,
 		onActivate: options.onActivate,
+		onActivateAll: options.onActivateAll,
 		window,
 		keys: options.keys,
 		pageSize: () => {

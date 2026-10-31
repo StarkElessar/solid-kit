@@ -16,7 +16,7 @@ interface Handle {
 	activated: string[];
 }
 
-type PassedProps = 'multiple' | 'loading' | 'emptyText' | 'loadingText' | 'renderOption' | 'renderGroupHeader';
+type PassedProps = 'multiple' | 'allLabel' | 'loading' | 'emptyText' | 'loadingText' | 'renderOption' | 'renderGroupHeader';
 
 interface HarnessProps extends Partial<Pick<ListBoxProps<string>, PassedProps>> {
 	items: readonly string[];
@@ -24,6 +24,7 @@ interface HarnessProps extends Partial<Pick<ListBoxProps<string>, PassedProps>> 
 	disabled?: readonly string[];
 	selected?: readonly string[];
 	virtualized?: boolean;
+	allKey?: string;
 	onReady?: (handle: Handle) => void;
 }
 
@@ -32,7 +33,8 @@ function Harness(props: HarnessProps): JSX.Element {
 		getKey: (item) => item,
 		getLabel: (item) => item,
 		groupBy: props.groupBy,
-		isItemDisabled: (item) => props.disabled?.includes(item) ?? false
+		isItemDisabled: (item) => props.disabled?.includes(item) ?? false,
+		allKey: props.allKey
 	}));
 	const [scroller, setScroller] = createSignal<HTMLElement>();
 	const windowOptions = { count: () => rows().length, scroller, estimateSize: () => 20, overscan: 2, initialHeight: () => 100 };
@@ -44,6 +46,7 @@ function Harness(props: HarnessProps): JSX.Element {
 		rows,
 		selectedKeys: () => new Set(props.selected ?? []),
 		onActivate: (item) => activated.push(item),
+		onActivateAll: () => activated.push('*all*'),
 		window
 	});
 	untrack(() => props.onReady)?.({ controller, scroller, activated });
@@ -55,6 +58,7 @@ function Harness(props: HarnessProps): JSX.Element {
 			window={window}
 			scrollerRef={setScroller}
 			multiple={props.multiple}
+			allLabel={props.allLabel}
 			loading={props.loading}
 			emptyText={props.emptyText}
 			loadingText={props.loadingText}
@@ -308,5 +312,40 @@ describe('ListBox: содержимое', () => {
 		expect(ref).toHaveBeenLastCalledWith(expect.any(HTMLElement));
 		unmount();
 		expect(ref).toHaveBeenLastCalledWith(undefined);
+	});
+});
+
+describe('ListBox: строка «Все»', () => {
+	it('первой идёт строка «Все» с подписью, она опция, но не входит в aria-setsize и aria-posinset', () => {
+		render(() => <Harness items={numbered(3)} allKey='all' allLabel='Все сотрудники' multiple virtualized={false}/>);
+		const options = screen.getAllByRole('option');
+		expect(options.map((option) => option.textContent)).toEqual(['Все сотрудники', 'item-0', 'item-1', 'item-2']);
+		expect(options[0]?.hasAttribute('aria-setsize')).toBe(false);
+		expect(options[1]?.getAttribute('aria-setsize')).toBe('3');
+		expect(options[1]?.getAttribute('aria-posinset')).toBe('1');
+	});
+
+	it('без подписи показывается «Все»; aria-selected идёт по selectedKeys; клик активирует «Все»', () => {
+		let handle: Handle | undefined;
+		render(() => (
+			<Harness
+				items={numbered(2)}
+				allKey='all'
+				selected={['all']}
+				virtualized={false}
+				onReady={(value) => {
+					handle = value;
+				}}
+			/>
+		));
+		const all = screen.getByRole('option', { name: 'Все' });
+		expect(all.getAttribute('aria-selected')).toBe('true');
+		fireEvent.click(all);
+		expect(handle?.activated).toEqual(['*all*']);
+	});
+
+	it('без allKey строки «Все» нет', () => {
+		render(() => <Harness items={numbered(2)} virtualized={false}/>);
+		expect(screen.getAllByRole('option')).toHaveLength(2);
 	});
 });

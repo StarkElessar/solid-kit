@@ -19,6 +19,8 @@ export interface ListBoxControllerOptions<T> {
 	selectedKeys: Accessor<ReadonlySet<ListKey>>;
 	/** Клик или Enter/Space на активной опции (не для «Все» и не для отключённой). */
 	onActivate: (item: T) => void;
+	/** Клик или Enter/Space на строке «Все». */
+	onActivateAll?: (() => void) | undefined;
 	window: RenderWindow;
 	/** Число полностью помещающихся строк окна: шаг PageUp/PageDown; по умолчанию 10. */
 	pageSize?: Accessor<number> | undefined;
@@ -36,7 +38,7 @@ export interface ListBoxController {
 	/** `id` активной опции для `aria-activedescendant` владельца. */
 	activeId: Accessor<string | undefined>;
 	setActiveKey: (key: ListKey | undefined, source: ActiveSource) => void;
-	/** Активирует опцию по ключу (клик): отключённые и «Все» игнорируются. */
+	/** Активирует опцию или строку «Все» по ключу (клик): отключённые игнорируются. */
 	activate: (key: ListKey) => void;
 	/** При открытии: подсветка на выбранной (иначе первой доступной) и прокрутка к ней, сразу и в следующем кадре. */
 	resetActive: (source?: ActiveSource, options?: ResetActiveOptions) => void;
@@ -124,6 +126,9 @@ export function createListBoxController<T>(options: ListBoxControllerOptions<T>)
 		const row = options.rows()[index];
 		if (row?.kind === 'option' && !row.disabled) {
 			options.onActivate(row.item);
+		}
+		else if (row?.kind === 'all') {
+			options.onActivateAll?.();
 		}
 	};
 
