@@ -40,6 +40,7 @@ export interface SelectRootProps<T> {
 
 const FALLBACK_ESTIMATE = 32;
 const FALLBACK_MAX_HEIGHT = 320;
+const FALLBACK_PADDING = 4;
 const NO_KEYS: ReadonlySet<ListKey> = new Set();
 
 export function SelectRoot<T>(props: SelectRootProps<T>): JSX.Element {
@@ -82,6 +83,11 @@ export function SelectRoot<T>(props: SelectRootProps<T>): JSX.Element {
 		return open() && trigger ? readTokenPx(trigger, ['--s-kit-listbox-max-height'], FALLBACK_MAX_HEIGHT) : FALLBACK_MAX_HEIGHT;
 	});
 
+	const listPadding = createMemo(() => {
+		const trigger = anchor();
+		return open() && trigger ? readTokenPx(trigger, ['--s-kit-listbox-padding'], FALLBACK_PADDING) : FALLBACK_PADDING;
+	});
+
 	const windowOptions: RenderWindowOptions = {
 		// закрытый список не держит измерений: оценка читается при открытии, до них
 		count: () => (open() ? rows().length : 0),
@@ -89,6 +95,7 @@ export function SelectRoot<T>(props: SelectRootProps<T>): JSX.Element {
 		estimateSize: () => estimate(),
 		overscan: untrack(() => props.overscan) ?? 6,
 		scrollPaddingStart: () => (hasGroups() ? estimate() : 0),
+		scrollPaddingEnd: () => listPadding(),
 		initialHeight: () => Math.min(maxHeight(), rows().length * estimate())
 	};
 	const window = untrack(() => props.virtualized) === false ? createFullWindow(windowOptions) : createVirtualWindow(windowOptions);

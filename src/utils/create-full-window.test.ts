@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { createFullWindow } from './create-full-window';
 
-function setup(count: number, scrollPaddingStart?: number) {
+function setup(count: number, scrollPaddingStart?: number, scrollPaddingEnd?: number) {
 	return createRoot((dispose) => {
 		const scroller = document.createElement('div');
 		for (let index = 0; index < 5; index++) {
@@ -17,7 +17,8 @@ function setup(count: number, scrollPaddingStart?: number) {
 			scroller: () => scroller,
 			estimateSize: () => 30,
 			overscan: 6,
-			...(scrollPaddingStart === undefined ? {} : { scrollPaddingStart: () => scrollPaddingStart })
+			...(scrollPaddingStart === undefined ? {} : { scrollPaddingStart: () => scrollPaddingStart }),
+			...(scrollPaddingEnd === undefined ? {} : { scrollPaddingEnd: () => scrollPaddingEnd })
 		});
 		return { window, scroller, setCount: set, dispose };
 	});
@@ -88,6 +89,13 @@ describe('createFullWindow', () => {
 		const { window, scroller, dispose } = setup(5, 28);
 		window.scrollToIndex(2);
 		expect(scroller.style.scrollPaddingTop).toBe('28px');
+		dispose();
+	});
+
+	it('scrollPaddingEnd записывается в scroll-padding-bottom скроллера перед прокруткой', () => {
+		const { window, scroller, dispose } = setup(5, 0, 4);
+		window.scrollToIndex(2);
+		expect(scroller.style.scrollPaddingBottom).toBe('4px');
 		dispose();
 	});
 

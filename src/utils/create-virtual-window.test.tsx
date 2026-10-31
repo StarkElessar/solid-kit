@@ -62,7 +62,7 @@ describe('createVirtualWindow', () => {
 	});
 
 	// onMount виртуализатора выполняется после выхода из createRoot: прокрутку вызываем уже после него
-	function mountWindow(scrollPaddingStart?: number) {
+	function mountWindow(scrollPaddingStart?: number, scrollPaddingEnd?: number) {
 		return createRoot((dispose) => {
 			const scroller = makeScroller(100);
 			const window = createVirtualWindow({
@@ -70,7 +70,8 @@ describe('createVirtualWindow', () => {
 				scroller: () => scroller,
 				estimateSize: () => 20,
 				overscan: 0,
-				...(scrollPaddingStart === undefined ? {} : { scrollPaddingStart: () => scrollPaddingStart })
+				...(scrollPaddingStart === undefined ? {} : { scrollPaddingStart: () => scrollPaddingStart }),
+				...(scrollPaddingEnd === undefined ? {} : { scrollPaddingEnd: () => scrollPaddingEnd })
 			});
 			return { window, scroller, dispose };
 		});
@@ -87,6 +88,13 @@ describe('createVirtualWindow', () => {
 		const { window, scroller, dispose } = mountWindow(28);
 		window.scrollToIndex(50, { align: 'start' });
 		expect(scroller.scrollTop).toBe(972);
+		dispose();
+	});
+
+	it('scrollPaddingEnd оставляет место под нижний padding скроллера при выравнивании end', () => {
+		const { window, scroller, dispose } = mountWindow(undefined, 4);
+		window.scrollToIndex(50, { align: 'end' });
+		expect(scroller.scrollTop).toBe(924);
 		dispose();
 	});
 });

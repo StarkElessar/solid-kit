@@ -3,8 +3,8 @@ import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { RenderWindow, RenderWindowOptions } from './render-window';
 
 /**
- * Окно рендера на TanStack Virtual. Опции передаются геттерами, поэтому смена `count`, скроллера, `scrollPaddingStart`
- * и `initialHeight` подхватывается реактивно. Пункты рендерятся в обычном потоке между двумя spacer-элементами
+ * Окно рендера на TanStack Virtual. Опции передаются геттерами, поэтому смена `count`, скроллера, `scrollPaddingStart`,
+ * `scrollPaddingEnd` и `initialHeight` подхватывается реактивно. Пункты рендерятся в обычном потоке между двумя spacer-элементами
  * (раздел 6 зонтичного); строкам нужен `data-index` и `ref={window.measure}` для точных высот.
  */
 export function createVirtualWindow(options: RenderWindowOptions): RenderWindow {
@@ -19,6 +19,9 @@ export function createVirtualWindow(options: RenderWindowOptions): RenderWindow 
 		},
 		get scrollPaddingStart() {
 			return options.scrollPaddingStart?.() ?? 0;
+		},
+		get scrollPaddingEnd() {
+			return options.scrollPaddingEnd?.() ?? 0;
 		},
 		get initialRect() {
 			return { width: 0, height: options.initialHeight?.() ?? 0 };

@@ -11,7 +11,8 @@ const BLOCK: Record<ScrollAlign, ScrollLogicalPosition> = {
 
 /**
  * Окно рендера без виртуализации (`virtualized={false}`): `items()` это все строки, измерять нечего. Прокрутка идёт через
- * `scrollIntoView` строки с `data-index`; высота липкого заголовка попадает в `scroll-padding-top` скроллера.
+ * `scrollIntoView` строки с `data-index`; высота липкого заголовка попадает в `scroll-padding-top`, нижний отступ в
+ * `scroll-padding-bottom` скроллера.
  */
 export function createFullWindow(options: RenderWindowOptions): RenderWindow {
 	const items = createMemo<readonly RenderWindowItem[]>(() => {
@@ -41,6 +42,7 @@ export function createFullWindow(options: RenderWindowOptions): RenderWindow {
 				return;
 			}
 			scroller.style.scrollPaddingTop = `${options.scrollPaddingStart?.() ?? 0}px`;
+			scroller.style.scrollPaddingBottom = `${options.scrollPaddingEnd?.() ?? 0}px`;
 			row.scrollIntoView({ block: BLOCK[scrollOptions?.align ?? 'auto'] });
 		}
 	};

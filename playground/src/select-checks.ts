@@ -16,6 +16,8 @@ function keyDown(trigger: HTMLElement, key: string): void {
 }
 
 async function open(trigger: HTMLElement): Promise<number> {
+	// настоящий клик фокусирует кнопку, программный `click()` нет
+	trigger.focus();
 	const started = performance.now();
 	trigger.click();
 	// ждём, пока список появится и отрисуется хотя бы одна опция
