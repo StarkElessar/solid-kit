@@ -255,6 +255,14 @@ describe('createListBoxController: resetActive, clearActive, данные', () =
 		dispose();
 	});
 
+	it('ignoreSelected подсвечивает первую доступную, даже если есть выбранная', () => {
+		const { controller, setSelected, dispose } = setup(big);
+		setSelected(['item-500']);
+		controller.resetActive('keyboard', { ignoreSelected: true });
+		expect(controller.activeKey()).toBe('item-0');
+		dispose();
+	});
+
 	it('без выбранного подсвечивается первая доступная, источник передаётся', () => {
 		const { controller, dispose } = setup(small);
 		controller.resetActive('pointer');

@@ -2,8 +2,8 @@ import styles from './select.module.css';
 
 import type { JSX } from 'solid-js';
 
-import { FloatingPanel } from '../../internal/floating-panel/floating-panel';
-import { ListBox, type ListBoxProps } from '../../internal/list-box/list-box';
+import type { ListBoxProps } from '../../internal/list-box/list-box';
+import { ListBoxPanel } from '../../internal/list-box/list-box-panel';
 
 import { useSelectContext } from './select-context';
 
@@ -27,32 +27,24 @@ export function SelectContent<T>(props: SelectContentProps<T>): JSX.Element {
 	};
 
 	return (
-		<FloatingPanel
+		<ListBoxPanel
 			open={context.open}
 			onDismiss={close}
 			anchor={context.anchor}
-			placement='bottom-start'
-			gap={4}
-			matchAnchorWidth
-			// фокус остаётся на кнопке: подсветка опций идёт через aria-activedescendant
-			initialFocus='none'
 			size={context.size()}
+			listId={context.listId}
+			controller={context.controller}
+			rows={context.rows}
+			window={context.window}
+			setScroller={context.setScroller}
+			loading={context.loading()}
+			loadingText={props.loadingText}
+			emptyText={props.emptyText}
+			renderOption={props.renderOption as ListBoxProps<unknown>['renderOption']}
+			renderGroupHeader={props.renderGroupHeader}
 			panelRef={props.ref}
 			class={props.class ? `${styles['content']} ${props.class}` : styles['content']}
 			style={props.style}
-		>
-			<ListBox
-				listId={context.listId}
-				controller={context.controller}
-				rows={context.rows}
-				window={context.window}
-				scrollerRef={context.setScroller}
-				loading={context.loading()}
-				loadingText={props.loadingText}
-				emptyText={props.emptyText}
-				renderOption={props.renderOption as ListBoxProps<unknown>['renderOption']}
-				renderGroupHeader={props.renderGroupHeader}
-			/>
-		</FloatingPanel>
+		/>
 	);
 }

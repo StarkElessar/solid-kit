@@ -51,27 +51,13 @@
 }
 
 .content {
-    composes: panel material from "../../internal/floating-panel/panel-base.module.css";
-
-    display: flex;
-    flex-direction: column;
-
-    min-inline-size: var(--s-kit-listbox-min-width, 160px);
-    border-radius: calc(var(--s-kit-radius) * 1.5);
-
-    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
-    background: var(--s-kit-select-bg, var(--s-kit-color-surface));
+    --s-kit-listbox-bg: var(--s-kit-select-bg, var(--s-kit-color-surface));
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     @media not (prefers-reduced-transparency: reduce) {
         .content {
-            background: var(--s-kit-select-bg, var(--s-kit-color-panel));
+            --s-kit-listbox-bg: var(--s-kit-select-bg, var(--s-kit-color-panel));
         }
     }
-}
-
-/* прокручивается список внутри панели, а не сама панель */
-.content {
-    overflow: hidden;
 }

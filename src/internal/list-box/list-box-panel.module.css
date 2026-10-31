@@ -1,0 +1,27 @@
+/*
+ * Панель выпадающего списка (Select, Combobox, MultiSelect). Фон читается из --s-kit-listbox-bg: компоненты отображают на него
+ * свои публичные токены (--s-kit-select-bg и подобные). Минимальная ширина --s-kit-listbox-min-width.
+ */
+
+.panel {
+    composes: panel material from "./../floating-panel/panel-base.module.css";
+
+    /* прокручивается список внутри панели, а не сама панель */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    min-inline-size: var(--s-kit-listbox-min-width, 160px);
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+
+    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
+    background: var(--s-kit-listbox-bg, var(--s-kit-color-surface));
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        .panel {
+            background: var(--s-kit-listbox-bg, var(--s-kit-color-panel));
+        }
+    }
+}

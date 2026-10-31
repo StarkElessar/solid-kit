@@ -25,6 +25,11 @@ export interface ListBoxControllerOptions<T> {
 	keys?: { typeahead?: boolean | undefined; space?: boolean | undefined; homeEnd?: boolean | undefined } | undefined;
 }
 
+export interface ResetActiveOptions {
+	/** Подсветить первую доступную строку, даже если есть выбранная (печать в Combobox). */
+	ignoreSelected?: boolean | undefined;
+}
+
 export interface ListBoxController {
 	activeKey: Accessor<ListKey | undefined>;
 	activeSource: Accessor<ActiveSource>;
@@ -34,7 +39,7 @@ export interface ListBoxController {
 	/** Активирует опцию по ключу (клик): отключённые и «Все» игнорируются. */
 	activate: (key: ListKey) => void;
 	/** При открытии: подсветка на выбранной (иначе первой доступной) и прокрутка к ней, сразу и в следующем кадре. */
-	resetActive: (source?: ActiveSource) => void;
+	resetActive: (source?: ActiveSource, options?: ResetActiveOptions) => void;
 	/** При закрытии. */
 	clearActive: () => void;
 	isSelected: (key: ListKey) => boolean;
@@ -196,9 +201,9 @@ export function createListBoxController<T>(options: ListBoxControllerOptions<T>)
 				activateIndex(index);
 			}
 		},
-		resetActive: (source = 'keyboard') => {
+		resetActive: (source = 'keyboard', resetOptions) => {
 			const rows = options.rows();
-			const index = initialActiveIndex(rows, [...options.selectedKeys()]);
+			const index = initialActiveIndex(rows, resetOptions?.ignoreSelected === true ? [] : [...options.selectedKeys()]);
 			const row = rows[index];
 			typeahead.clear();
 			setActiveSource(source);
