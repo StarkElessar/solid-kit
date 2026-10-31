@@ -354,3 +354,14 @@ h2 {
     padding-block: 6px;
     white-space: normal;
 }
+
+.grid-action {
+    padding: 0 8px;
+    border: 1px solid var(--s-kit-color-border-strong);
+    border-radius: 6px;
+
+    font: inherit;
+    color: inherit;
+
+    background: transparent;
+}

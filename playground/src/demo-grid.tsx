@@ -1,4 +1,4 @@
-import { Grid, type GridColumn } from '@stark/solid-kit/grid';
+import { Grid, type GridColumn, type GridSort, type RowKey } from '@stark/solid-kit/grid';
 import { createMemo, createSignal, For, type JSX } from 'solid-js';
 
 import { pick } from './pick';
@@ -50,9 +50,14 @@ function makeOrders(count: number): Order[] {
 export const ALL_ORDERS: readonly Order[] = makeOrders(100_000);
 
 const COLUMNS: readonly GridColumn<Order>[] = [
-	{ id: 'id', title: 'Номер', value: (row) => row.id, width: 90, locked: true, align: 'end' },
-	{ id: 'name', title: 'Заказчик', value: (row) => row.name, width: 160, locked: true },
-	{ id: 'team', title: 'Команда', value: (row) => row.team },
+	{ id: 'id', title: 'Номер', value: (row) => row.id, width: 90, locked: true, align: 'end', sortable: true },
+	{ id: 'name', title: 'Заказчик', value: (row) => row.name, width: 160, locked: true, sortable: true },
+	{
+		id: 'team',
+		title: 'Команда',
+		value: (row) => row.team,
+		cell: (row) => <button type='button' class='grid-action' data-grid-action>{row.team}</button>
+	},
 	{
 		id: 'status',
 		title: 'Статус',
@@ -60,12 +65,12 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		width: 130,
 		cell: (row) => <span class='grid-status' data-status={row.status}>{row.status}</span>
 	},
-	{ id: 'amount', title: 'Сумма', value: (row) => row.amount, align: 'end', width: 120 },
+	{ id: 'amount', title: 'Сумма', value: (row) => row.amount, align: 'end', width: 120, sortable: true },
 	{ id: 'city', title: 'Город', value: (row) => row.city },
 	{ id: 'email', title: 'Почта', value: (row) => row.email, width: 220 },
 	{ id: 'phone', title: 'Телефон', value: (row) => row.phone, width: 150 },
-	{ id: 'created', title: 'Создан', value: (row) => row.created, width: 200 },
-	{ id: 'score', title: 'Оценка', value: (row) => row.score, align: 'end', width: 100 },
+	{ id: 'created', title: 'Создан', value: (row) => row.created, width: 200, sortable: true },
+	{ id: 'score', title: 'Оценка', value: (row) => row.score, align: 'end', width: 100, sortable: true },
 	{
 		id: 'note',
 		title: 'Заметка с переносом',
@@ -77,13 +82,38 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 ];
 
 const ROW_COUNTS = ['10', '1000', '100000'] as const;
+const COLLATOR = new Intl.Collator('ru');
+
+function compareValues(first: unknown, second: unknown): number {
+	if (typeof first === 'number' && typeof second === 'number') {
+		return first - second;
+	}
+	if (first instanceof Date && second instanceof Date) {
+		return first.getTime() - second.getTime();
+	}
+	return COLLATOR.compare(String(first), String(second));
+}
+
+/** Клиентская сортировка страницы: сам Grid строки не сортирует. */
+function sortRows(rows: readonly Order[], sort: GridSort | null): readonly Order[] {
+	const column = sort === null ? undefined : COLUMNS.find((candidate) => candidate.id === sort.columnId);
+	if (sort === null || column === undefined) {
+		return rows;
+	}
+	const sign = sort.direction === 'asc' ? 1 : -1;
+	return [...rows].sort((first, second) => sign * compareValues(column.value(first), column.value(second)));
+}
 
 /** Демонстрация Grid (страница «Грид»): число строк и виртуализация переключаются, последняя запись ширин видна. */
 export function DemoGrid(): JSX.Element {
 	const [count, setCount] = createSignal<(typeof ROW_COUNTS)[number]>('100000');
 	const [virtualized, setVirtualized] = createSignal(true);
+	const [selectable, setSelectable] = createSignal(true);
+	const [sort, setSort] = createSignal<GridSort | null>(null);
+	const [selected, setSelected] = createSignal<ReadonlySet<RowKey>>(new Set());
 	const [widthsLog, setWidthsLog] = createSignal('ещё не менялись');
-	const rows = createMemo(() => ALL_ORDERS.slice(0, Number(count())));
+	const [doubleLog, setDoubleLog] = createSignal('ещё не было');
+	const rows = createMemo(() => sortRows(ALL_ORDERS.slice(0, Number(count())), sort()));
 
 	return (
 		<div class='grid-demo'>
@@ -103,6 +133,15 @@ export function DemoGrid(): JSX.Element {
 					/>
 					Виртуализация
 				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-selectable
+						checked={selectable()}
+						onChange={(event) => setSelectable(event.currentTarget.checked)}
+					/>
+					Выбор строк
+				</label>
 			</div>
 			<div class='grid-frame' data-grid-demo>
 				<Grid<Order>
@@ -110,12 +149,20 @@ export function DemoGrid(): JSX.Element {
 					getRowKey={(row) => row.id}
 					columns={COLUMNS}
 					virtualized={virtualized()}
+					selectable={selectable()}
+					selectedKeys={selected()}
+					onSelectedKeysChange={setSelected}
+					sort={sort()}
+					onSortChange={setSort}
+					onRowDoubleClick={(row) => setDoubleLog(row.name)}
 					aria-label='Заказы'
 					onColumnWidthsChange={(widths) => setWidthsLog(JSON.stringify(widths))}
 				/>
 			</div>
 			<p>
-				Последний <code>onColumnWidthsChange</code>: <output data-grid-widths>{widthsLog()}</output>
+				Выбрано строк: <output data-grid-selected-count>{selected().size}</output>. Последний <code>onRowDoubleClick</code>:{' '}
+				<output data-grid-dblclick>{doubleLog()}</output>. Последний <code>onColumnWidthsChange</code>:{' '}
+				<output data-grid-widths>{widthsLog()}</output>
 			</p>
 		</div>
 	);

@@ -102,25 +102,26 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 	const scrollerBox = scroller.getBoundingClientRect();
 	const stickyCells = [...(bodyRows(table)[0] as HTMLTableRowElement).cells].filter((cell) => cell.hasAttribute('data-sticky'));
 	const stickyHeaders = headers(table).filter((th) => th.hasAttribute('data-sticky'));
-	const offsets = stickyCells.map(
-		(cell, index) => cell.getBoundingClientRect().left - scrollerBox.left - scroller.clientLeft - leftVar(table, index)
-	);
+	const selectShift = stickyCells[0]?.hasAttribute('data-grid-select') === true ? 1 : 0;
+	const lockedCount = 2;
+	const offsets = stickyCells.map((cell, index) => {
+		const expected = index < selectShift ? 0 : leftVar(table, index - selectShift);
+		return cell.getBoundingClientRect().left - scrollerBox.left - scroller.clientLeft - expected;
+	});
 	check(
-		'Grid: при прокрутке вправо закреплённые ячейки стоят у левого края со своим смещением',
-		stickyCells.length === 2 && offsets.every((offset) => Math.abs(offset) <= 0.5),
-		`отклонения ${offsets.map((offset) => offset.toFixed(2)).join(', ')} px при scrollLeft ${scroller.scrollLeft}`
+		'Grid: при прокрутке вправо закреплённые ячейки (и колонка чекбоксов) стоят у левого края со своим смещением',
+		stickyCells.length === lockedCount + selectShift && offsets.every((offset) => Math.abs(offset) <= 0.5),
+		`закреплённых ${stickyCells.length}, отклонения ${offsets.map((offset) => offset.toFixed(2)).join(', ')} px`
 	);
-	const [firstSticky, secondSticky] = stickyCells;
-	const gap = firstSticky && secondSticky
-		? secondSticky.getBoundingClientRect().left - firstSticky.getBoundingClientRect().right
-		: Number.NaN;
-	const headerGap = stickyHeaders.length === 2
-		? (stickyHeaders[1] as HTMLElement).getBoundingClientRect().left - (stickyHeaders[0] as HTMLElement).getBoundingClientRect().right
-		: Number.NaN;
+	const gaps = (cells: readonly HTMLElement[]): number[] => cells.slice(1).map(
+		(cell, index) => cell.getBoundingClientRect().left - (cells[index] as HTMLElement).getBoundingClientRect().right
+	);
+	const bodyGaps = gaps(stickyCells);
+	const headerGaps = gaps(stickyHeaders);
 	check(
 		'Grid: между соседними закреплёнными ячейками нет зазора и наложения',
-		Math.abs(gap) <= 0.5 && Math.abs(headerGap) <= 0.5,
-		`тело ${gap.toFixed(2)} px, шапка ${headerGap.toFixed(2)} px`
+		bodyGaps.length > 0 && [...bodyGaps, ...headerGaps].every((gap) => Math.abs(gap) <= 0.5),
+		`тело ${bodyGaps.map((gap) => gap.toFixed(2)).join(', ')} px, шапка ${headerGaps.map((gap) => gap.toFixed(2)).join(', ')} px`
 	);
 	scroller.scrollLeft = 0;
 	await frames();
@@ -164,6 +165,108 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 		'Grid: двойной клик по ручке возвращает исходную ширину',
 		Math.abs(widthReset - widthBefore) <= 1 && !required(page, '[data-grid-widths]').textContent.includes('"city"'),
 		`ширина ${widthReset.toFixed(0)}, было ${widthBefore.toFixed(0)}`
+	);
+
+	scroller.scrollTop = 0;
+	await frames();
+	const selectedCount = (): number => Number(required(page, '[data-grid-selected-count]').textContent);
+	const firstBodyRow = (): HTMLTableRowElement => bodyRows(table)[0] as HTMLTableRowElement;
+	const rowBox = (): HTMLInputElement => required(firstBodyRow(), 'input[type="checkbox"]') as HTMLInputElement;
+	const headBox = (): HTMLInputElement => required(table, 'thead input[type="checkbox"]') as HTMLInputElement;
+	const textCell = (): HTMLElement => firstBodyRow().cells[firstBodyRow().cells.length - 3] as HTMLElement;
+
+	textCell().click();
+	await frames();
+	const afterFirstClick = firstBodyRow().getAttribute('aria-selected') === 'true' && selectedCount() === 1;
+	textCell().click();
+	await frames();
+	check(
+		'Grid: клик по ячейке выбирает строку (aria-selected), второй клик снимает',
+		afterFirstClick && !firstBodyRow().hasAttribute('aria-selected') && selectedCount() === 0,
+		`после первого клика ${afterFirstClick ? 'выбрана' : 'не выбрана'}, выбрано сейчас ${selectedCount()}`
+	);
+
+	rowBox().click();
+	await frames();
+	const boxSelected = firstBodyRow().getAttribute('aria-selected') === 'true' && selectedCount() === 1;
+	rowBox().click();
+	await frames();
+	check(
+		'Grid: клик по чекбоксу строки переключает выбор ровно один раз',
+		boxSelected && selectedCount() === 0,
+		`после клика выбрано ${boxSelected ? 1 : 'не 1'}, потом ${selectedCount()}`
+	);
+
+	required(firstBodyRow(), '[data-grid-action]').click();
+	await frames();
+	check('Grid: клик по кнопке внутри ячейки выбор не меняет', selectedCount() === 0, `выбрано ${selectedCount()}`);
+
+	headBox().click();
+	await frames(4);
+	const allSelected = headBox().checked && !headBox().indeterminate && selectedCount() === 100_000;
+	rowBox().click();
+	await frames(4);
+	const someSelected = headBox().indeterminate && !headBox().checked && selectedCount() === 99_999;
+	headBox().click();
+	await frames(4);
+	const allAgain = headBox().checked && selectedCount() === 100_000;
+	headBox().click();
+	await frames(4);
+	check(
+		'Grid: главный чекбокс проходит состояния все, часть, все, ничего',
+		allSelected && someSelected && allAgain && !headBox().checked && !headBox().indeterminate && selectedCount() === 0,
+		`все ${String(allSelected)}, часть ${String(someSelected)}, снова все ${String(allAgain)}, в конце выбрано ${selectedCount()}`
+	);
+
+	textCell().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+	textCell().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+	textCell().dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+	await frames();
+	const doubleLogged = required(page, '[data-grid-dblclick]').textContent;
+	check(
+		'Grid: click, click, dblclick оставляют выбор прежним и сообщают строку в onRowDoubleClick',
+		selectedCount() === 0 && doubleLogged === 'Заказчик 1',
+		`выбрано ${selectedCount()}, onRowDoubleClick: ${doubleLogged}`
+	);
+
+	const amountHeader = headers(table).find((th) => th.textContent === 'Сумма') as HTMLElement;
+	const amountIndex = headers(table).indexOf(amountHeader);
+	required(amountHeader, 'button').click();
+	let ascending = false;
+	for (let attempt = 0; attempt < 30 && !ascending; attempt++) {
+		await frames(3);
+		ascending = amountHeader.getAttribute('aria-sort') === 'ascending' && firstBodyRow().cells[amountIndex]?.textContent === '0';
+	}
+	const ascOrder = bodyRows(table).slice(0, 5).map((row) => Number(row.cells[amountIndex]?.textContent));
+	required(amountHeader, 'button').click();
+	required(amountHeader, 'button').click();
+	let reset = false;
+	for (let attempt = 0; attempt < 30 && !reset; attempt++) {
+		await frames(3);
+		reset = amountHeader.getAttribute('aria-sort') === 'none' && firstBodyRow().dataset['rowKey'] === '1';
+	}
+	check(
+		'Grid: клик по заголовку сортирует (asc, desc, сброс), aria-sort у активной колонки, порядок строк даёт страница',
+		ascending && ascOrder.every((value, index) => index === 0 || (ascOrder[index - 1] as number) <= value) && reset,
+		`asc ${String(ascending)} (${ascOrder.join(', ')}), сброс ${String(reset)}`
+	);
+
+	textCell().click();
+	await frames();
+	const countSelect = required(page, '[data-grid-count]') as HTMLSelectElement;
+	countSelect.value = '1000';
+	countSelect.dispatchEvent(new Event('change', { bubbles: true }));
+	await frames(4);
+	const keptAfterShrink = selectedCount() === 1 && firstBodyRow().getAttribute('aria-selected') === 'true';
+	countSelect.value = '100000';
+	countSelect.dispatchEvent(new Event('change', { bubbles: true }));
+	await frames(4);
+	textCell().click();
+	await frames();
+	check(
+		'Grid: выбор сохраняется при замене числа строк',
+		keptAfterShrink && selectedCount() === 0,
+		`после замены выбрано ${keptAfterShrink ? 1 : 'не 1'}, после снятия ${selectedCount()}`
 	);
 
 	const headerHeight = required(table, 'thead').getBoundingClientRect().height;
