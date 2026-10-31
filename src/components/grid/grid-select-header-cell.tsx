@@ -9,6 +9,7 @@ import { useGrid } from './grid-context';
 /** Заголовок колонки чекбоксов: главный чекбокс «все / часть / ничего» по ключам загруженных строк (`rows`). */
 export function GridSelectHeaderCell(): JSX.Element {
 	const grid = useGrid();
+
 	return (
 		<th
 			scope='col'

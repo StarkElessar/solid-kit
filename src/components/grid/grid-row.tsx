@@ -13,9 +13,11 @@ export interface GridRowProps {
 
 export function GridRow(props: GridRowProps): JSX.Element {
 	const grid = useGrid();
+
+	let element: HTMLTableRowElement | undefined;
 	// при сокращении rows Solid может пересчитать ячейки раньше, чем окно уберёт эту строку: до удаления она держит последнюю строку
 	let lastRow: unknown;
-	let element: HTMLTableRowElement | undefined;
+
 	const row = (): unknown => {
 		const rows = grid.rows();
 		if (props.index < rows.length) {
@@ -30,6 +32,7 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			grid.window.measure(element);
 		}
 	});
+
 	return (
 		<tr
 			ref={element}
@@ -43,7 +46,9 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			<Show when={grid.selectable()}>
 				<GridSelectCell index={props.index}/>
 			</Show>
-			<For each={grid.columns()}>{(column, index) => <GridCell column={column} index={index()} row={row()}/>}</For>
+			<For each={grid.columns()}>
+				{(column, index) => <GridCell column={column} index={index()} row={row()}/>}
+			</For>
 		</tr>
 	);
 }

@@ -5,8 +5,9 @@ import type { RenderWindow, RenderWindowOptions } from './render-window';
 /**
  * Окно рендера на TanStack Virtual. Опции передаются геттерами, поэтому смена `count`, скроллера, `scrollPaddingStart`,
  * `scrollPaddingEnd` и `initialHeight` подхватывается реактивно. Пункты рендерятся в обычном потоке между двумя spacer-элементами
- * (раздел 6 зонтичного); строкам нужен `data-index` и `ref={window.measure}` для точных высот. `scrollMargin` (шапка грида в том же
- * скроллере) смещает отсчёт видимого диапазона, а `start` строк остаётся отсчётом от начала списка.
+ * (раздел 6 зонтичного); строкам нужен `data-index` и вызов `window.measure(element)` из `onMount` для точных высот (`ref` срабатывает
+ * раньше атрибутов). `scrollMargin` (шапка грида в том же скроллере) смещает отсчёт видимого диапазона, а `start` строк остаётся
+ * отсчётом от начала списка.
  */
 export function createVirtualWindow(options: RenderWindowOptions): RenderWindow {
 	const virtualizer = createVirtualizer<HTMLElement, HTMLElement>({
