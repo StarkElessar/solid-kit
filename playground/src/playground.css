@@ -310,3 +310,10 @@ h2 {
 .page-filler {
     block-size: 120vh;
 }
+
+.select-demos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-inline-size: 28rem;
+}
