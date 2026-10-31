@@ -3,6 +3,7 @@ import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { MultiSelect } from '@stark/solid-kit/multiselect';
 import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
 import { Switch } from '@stark/solid-kit/switch';
@@ -14,11 +15,12 @@ import { runButtonChecks } from './button-checks';
 import { runCheckboxChecks } from './checkbox-checks';
 import { ROWS, type RowSpec } from './control-rows';
 import { DemoCheckboxes } from './demo-checkboxes';
-import { DEMO_CONTROLS } from './demo-controls';
+import { DEMO_CONTROLS, getEmployeeKey, getEmployeeLabel, ROW_EMPLOYEES } from './demo-controls';
 import { DemoFields } from './demo-fields';
 import { DemoIcon } from './demo-icon';
 import { DemoNumericInputs } from './demo-numeric-inputs';
 import { DemoRadioGroups } from './demo-radio-groups';
+import type { Employee } from './demo-selects';
 import { DemoSwitches } from './demo-switches';
 import { DemoTabs } from './demo-tabs';
 import { DemoToggleGroups } from './demo-toggle-groups';
@@ -140,6 +142,22 @@ export function ControlsRowPage(): JSX.Element {
 					</section>
 				)}
 			</For>
+
+			<section>
+				<h2>MultiSelect в режиме wrap: растёт по высоте, поэтому в ряды с равной высотой не входит</h2>
+				<div class='control-row'>
+					<MultiSelect<Employee>
+						data-wrap-multiselect
+						aria-label='Сотрудники (wrap)'
+						items={ROW_EMPLOYEES}
+						defaultValue={ROW_EMPLOYEES.slice(0, 8)}
+						getKey={getEmployeeKey}
+						getLabel={getEmployeeLabel}
+						chipsOverflow='wrap'
+						placeholder='Выберите'
+					/>
+				</div>
+			</section>
 
 			<section>
 				<h2>Кольцо фокуса: снаружи и внутри контейнера с data-s-kit-focus-inset, сегменты группы всегда внутри</h2>

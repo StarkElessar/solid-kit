@@ -149,6 +149,11 @@ h2 {
     align-items: center;
 }
 
+/* контролы сохраняют свою ширину: в узком окне ряд прокручивается, а поля со списком не сжимаются до значка */
+.control-row > * {
+    flex: none;
+}
+
 .focus-blocks {
     display: flex;
     flex-wrap: wrap;

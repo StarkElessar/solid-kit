@@ -1,10 +1,13 @@
 import { Button } from '@stark/solid-kit/button';
 import { ButtonGroup } from '@stark/solid-kit/button-group';
 import { Checkbox } from '@stark/solid-kit/checkbox';
+import { Combobox } from '@stark/solid-kit/combobox';
 import { IconButton } from '@stark/solid-kit/icon-button';
 import { Input } from '@stark/solid-kit/input';
+import { MultiSelect } from '@stark/solid-kit/multiselect';
 import { NumericInput } from '@stark/solid-kit/numeric-input';
 import { RadioGroup } from '@stark/solid-kit/radio-group';
+import { Select } from '@stark/solid-kit/select';
 import { Switch } from '@stark/solid-kit/switch';
 import { Tabs } from '@stark/solid-kit/tabs';
 import { ToggleGroup } from '@stark/solid-kit/toggle-group';
@@ -12,11 +15,21 @@ import type { JSX } from 'solid-js';
 
 import type { ControlSize } from './control-rows';
 import { DemoIcon } from './demo-icon';
+import type { Employee } from './demo-selects';
 
 export interface DemoControl {
 	readonly id: string;
 	readonly render: (size: ControlSize | undefined) => JSX.Element;
 }
+
+export const ROW_EMPLOYEES: readonly Employee[] = Array.from({ length: 12 }, (_, index) => ({
+	id: index,
+	name: `Сотрудник ${index}`,
+	team: index % 2 === 0 ? 'Дизайн' : 'Разработка'
+}));
+
+export const getEmployeeKey = (employee: Employee): number => employee.id;
+export const getEmployeeLabel = (employee: Employee): string => employee.name;
 
 type DemoVariant = 'primary' | 'tinted' | 'plain' | 'danger';
 
@@ -107,6 +120,65 @@ export const DEMO_CONTROLS: readonly DemoControl[] = [
 					<Tabs.Tab value='details'>Детали</Tabs.Tab>
 				</Tabs.List>
 			</Tabs.Root>
+		)
+	},
+	{
+		id: 'select',
+		render: (size) => (
+			<Select<Employee>
+				data-row-control='select'
+				aria-label='Сотрудник'
+				items={ROW_EMPLOYEES}
+				getKey={getEmployeeKey}
+				getLabel={getEmployeeLabel}
+				placeholder='Выберите'
+				size={size}
+			/>
+		)
+	},
+	{
+		id: 'combobox',
+		render: (size) => (
+			<Combobox<Employee>
+				data-row-control='combobox'
+				aria-label='Сотрудник с поиском'
+				items={ROW_EMPLOYEES}
+				getKey={getEmployeeKey}
+				getLabel={getEmployeeLabel}
+				placeholder='Начните вводить'
+				size={size}
+			/>
+		)
+	},
+	{
+		id: 'multiselect-collapse',
+		render: (size) => (
+			<MultiSelect<Employee>
+				data-row-control='multiselect-collapse'
+				aria-label='Сотрудники (collapse)'
+				items={ROW_EMPLOYEES}
+				defaultValue={ROW_EMPLOYEES.slice(0, 5)}
+				getKey={getEmployeeKey}
+				getLabel={getEmployeeLabel}
+				placeholder='Выберите'
+				size={size}
+			/>
+		)
+	},
+	{
+		id: 'multiselect-summary',
+		render: (size) => (
+			<MultiSelect<Employee>
+				data-row-control='multiselect-summary'
+				aria-label='Сотрудники (summary)'
+				items={ROW_EMPLOYEES}
+				defaultValue={ROW_EMPLOYEES.slice(0, 3)}
+				getKey={getEmployeeKey}
+				getLabel={getEmployeeLabel}
+				chipsOverflow='summary'
+				placeholder='Выберите'
+				size={size}
+			/>
 		)
 	}
 ];
