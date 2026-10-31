@@ -18,19 +18,17 @@
 
     /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
     background: var(--s-kit-menu-bg, var(--s-kit-color-surface));
-}
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
-        .content {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
             background: var(--s-kit-menu-bg, var(--s-kit-color-panel));
         }
     }
-}
 
-/* фокус на самом меню (открытие мышью) не рисует кольцо UA: кольцо только у пунктов; прозрачная обводка остаётся видимой в forced-colors */
-.content:focus-visible {
-    outline: var(--s-kit-focus-width) solid transparent;
+    /* фокус на самом меню (открытие мышью) не рисует кольцо UA: кольцо только у пунктов; прозрачная обводка видна в forced-colors */
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid transparent;
+    }
 }
 
 .item {
@@ -46,25 +44,25 @@
     border-radius: var(--s-kit-menu-item-radius, var(--s-kit-radius));
 
     color: var(--s-kit-color-text);
-}
 
-.item:focus,
-.item[aria-expanded="true"] {
-    background: var(--s-kit-color-tint);
-}
+    &:focus,
+    &[aria-expanded="true"] {
+        background: var(--s-kit-color-tint);
+    }
 
-.item:focus-visible {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
 
-.item[data-variant="danger"] {
-    color: var(--s-kit-color-danger);
-}
+    &[data-variant="danger"] {
+        color: var(--s-kit-color-danger);
+    }
 
-.item[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: var(--s-kit-disabled-opacity);
+    &[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
 }
 
 .label {

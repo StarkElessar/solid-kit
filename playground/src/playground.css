@@ -29,11 +29,11 @@ body {
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
-}
 
-.toolbar h1 {
-    margin: 0 auto 0 0;
-    font-size: 20px;
+    & h1 {
+        margin: 0 auto 0 0;
+        font-size: 20px;
+    }
 }
 
 h2 {
@@ -100,6 +100,10 @@ h2 {
 
     font-size: 11px;
     color: var(--s-kit-color-primary-contrast);
+
+    &[data-swatch="subtle"] {
+        color: var(--s-kit-color-text);
+    }
 }
 
 .dialog {
@@ -112,34 +116,30 @@ h2 {
 .checks {
     padding: 0;
     list-style: none;
-}
 
-.checks li {
-    padding-block: 2px;
-}
+    & li {
+        padding-block: 2px;
 
-.checks li[data-ok="true"] {
-    color: var(--s-kit-color-success);
-}
+        &[data-ok="true"] {
+            color: var(--s-kit-color-success);
+        }
 
-.checks li[data-ok="false"] {
-    font-weight: 600;
-    color: var(--s-kit-color-danger);
-}
-
-.swatch[data-swatch="subtle"] {
-    color: var(--s-kit-color-text);
+        &[data-ok="false"] {
+            font-weight: 600;
+            color: var(--s-kit-color-danger);
+        }
+    }
 }
 
 .nav {
     display: flex;
     gap: 16px;
     padding: 12px 24px 0;
-}
 
-.nav a[aria-current="page"] {
-    font-weight: 600;
-    color: var(--s-kit-color-text);
+    & a[aria-current="page"] {
+        font-weight: 600;
+        color: var(--s-kit-color-text);
+    }
 }
 
 .control-row {
@@ -147,11 +147,11 @@ h2 {
     flex-wrap: nowrap;
     gap: 12px;
     align-items: center;
-}
 
-/* контролы сохраняют свою ширину: в узком окне ряд прокручивается, а поля со списком не сжимаются до значка */
-.control-row > * {
-    flex: none;
+    /* контролы сохраняют свою ширину: в узком окне ряд прокручивается, а поля со списком не сжимаются до значка */
+    & > * {
+        flex: none;
+    }
 }
 
 .focus-blocks {
@@ -302,13 +302,13 @@ h2 {
     table-layout: fixed;
     inline-size: 200px;
     border: 1px solid var(--s-kit-color-border);
-}
 
-.cell-table td {
-    overflow: hidden;
-    padding: 8px;
-    text-align: end;
-    white-space: nowrap;
+    & td {
+        overflow: hidden;
+        padding: 8px;
+        text-align: end;
+        white-space: nowrap;
+    }
 }
 
 /* высота страницы нужна, чтобы проверять блокировку прокрутки под диалогом */
@@ -339,14 +339,14 @@ h2 {
     border-radius: 999px;
     font-size: 0.85em;
     background: var(--s-kit-color-tint);
-}
 
-.grid-status[data-status="готов"] {
-    color: var(--s-kit-color-success);
-}
+    &[data-status="готов"] {
+        color: var(--s-kit-color-success);
+    }
 
-.grid-status[data-status="отклонён"] {
-    color: var(--s-kit-color-danger);
+    &[data-status="отклонён"] {
+        color: var(--s-kit-color-danger);
+    }
 }
 
 .grid-wrap {

@@ -12,13 +12,13 @@
 
     inline-size: var(--s-kit-combobox-width, var(--s-kit-input-width, 12rem));
     min-inline-size: 0;
-}
 
-.field .input {
-    inline-size: 100%;
+    & .input {
+        inline-size: 100%;
 
-    /* место под шеврон: он занимает квадрат высотой в контрол */
-    padding-inline-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
+        /* место под шеврон: он занимает квадрат высотой в контрол */
+        padding-inline-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    }
 }
 
 .toggle {
@@ -41,20 +41,18 @@
     color: var(--s-kit-color-muted);
 
     background: transparent;
-}
 
-.toggle:disabled {
-    cursor: not-allowed;
-    opacity: var(--s-kit-disabled-opacity);
+    &:disabled {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
 }
 
 .content {
     --s-kit-listbox-bg: var(--s-kit-combobox-bg, var(--s-kit-color-surface));
-}
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
-        .content {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
             --s-kit-listbox-bg: var(--s-kit-combobox-bg, var(--s-kit-color-panel));
         }
     }

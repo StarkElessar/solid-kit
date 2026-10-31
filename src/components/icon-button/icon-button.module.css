@@ -13,10 +13,10 @@
     inline-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
     padding-inline: 0;
     border-radius: var(--s-kit-icon-button-radius, var(--s-kit-button-radius, var(--s-kit-radius)));
-}
 
-.root > svg {
-    flex: none;
-    inline-size: 1.25em;
-    block-size: 1.25em;
+    & > svg {
+        flex: none;
+        inline-size: 1.25em;
+        block-size: 1.25em;
+    }
 }

@@ -10,11 +10,19 @@
     flex: none;
     flex-direction: column;
     gap: var(--s-kit-radio-group-gap, 0);
-}
 
-.root[data-orientation="horizontal"] {
-    flex-direction: row;
-    gap: var(--s-kit-radio-group-gap, 16px);
+    &[data-orientation="horizontal"] {
+        flex-direction: row;
+        gap: var(--s-kit-radio-group-gap, 16px);
+    }
+
+    &[aria-invalid="true"] .input:not(:checked) {
+        border-color: var(--s-kit-color-danger);
+    }
+
+    &[aria-invalid="true"] .input:not(:checked):focus-visible {
+        outline-color: var(--s-kit-color-danger);
+    }
 }
 
 .item {
@@ -33,11 +41,11 @@
     font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
     line-height: 1.25;
     color: var(--s-kit-color-text);
-}
 
-.item[data-disabled] {
-    cursor: not-allowed;
-    opacity: var(--s-kit-disabled-opacity);
+    &[data-disabled] {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
 }
 
 .box {
@@ -60,42 +68,42 @@
     background: var(--s-kit-color-surface);
 
     transition: background-color 150ms, border-color 150ms;
-}
 
-.input:hover:not(:disabled) {
-    background: var(--s-kit-color-hover);
-}
+    &:hover:not(:disabled) {
+        background: var(--s-kit-color-hover);
+    }
 
-.input:checked {
-    border-color: var(--s-kit-color-primary);
-    background: var(--s-kit-color-primary);
-}
+    &:checked {
+        border-color: var(--s-kit-color-primary);
+        background: var(--s-kit-color-primary);
+    }
 
-.input:checked:hover:not(:disabled) {
-    border-color: var(--s-kit-color-primary-hover);
-    background: var(--s-kit-color-primary-hover);
-}
+    &:checked:hover:not(:disabled) {
+        border-color: var(--s-kit-color-primary-hover);
+        background: var(--s-kit-color-primary-hover);
+    }
 
-.input:checked:active:not(:disabled) {
-    border-color: var(--s-kit-color-primary-active);
-    background: var(--s-kit-color-primary-active);
-}
+    &:checked:active:not(:disabled) {
+        border-color: var(--s-kit-color-primary-active);
+        background: var(--s-kit-color-primary-active);
+    }
 
-.input:focus-visible {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
 
-.input:checked:focus-visible {
-    outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
-}
+    &:checked:focus-visible {
+        outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
+    }
 
-.root[aria-invalid="true"] .input:not(:checked) {
-    border-color: var(--s-kit-color-danger);
-}
+    &:checked ~ .mark {
+        display: block;
+    }
 
-.root[aria-invalid="true"] .input:not(:checked):focus-visible {
-    outline-color: var(--s-kit-color-danger);
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
 }
 
 .mark {
@@ -110,14 +118,4 @@
     block-size: 100%;
 
     color: var(--s-kit-color-primary-contrast);
-}
-
-.input:checked ~ .mark {
-    display: block;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .input {
-        transition: none;
-    }
 }
