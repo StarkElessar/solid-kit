@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 
 import type { GridColumn } from './grid-column';
+import type { GridSort } from './grid-sort';
 import type { RowKey } from './row-key';
 
 /** Пропсы Grid, добавленные по частям этапа 4а: часть 2 это данные, колонки, ширины и виртуализация. */
@@ -15,6 +16,11 @@ export interface GridProps<T> {
 	defaultSelectedKeys?: ReadonlySet<RowKey> | undefined;
 	/** Новый `Set` на каждое изменение; прежний не мутируется. Выбор не сбрасывается при смене `rows`. */
 	onSelectedKeysChange?: ((keys: ReadonlySet<RowKey>) => void) | undefined;
+	/** Сортировка только отображается и сообщается наружу: строки грид не сортирует. */
+	sort?: GridSort | null | undefined;
+	defaultSort?: GridSort | null | undefined;
+	/** По клику на заголовок сортируемой колонки: цикл `asc → desc → null`, смена колонки начинает с `asc`. */
+	onSortChange?: ((sort: GridSort | null) => void) | undefined;
 	/** Двойной клик по неинтерактивной части строки; выбор при этом не откатывается (раздел 7 спека). */
 	onRowDoubleClick?: ((row: T) => void) | undefined;
 	/** Подпись главного чекбокса ('Выбрать все строки'). */

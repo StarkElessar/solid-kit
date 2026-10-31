@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Grid } from './grid';
 import type { GridColumn } from './grid-column';
+import type { GridSort } from './grid-sort';
 
 afterEach(cleanup);
 
@@ -752,5 +753,90 @@ describe('Grid: клики по строке', () => {
 		setRows([{ id: 77, name: 'Новый', age: 1, note: null }]);
 		fireEvent.click((bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement);
 		expect([...(onChange.mock.calls[0]?.[0] as ReadonlySet<number>)]).toEqual([77]);
+	});
+});
+
+describe('Grid: сортировка', () => {
+	const SORT_COLUMNS: readonly GridColumn<Person>[] = [
+		{ id: 'name', title: 'Имя', value: (row) => row.name, sortable: true },
+		{ id: 'age', title: 'Возраст', value: (row) => row.age, sortable: true },
+		{ id: 'note', title: 'Заметка', value: (row) => row.note }
+	];
+
+	function sortable(overrides: Partial<Parameters<typeof Grid<Person>>[0]> = {}) {
+		return renderGrid({ columns: SORT_COLUMNS, ...overrides });
+	}
+
+	function header(title: string): HTMLElement {
+		return [...table().querySelectorAll<HTMLElement>('thead th')].find((th) => th.textContent === title) as HTMLElement;
+	}
+
+	function sortButton(title: string): HTMLButtonElement {
+		return header(title).querySelector('button') as HTMLButtonElement;
+	}
+
+	it('у несортируемой колонки нет кнопки и aria-sort, у сортируемой есть кнопка и aria-sort="none"', () => {
+		sortable();
+		expect(header('Заметка').querySelector('button')).toBeNull();
+		expect(header('Заметка').hasAttribute('aria-sort')).toBe(false);
+		expect(sortButton('Имя').type).toBe('button');
+		expect(header('Имя').getAttribute('aria-sort')).toBe('none');
+		expect(screen.getByRole('button', { name: 'Имя' })).toBeTruthy();
+	});
+
+	it('клики идут по циклу asc, desc, null, смена колонки начинает с asc', () => {
+		const onSort = vi.fn();
+		sortable({ onSortChange: onSort });
+		fireEvent.click(sortButton('Имя'));
+		expect(onSort).toHaveBeenLastCalledWith({ columnId: 'name', direction: 'asc' });
+		expect(header('Имя').getAttribute('aria-sort')).toBe('ascending');
+		expect(header('Возраст').getAttribute('aria-sort')).toBe('none');
+		fireEvent.click(sortButton('Имя'));
+		expect(onSort).toHaveBeenLastCalledWith({ columnId: 'name', direction: 'desc' });
+		expect(header('Имя').getAttribute('aria-sort')).toBe('descending');
+		fireEvent.click(sortButton('Имя'));
+		expect(onSort).toHaveBeenLastCalledWith(null);
+		expect(header('Имя').getAttribute('aria-sort')).toBe('none');
+		fireEvent.click(sortButton('Имя'));
+		fireEvent.click(sortButton('Возраст'));
+		expect(onSort).toHaveBeenLastCalledWith({ columnId: 'age', direction: 'asc' });
+		expect(header('Имя').getAttribute('aria-sort')).toBe('none');
+	});
+
+	it('defaultSort задаёт начальное состояние, активная кнопка помечена data-active', () => {
+		sortable({ defaultSort: { columnId: 'age', direction: 'desc' } });
+		expect(header('Возраст').getAttribute('aria-sort')).toBe('descending');
+		expect(sortButton('Возраст').hasAttribute('data-active')).toBe(true);
+		expect(sortButton('Имя').hasAttribute('data-active')).toBe(false);
+	});
+
+	it('controlled: если родитель не принял сортировку, атрибуты не меняются; принятая отображается', () => {
+		const onSort = vi.fn();
+		sortable({ sort: null, onSortChange: onSort });
+		fireEvent.click(sortButton('Имя'));
+		expect(onSort).toHaveBeenCalledTimes(1);
+		expect(header('Имя').getAttribute('aria-sort')).toBe('none');
+		cleanup();
+		const [sort, setSort] = createSignal<GridSort | null>(null);
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={SORT_COLUMNS}
+				sort={sort()}
+				onSortChange={setSort}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		fireEvent.click(sortButton('Имя'));
+		expect(header('Имя').getAttribute('aria-sort')).toBe('ascending');
+	});
+
+	it('сортировка не меняет порядок строк, а текст заголовка остаётся названием колонки', () => {
+		sortable();
+		fireEvent.click(sortButton('Возраст'));
+		expect(bodyRows().map((row) => row.dataset['rowKey'])).toEqual(['1', '2', '3']);
+		expect(header('Возраст').textContent).toBe('Возраст');
 	});
 });

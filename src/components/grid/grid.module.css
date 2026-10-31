@@ -162,3 +162,59 @@
     padding-inline: 0;
     text-align: center;
 }
+
+.sort-button {
+    cursor: pointer;
+
+    display: flex;
+    gap: 6px;
+    align-items: center;
+
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 1px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+
+    font: inherit;
+    color: inherit;
+    text-align: start;
+
+    appearance: none;
+    background: transparent;
+}
+
+.sort-button:focus-visible {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+}
+
+.head-cell[data-align="end"] .sort-button {
+    justify-content: flex-end;
+}
+
+.head-cell[data-align="center"] .sort-button {
+    justify-content: center;
+}
+
+.sort-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sort-arrow {
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+    opacity: 0.4;
+}
+
+.sort-button[data-active] {
+    color: var(--s-kit-color-text);
+}
+
+.sort-button[data-active] .sort-arrow {
+    opacity: 1;
+}

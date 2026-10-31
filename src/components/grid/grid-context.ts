@@ -5,6 +5,7 @@ import type { RenderWindow } from '../../utils/render-window';
 import type { RowIndex } from './build-row-index';
 import type { ColumnLayout } from './column-layout';
 import type { GridColumn } from './grid-column';
+import type { GridSort } from './grid-sort';
 import type { SelectionState } from './selection-state';
 
 export interface GridContextValue<T> {
@@ -14,6 +15,9 @@ export interface GridContextValue<T> {
 	/** Видимые колонки в порядке показа. Список не пересоздаётся при смене ширин: шапка и ячейки живут между ресайзами. */
 	columns: Accessor<readonly GridColumn<T>[]>;
 	selectable: Accessor<boolean>;
+	sort: Accessor<GridSort | null>;
+	/** Клик по заголовку колонки `columnId`: следующая сортировка по циклу. */
+	toggleSort: (columnId: string) => void;
 	/** Выбрана ли строка с индексом `index`. */
 	isRowSelected: (index: number) => boolean;
 	toggleRow: (index: number) => void;

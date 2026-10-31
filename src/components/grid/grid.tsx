@@ -14,7 +14,9 @@ import { computeColumnLayout } from './column-layout';
 import { createGridResize } from './create-grid-resize';
 import { GridContext, type GridContextValue } from './grid-context';
 import type { GridProps } from './grid-props';
+import type { GridSort } from './grid-sort';
 import { GridTable } from './grid-table';
+import { nextSort } from './next-sort';
 import type { RowKey } from './row-key';
 import { sameItems } from './same-items';
 import { clearKeys, selectAllKeys, selectionOf, toggleKey } from './selection-state';
@@ -49,6 +51,12 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
 	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
+	const [sort, setSort] = createControllableSignal<GridSort | null>({
+		name: 'Grid',
+		value: () => props.sort,
+		defaultValue: () => props.defaultSort ?? null,
+		onChange: (next) => props.onSortChange?.(next)
+	});
 	const selectionState = createMemo(() => selectionOf(selected(), rowIndex().keys));
 
 	const [scroller, setScroller] = createSignal<HTMLElement | undefined>(undefined);
@@ -109,6 +117,10 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		rowIndex,
 		layout,
 		selectable,
+		sort,
+		toggleSort: (columnId) => {
+			setSort(nextSort(sort(), columnId));
+		},
 		isRowSelected: (index) => {
 			const key = rowIndex().keys[index];
 			return key !== undefined && selected().has(key);
