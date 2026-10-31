@@ -15,6 +15,10 @@ export interface GridContextValue<T> {
 	/** Индекс последней закреплённой колонки (правый разделитель закрепа), -1 если закреплённых нет. */
 	lastStickyIndex: Accessor<number>;
 	window: RenderWindow;
+	/** `pointerdown` на ручке колонки `index` (среди видимых колонок). */
+	beginResize: (index: number, event: PointerEvent) => void;
+	/** Двойной клик по ручке: возврат к `GridColumn.width`. */
+	resetWidth: (columnId: string) => void;
 	/** Ref шапки: Grid измеряет её высоту. */
 	headerRef: (element: HTMLTableSectionElement) => void;
 }

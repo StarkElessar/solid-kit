@@ -10,6 +10,7 @@ import type { RenderWindowOptions } from '../../utils/render-window';
 
 import { buildRowIndex } from './build-row-index';
 import { computeColumnLayout } from './column-layout';
+import { createGridResize } from './create-grid-resize';
 import { GridContext, type GridContextValue } from './grid-context';
 import type { GridProps } from './grid-props';
 import { GridTable } from './grid-table';
@@ -24,13 +25,14 @@ const INITIAL_WINDOW_HEIGHT = 512;
  * сортировку и выбор хранит страница. Раскладка колонок живёт в CSS-переменных таблицы (спек этапа 4а, раздел 4).
  */
 export function Grid<T>(props: GridProps<T>): JSX.Element {
-	const [widths] = createControllableSignal<Readonly<Record<string, number>>>({
+	const [widths, setWidths] = createControllableSignal<Readonly<Record<string, number>>>({
 		name: 'Grid',
 		value: () => props.columnWidths,
 		defaultValue: () => props.defaultColumnWidths ?? {},
 		onChange: (next) => props.onColumnWidthsChange?.(next)
 	});
-	const layout = createMemo(() => computeColumnLayout(props.columns, widths(), { selectable: false, selectWidth: 0 }));
+	const layoutOptions = { selectable: false, selectWidth: 0 };
+	const layout = createMemo(() => computeColumnLayout(props.columns, widths(), layoutOptions));
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
 	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
@@ -75,6 +77,15 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		});
 	});
 
+	const resize = createGridResize({
+		columns: () => props.columns,
+		widths,
+		setWidths,
+		layout,
+		layoutOptions,
+		scroller
+	});
+
 	const context: GridContextValue<T> = {
 		rows: () => props.rows,
 		rowIndex,
@@ -82,6 +93,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		columns,
 		lastStickyIndex,
 		window,
+		beginResize: resize.beginResize,
+		resetWidth: resize.resetWidth,
 		headerRef: (element) => {
 			header = element;
 		}

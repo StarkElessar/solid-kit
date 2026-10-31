@@ -5,6 +5,7 @@ import type { JSX } from 'solid-js';
 import { leftVar } from './column-css-vars';
 import type { GridColumn } from './grid-column';
 import { useGrid } from './grid-context';
+import { GridResizeHandle } from './grid-resize-handle';
 
 export interface GridHeaderCellProps {
 	column: GridColumn<unknown>;
@@ -25,6 +26,7 @@ export function GridHeaderCell(props: GridHeaderCellProps): JSX.Element {
 			style={{ 'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined }}
 		>
 			{props.column.title}
+			<GridResizeHandle index={props.index} columnId={props.column.id}/>
 		</th>
 	);
 }

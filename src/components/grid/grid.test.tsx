@@ -285,3 +285,167 @@ describe('Grid: виртуализация', () => {
 		expect(bodyRows().length).toBeLessThan(40);
 	});
 });
+
+function pointer(type: string, clientX: number): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, clientX, button: 0 });
+	Object.defineProperty(event, 'pointerId', { value: 1 });
+	return event;
+}
+
+function handleOf(title: string): HTMLElement {
+	const header = [...table().querySelectorAll('thead th')].find((th) => th.textContent === title);
+	return header?.querySelector<HTMLElement>('[data-grid-resize]') as HTMLElement;
+}
+
+function tableVar(name: string): string {
+	return table().style.getPropertyValue(name);
+}
+
+describe('Grid: ресайз колонок', () => {
+	it('в каждом заголовке есть ручка-разделитель вне Tab-порядка', () => {
+		renderGrid();
+		const handles = table().querySelectorAll('thead th [data-grid-resize]');
+		expect(handles).toHaveLength(4);
+		expect(handles[0]?.getAttribute('role')).toBe('separator');
+		expect(handles[0]?.getAttribute('aria-orientation')).toBe('vertical');
+		expect(handles[0]?.hasAttribute('tabindex')).toBe(false);
+	});
+
+	it('серия pointermove меняет только переменные: ни value, ни cell, ни onColumnWidthsChange, строки те же', () => {
+		const value = vi.fn((row: Person) => row.age);
+		const cell = vi.fn((row: Person) => <i>{row.name}</i>);
+		const onChange = vi.fn();
+		const columns: GridColumn<Person>[] = [
+			{ id: 'name', title: 'Имя', value: (row) => row.name, width: 150, locked: true },
+			{ id: 'age', title: 'Возраст', value, width: 100 },
+			{ id: 'city', title: 'Город', value: () => '', cell, width: 120 }
+		];
+		renderGrid({ columns, onColumnWidthsChange: onChange });
+		const rowsBefore = bodyRows();
+		const valueCalls = value.mock.calls.length;
+		const cellCalls = cell.mock.calls.length;
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 120));
+		expect(tableVar('--s-kit-grid-w-1')).toBe('120px');
+		expect(tableVar('--s-kit-grid-table-w')).toBe('390px');
+		handle.dispatchEvent(pointer('pointermove', 150));
+		handle.dispatchEvent(pointer('pointermove', 90));
+		expect(tableVar('--s-kit-grid-w-1')).toBe('90px');
+		expect(tableVar('--s-kit-grid-table-w')).toBe('360px');
+		expect(value.mock.calls.length).toBe(valueCalls);
+		expect(cell.mock.calls.length).toBe(cellCalls);
+		expect(onChange).not.toHaveBeenCalled();
+		bodyRows().forEach((row, index) => {
+			expect(row).toBe(rowsBefore[index]);
+		});
+	});
+
+	it('pointerup вызывает onColumnWidthsChange ровно один раз с полным словарём и оставляет ширину', () => {
+		const onChange = vi.fn();
+		renderGrid({ defaultColumnWidths: { name: 200 }, onColumnWidthsChange: onChange });
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 140));
+		handle.dispatchEvent(pointer('pointerup', 140));
+		handle.dispatchEvent(pointer('pointerup', 300));
+		expect(onChange).toHaveBeenCalledExactlyOnceWith({ name: 200, age: 140 });
+		expect(tableVar('--s-kit-grid-w-2')).toBe('140px');
+	});
+
+	it('нажатие без движения не сообщает о ширине', () => {
+		const onChange = vi.fn();
+		renderGrid({ onColumnWidthsChange: onChange });
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointerup', 100));
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it('Esc возвращает прежние переменные, колбэк не зовётся', () => {
+		const onChange = vi.fn();
+		renderGrid({ onColumnWidthsChange: onChange });
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 180));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('180px');
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('100px');
+		expect(tableVar('--s-kit-grid-table-w')).toBe('490px');
+		handle.dispatchEvent(pointer('pointerup', 180));
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it('ширина зажимается по minWidth колонки', () => {
+		renderGrid({ columns: COLUMNS.map((column) => (column.id === 'age' ? { ...column, minWidth: 90 } : column)) });
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', -500));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('90px');
+		handle.dispatchEvent(pointer('pointerup', -500));
+	});
+
+	it('ресайз закреплённой колонки сдвигает смещения закреплённых правее и scroll-padding', () => {
+		renderGrid();
+		const handle = handleOf('Имя');
+		handle.dispatchEvent(pointer('pointerdown', 150));
+		handle.dispatchEvent(pointer('pointermove', 180));
+		expect(tableVar('--s-kit-grid-w-0')).toBe('180px');
+		expect(tableVar('--s-kit-grid-left-1')).toBe('180px');
+		expect((table().parentElement as HTMLElement).style.getPropertyValue('scroll-padding-inline-start')).toBe('260px');
+		handle.dispatchEvent(pointer('pointerup', 180));
+	});
+
+	it('двойной клик по ручке убирает ширину колонки из словаря и возвращает исходную', () => {
+		const onChange = vi.fn();
+		renderGrid({ defaultColumnWidths: { age: 200, name: 170 }, onColumnWidthsChange: onChange });
+		expect(tableVar('--s-kit-grid-w-2')).toBe('200px');
+		handleOf('Возраст').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('100px');
+		expect(onChange).toHaveBeenCalledExactlyOnceWith({ name: 170 });
+	});
+
+	it('двойной клик по колонке без переопределения ничего не сообщает', () => {
+		const onChange = vi.fn();
+		renderGrid({ onColumnWidthsChange: onChange });
+		handleOf('Возраст').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it('controlled: если родитель не принял ширину, после pointerup возвращается значение из пропа', () => {
+		const onChange = vi.fn();
+		renderGrid({ columnWidths: { age: 100 }, onColumnWidthsChange: onChange });
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 150));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('150px');
+		handle.dispatchEvent(pointer('pointerup', 150));
+		expect(onChange).toHaveBeenCalledExactlyOnceWith({ age: 150 });
+		expect(tableVar('--s-kit-grid-w-2')).toBe('100px');
+	});
+
+	it('controlled: принятая родителем ширина остаётся', () => {
+		const [widths, setWidths] = createSignal<Readonly<Record<string, number>>>({ age: 100 });
+		let accepted: Readonly<Record<string, number>> | undefined;
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				columnWidths={widths()}
+				onColumnWidthsChange={(next) => {
+					accepted = next;
+					setWidths(next);
+				}}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		const handle = handleOf('Возраст');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 150));
+		handle.dispatchEvent(pointer('pointerup', 150));
+		expect(accepted).toEqual({ age: 150 });
+		expect(tableVar('--s-kit-grid-w-2')).toBe('150px');
+	});
+});
