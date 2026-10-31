@@ -1,5 +1,7 @@
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
+import { runComboboxChecks } from './combobox-checks';
+import { DemoComboboxes } from './demo-comboboxes';
 import { DemoSelects } from './demo-selects';
 import { pick } from './pick';
 import { runSelectChecks } from './select-checks';
@@ -9,7 +11,7 @@ type Theme = 'system' | 'light' | 'dark';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 
-/** Страница «Списки» (раздел 8 зонтичного спека): наращивается частями этапа 3. Сейчас: Select. */
+/** Страница «Списки» (раздел 8 зонтичного спека): наращивается частями этапа 3. Сейчас: Select и Combobox. */
 export function ListsPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
 	const [results, setResults] = createSignal<readonly CheckResult[]>([]);
@@ -29,7 +31,7 @@ export function ListsPage(): JSX.Element {
 		if (page) {
 			const root = page;
 			void (async () => {
-				setResults(await runSelectChecks(root));
+				setResults([...await runSelectChecks(root), ...await runComboboxChecks(root)]);
 			})();
 		}
 	};
@@ -58,7 +60,19 @@ export function ListsPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>2. Проверки</h2>
+				<h2>2. Combobox</h2>
+				<p>
+					Ручная приёмка настоящими клавишами: печать фильтрует и открывает список, ArrowDown и ArrowUp, PageUp и PageDown,
+					Enter выбирает активную опцию (форма не отправляется), Esc закрывает, Tab закрывает; Home, End и Space работают как в
+					обычном поле; шеврон мышью; после выбора список открывается целиком; стёртый текст при уходе из поля сбрасывает
+					значение, иначе возвращается подпись; внешний поиск с задержкой; на 100 000 опций печать без рывков; в диалоге Esc
+					закрывает сначала список, потом диалог; IME (русская раскладка и composition) проверяется на реальной клавиатуре.
+				</p>
+				<DemoComboboxes/>
+			</section>
+
+			<section>
+				<h2>3. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>
