@@ -47,6 +47,11 @@ function visibleChips(trigger: HTMLElement): string[] {
 		.map((chip) => chip.textContent);
 }
 
+// все чипы в DOM, в том числе скрытые режимом collapse: значение они не теряют
+function allChips(trigger: HTMLElement): string[] {
+	return [...shellOf(trigger).querySelectorAll<HTMLElement>('[data-multiselect-chip]')].map((chip) => chip.textContent);
+}
+
 async function waitFor(condition: () => boolean, attempts = 40): Promise<boolean> {
 	for (let attempt = 0; attempt < attempts; attempt++) {
 		if (condition()) {
@@ -116,8 +121,8 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 			await frames();
 			check(
 				'MultiSelect: выбранное вне результата поиска остаётся в чипах',
-				visibleChips(short).includes('Сотрудник 0') && visibleChips(short).includes('Сотрудник 5'),
-				`чипы: ${visibleChips(short).join(', ')}`
+				allChips(short).includes('Сотрудник 0') && allChips(short).includes('Сотрудник 5'),
+				`чипы: ${allChips(short).join(', ')}`
 			);
 		}
 	}
@@ -136,8 +141,8 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 	await frames();
 	check(
 		'MultiSelect: × убирает чип, фокус на кнопке',
-		!visibleChips(short).includes('Сотрудник 0') && document.activeElement === short,
-		`чипы: ${visibleChips(short).join(', ') || 'нет'}`
+		!allChips(short).includes('Сотрудник 0') && document.activeElement === short,
+		`чипы: ${allChips(short).join(', ') || 'нет'}`
 	);
 
 	const all = required(page, '[data-multiselect="all"]');
@@ -161,7 +166,7 @@ export async function runMultiSelectChecks(page: HTMLElement): Promise<CheckResu
 		await frames();
 		check(
 			'MultiSelect: снятие одной опции при «Все» даёт массив остальных',
-			allValue.textContent.startsWith('7:') && !allValue.textContent.includes('Сотрудник 1,')
+			/Значение: 7:/.test(allValue.textContent) && !allValue.textContent.includes('Сотрудник 1,')
 				&& option('Все сотрудники').getAttribute('aria-selected') === 'false',
 			allValue.textContent
 		);

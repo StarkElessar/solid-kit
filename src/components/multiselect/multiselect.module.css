@@ -14,7 +14,7 @@
     align-items: center;
 
     box-sizing: border-box;
-    inline-size: var(--s-kit-multiselect-width, 16rem);
+    inline-size: var(--s-kit-multiselect-width, 18rem);
     min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
     padding-inline-start: 4px;
     border: 1px solid var(--s-kit-select-border, var(--s-kit-color-control-edge));

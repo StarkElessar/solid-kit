@@ -82,7 +82,7 @@ export function DemoMultiSelects(): JSX.Element {
 					<MultiSelect<Employee>
 						{...control}
 						data-multiselect='narrow'
-						style={{ '--s-kit-multiselect-width': '14rem' }}
+						style={{ '--s-kit-multiselect-width': '24rem' }}
 						items={SHORT}
 						defaultValue={[SHORT[0], SHORT[1], SHORT[2], SHORT[4], SHORT[5]].filter((item) => item !== undefined)}
 						getKey={getKey}
