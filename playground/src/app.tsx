@@ -2,11 +2,12 @@ import { createSignal, For, type JSX, onCleanup, onMount } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 import { ControlsRowPage } from './controls-row-page';
+import { GridPage } from './grid-page';
 import { ListsPage } from './lists-page';
 import { PanelsPage } from './panels-page';
 import { ThemesPage } from './themes-page';
 
-const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists'] as const;
+const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid'] as const;
 
 type PageId = (typeof PAGE_IDS)[number];
 
@@ -14,7 +15,8 @@ const PAGES: Record<PageId, { readonly title: string; readonly component: () => 
 	themes: { title: 'Темы', component: ThemesPage },
 	'controls-row': { title: 'Контролы в ряд', component: ControlsRowPage },
 	panels: { title: 'Панели', component: PanelsPage },
-	lists: { title: 'Списки', component: ListsPage }
+	lists: { title: 'Списки', component: ListsPage },
+	grid: { title: 'Грид', component: GridPage }
 };
 
 function readHash(): PageId {

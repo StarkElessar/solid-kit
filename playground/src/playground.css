@@ -322,3 +322,35 @@ h2 {
     gap: 16px;
     max-inline-size: 28rem;
 }
+
+.grid-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.grid-frame {
+    inline-size: 100%;
+    block-size: 28rem;
+}
+
+.grid-status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.85em;
+    background: var(--s-kit-color-tint);
+}
+
+.grid-status[data-status="готов"] {
+    color: var(--s-kit-color-success);
+}
+
+.grid-status[data-status="отклонён"] {
+    color: var(--s-kit-color-danger);
+}
+
+.grid-wrap {
+    display: block;
+    padding-block: 6px;
+    white-space: normal;
+}
