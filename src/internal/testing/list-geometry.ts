@@ -43,7 +43,19 @@ export function installListGeometry(options: ListGeometryOptions = {}): () => vo
 		this.dispatchEvent(new Event('scroll'));
 	};
 
+	// jsdom не реализует scrollIntoView: полное окно (`virtualized={false}`) прокручивается им
+	const hadScrollIntoView = 'scrollIntoView' in Element.prototype;
+	// eslint-disable-next-line @typescript-eslint/unbound-method
+	const originalScrollIntoView = Element.prototype.scrollIntoView;
+	Element.prototype.scrollIntoView = (): void => undefined;
+
 	return () => {
+		if (hadScrollIntoView) {
+			Element.prototype.scrollIntoView = originalScrollIntoView;
+		}
+		else {
+			Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+		}
 		if (hadScrollTo) {
 			Element.prototype.scrollTo = original;
 		}

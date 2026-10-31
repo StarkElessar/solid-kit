@@ -1,0 +1,77 @@
+/*
+ * Компонентные токены Select (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-select-bg (фон панели), --s-kit-select-border, --s-kit-select-radius, --s-kit-select-width,
+ *   --s-kit-listbox-min-width (минимальная ширина панели)
+ * Список внутри панели: src/internal/list-box/list-box.module.css (--s-kit-listbox-*).
+ * Ошибка поля задаётся нативным aria-invalid="true": красная граница и красное кольцо фокуса, как у Input.
+ */
+
+.trigger {
+    composes: control from "../../styles/control-base.module.css";
+
+    gap: 8px;
+    justify-content: space-between;
+
+    inline-size: var(--s-kit-select-width, 12rem);
+    min-inline-size: 0;
+    border: 1px solid var(--s-kit-select-border, var(--s-kit-color-control-edge));
+    border-radius: var(--s-kit-select-radius, var(--s-kit-radius));
+
+    color: var(--s-kit-color-text);
+    text-align: start;
+
+    background: var(--s-kit-color-surface);
+}
+
+.trigger[aria-invalid="true"] {
+    border-color: var(--s-kit-color-danger);
+}
+
+.trigger[aria-invalid="true"]:focus-visible {
+    outline-color: var(--s-kit-color-danger);
+}
+
+.value {
+    overflow: hidden;
+    flex: 1 1 auto;
+
+    min-inline-size: 0;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.placeholder {
+    color: var(--s-kit-color-muted);
+}
+
+.chevron {
+    flex: none;
+    color: var(--s-kit-color-muted);
+}
+
+.content {
+    composes: panel material from "../../internal/floating-panel/panel-base.module.css";
+
+    display: flex;
+    flex-direction: column;
+
+    min-inline-size: var(--s-kit-listbox-min-width, 160px);
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+
+    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
+    background: var(--s-kit-select-bg, var(--s-kit-color-surface));
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        .content {
+            background: var(--s-kit-select-bg, var(--s-kit-color-panel));
+        }
+    }
+}
+
+/* прокручивается список внутри панели, а не сама панель */
+.content {
+    overflow: hidden;
+}
