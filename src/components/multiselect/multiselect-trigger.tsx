@@ -63,7 +63,7 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 	const [shellWidth, setShellWidth] = createSignal(0);
 	const [widths, setWidths] = createSignal<ReadonlyMap<ListKey, number>>(new Map());
 	onMount(() => {
-		if (!own || typeof ResizeObserver === 'undefined') {
+		if (!own) {
 			return;
 		}
 		const shell = own;
