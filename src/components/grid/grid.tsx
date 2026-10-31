@@ -2,22 +2,27 @@ import styles from './grid.module.css';
 
 import { createMemo, createSignal, type JSX, onCleanup, onMount, untrack } from 'solid-js';
 
+import { PanelHostContext } from '../../internal/panel/panel-host';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
 import { createFullWindow } from '../../utils/create-full-window';
 import { createVirtualWindow } from '../../utils/create-virtual-window';
 import { readControlHeight } from '../../utils/read-control-height';
 import { readTokenPx } from '../../utils/read-token-px';
 import type { RenderWindowOptions } from '../../utils/render-window';
+import type { ContextMenuPoint } from '../context-menu';
+import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
 import { buildRowIndex } from './build-row-index';
 import { computeColumnLayout } from './column-layout';
 import { createGridResize } from './create-grid-resize';
 import { GridContext, type GridContextValue } from './grid-context';
 import type { GridProps } from './grid-props';
+import { GridRowMenu } from './grid-row-menu';
 import type { GridSort } from './grid-sort';
 import { GridTable } from './grid-table';
 import { nextSort } from './next-sort';
 import type { RowKey } from './row-key';
+import type { RowMenuTarget } from './row-menu-target';
 import { sameItems } from './same-items';
 import { clearKeys, selectAllKeys, selectionOf, toggleKey } from './selection-state';
 
@@ -81,6 +86,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 	// скроллер отдаётся окну рендера после вставки в документ: виртуализатор пропускает ещё не вставленный элемент
 	let rootElement: HTMLDivElement | undefined;
+	const [root, setRoot] = createSignal<HTMLDivElement>();
+	const [rowMenu, setRowMenu] = createSignal<RowMenuTarget>();
 	let scrollerElement: HTMLDivElement | undefined;
 	let header: HTMLTableSectionElement | undefined;
 
@@ -121,6 +128,18 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			setSelected(checked ? selectAllKeys(selected(), rowIndex().keys) : clearKeys(selected(), rowIndex().keys));
 		},
 		selectionState,
+		rootElement: root,
+		hasRowMenu: () => props.rowContextMenu !== undefined,
+		rowMenu,
+		openRowMenu: (index: number, point: ContextMenuPoint, source: MenuOpenSource) => {
+			if (index < props.rows.length) {
+				setRowMenu({ point, source, row: props.rows[index] });
+			}
+		},
+		closeRowMenu: () => {
+			setRowMenu(undefined);
+		},
+		renderRowMenu: (row) => props.rowContextMenu?.(row as T),
 		selectAllLabel: () => props.selectAllLabel ?? 'Выбрать все строки',
 		selectRowLabel: () => props.selectRowLabel ?? 'Выбрать строку',
 		columnCount: () => columns().length + (selectable() ? 1 : 0),
@@ -160,25 +179,34 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 	return (
 		<GridContext.Provider value={context as unknown as GridContextValue<unknown>}>
-			<div
-				ref={rootElement}
-				data-s-kit
-				data-s-kit-focus-inset
-				tabindex='-1'
-				class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
-				style={{ ...props.style, '--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px` }}
-			>
+			<PanelHostContext.Provider value={root}>
 				<div
-					ref={scrollerElement}
-					class={styles['scroller']}
+					ref={(element) => {
+						rootElement = element;
+						setRoot(element);
+					}}
+					data-s-kit
+					data-s-kit-focus-inset
+					tabindex='-1'
+					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					style={{
-						'scroll-padding-block-start': `${headerHeight()}px`,
-						'scroll-padding-inline-start': `${layout().stickyWidth}px`
+						...props.style,
+						'--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px`
 					}}
 				>
-					<GridTable aria-label={props['aria-label']}/>
+					<div
+						ref={scrollerElement}
+						class={styles['scroller']}
+						style={{
+							'scroll-padding-block-start': `${headerHeight()}px`,
+							'scroll-padding-inline-start': `${layout().stickyWidth}px`
+						}}
+					>
+						<GridTable aria-label={props['aria-label']}/>
+					</div>
+					<GridRowMenu/>
 				</div>
-			</div>
+			</PanelHostContext.Provider>
 		</GridContext.Provider>
 	);
 }

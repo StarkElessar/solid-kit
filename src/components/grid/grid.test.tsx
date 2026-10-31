@@ -1,6 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
+import { cleanup, createEvent, fireEvent, render, screen } from '@solidjs/testing-library';
 import { createSignal } from 'solid-js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ContextMenu } from '../context-menu';
 
 import { Grid } from './grid';
 import type { GridColumn } from './grid-column';
@@ -846,5 +848,147 @@ describe('Grid: сортировка', () => {
 		fireEvent.click(sortButton('Возраст'));
 		expect(bodyRows().map((row) => row.dataset['rowKey'])).toEqual(['1', '2', '3']);
 		expect(header('Возраст').textContent).toBe('Возраст');
+	});
+});
+
+describe('Grid: контекстное меню строки', () => {
+	beforeEach(() => {
+		// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
+		HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
+			this.removeAttribute('popover');
+		});
+		HTMLElement.prototype.hidePopover = vi.fn();
+	});
+
+	function menuOf(row: Person) {
+		return (
+			<>
+				<ContextMenu.Item>{`Открыть ${row.name}`}</ContextMenu.Item>
+				<ContextMenu.Item closeOnSelect={false}>Оставить</ContextMenu.Item>
+			</>
+		);
+	}
+
+	function rowCheckbox(index: number): HTMLInputElement {
+		return (bodyRows()[index] as HTMLTableRowElement).querySelector('input[type="checkbox"]') as HTMLInputElement;
+	}
+
+	function press(key: string, options: { shiftKey?: boolean } = {}, target: Element = document.activeElement ?? document.body): Event {
+		const event = createEvent.keyDown(target, { key, ...options });
+		fireEvent(target, event);
+		return event;
+	}
+
+	it('без rowContextMenu правый клик не отменяется и меню нет', () => {
+		renderGrid();
+		const cell = (bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement;
+		expect(fireEvent.contextMenu(cell)).toBe(true);
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('правый клик по ячейке открывает меню для этой строки, содержимое вызывается лениво один раз', () => {
+		const rowContextMenu = vi.fn(menuOf);
+		renderGrid({ rowContextMenu });
+		expect(rowContextMenu).not.toHaveBeenCalled();
+		const cell = (bodyRows()[1] as HTMLTableRowElement).cells[0] as HTMLElement;
+		expect(fireEvent.contextMenu(cell, { clientX: 30, clientY: 40 })).toBe(false);
+		expect(screen.getByRole('menu')).toBeTruthy();
+		expect(screen.getByRole('menuitem', { name: 'Открыть Борис' })).toBeTruthy();
+		expect(rowContextMenu).toHaveBeenCalledTimes(1);
+		expect(rowContextMenu).toHaveBeenCalledWith(ROWS[1]);
+	});
+
+	it('меню лежит в корне грида, а не внутри таблицы', () => {
+		const { container } = renderGrid({ rowContextMenu: menuOf });
+		fireEvent.contextMenu((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		const menu = screen.getByRole('menu');
+		expect(menu.closest('table')).toBeNull();
+		expect(container.firstElementChild?.contains(menu)).toBe(true);
+	});
+
+	it('правый клик по заголовку меню не открывает и не отменяется', () => {
+		renderGrid({ rowContextMenu: menuOf });
+		const head = table().querySelector('thead th') as HTMLElement;
+		expect(fireEvent.contextMenu(head)).toBe(true);
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('правый клик строку не выбирает', () => {
+		const onSelectedKeysChange = vi.fn();
+		renderGrid({ rowContextMenu: menuOf, selectable: true, onSelectedKeysChange });
+		fireEvent.contextMenu((bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement);
+		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+	});
+
+	it('Shift+F10 и клавиша ContextMenu на чекбоксе строки открывают меню, фокус на первом пункте; F10 без Shift нет', () => {
+		renderGrid({ rowContextMenu: menuOf, selectable: true });
+		rowCheckbox(0).focus();
+		expect(press('F10').defaultPrevented).toBe(false);
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(press('F10', { shiftKey: true }).defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Открыть Анна' }));
+		press('Escape');
+		expect(screen.queryByRole('menu')).toBeNull();
+		rowCheckbox(2).focus();
+		press('ContextMenu');
+		expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Открыть Вера' }));
+	});
+
+	it('Esc закрывает меню, фокус возвращается на чекбокс строки', () => {
+		renderGrid({ rowContextMenu: menuOf, selectable: true });
+		rowCheckbox(1).focus();
+		press('F10', { shiftKey: true });
+		press('Escape');
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(document.activeElement).toBe(rowCheckbox(1));
+	});
+
+	it('клик и двойной клик по пункту не выбирают строку и не вызывают onRowDoubleClick', () => {
+		const onSelectedKeysChange = vi.fn();
+		const onRowDoubleClick = vi.fn();
+		renderGrid({ rowContextMenu: menuOf, selectable: true, onSelectedKeysChange, onRowDoubleClick });
+		fireEvent.contextMenu((bodyRows()[0] as HTMLTableRowElement).cells[1] as HTMLElement);
+		const item = screen.getByRole('menuitem', { name: 'Оставить' });
+		fireEvent.click(item);
+		fireEvent.dblClick(item);
+		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+		expect(onRowDoubleClick).not.toHaveBeenCalled();
+	});
+
+	it('прокрутка скроллера закрывает меню', () => {
+		renderGrid({ rowContextMenu: menuOf });
+		fireEvent.contextMenu((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		expect(screen.getByRole('menu')).toBeTruthy();
+		(table().parentElement as HTMLElement).dispatchEvent(new Event('scroll'));
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('повторное открытие на другой строке показывает пункты этой строки', () => {
+		renderGrid({ rowContextMenu: menuOf });
+		fireEvent.contextMenu((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		press('Escape');
+		fireEvent.contextMenu((bodyRows()[2] as HTMLTableRowElement).cells[0] as HTMLElement);
+		expect(screen.getByRole('menuitem', { name: 'Открыть Вера' })).toBeTruthy();
+		expect(screen.queryByRole('menuitem', { name: 'Открыть Анна' })).toBeNull();
+	});
+
+	it('если строка с инициатором исчезла, после закрытия фокус на корне грида', () => {
+		const [rows, setRows] = createSignal(ROWS);
+		const { container } = render(() => (
+			<Grid
+				rows={rows()}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				selectable
+				aria-label='Люди'
+				rowContextMenu={menuOf}
+			/>
+		));
+		rowCheckbox(2).focus();
+		press('F10', { shiftKey: true });
+		setRows(ROWS.slice(0, 1));
+		press('Escape');
+		expect(document.activeElement).toBe(container.firstElementChild);
 	});
 });

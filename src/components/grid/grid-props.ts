@@ -23,6 +23,8 @@ export interface GridProps<T> {
 	onSortChange?: ((sort: GridSort | null) => void) | undefined;
 	/** Двойной клик по неинтерактивной части строки; выбор при этом не откатывается (раздел 7 спека). */
 	onRowDoubleClick?: ((row: T) => void) | undefined;
+	/** Пункты контекстного меню строки (`ContextMenu.Item`, `Sub`, `Separator`): правый клик, Shift+F10 и клавиша ContextMenu. */
+	rowContextMenu?: ((row: T) => JSX.Element) | undefined;
 	/** Подпись главного чекбокса ('Выбрать все строки'). */
 	selectAllLabel?: string | undefined;
 	/** Подпись чекбокса строки ('Выбрать строку'). */

@@ -1,11 +1,14 @@
-import { type Accessor, createContext, useContext } from 'solid-js';
+import { type Accessor, createContext, type JSX, useContext } from 'solid-js';
 
 import type { RenderWindow } from '../../utils/render-window';
+import type { ContextMenuPoint } from '../context-menu';
+import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
 import type { RowIndex } from './build-row-index';
 import type { ColumnLayout } from './column-layout';
 import type { GridColumn } from './grid-column';
 import type { GridSort } from './grid-sort';
+import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
 
 export interface GridContextValue<T> {
@@ -37,6 +40,14 @@ export interface GridContextValue<T> {
 	beginResize: (index: number, event: PointerEvent) => void;
 	/** Двойной клик по ручке: возврат к `GridColumn.width`. */
 	resetWidth: (columnId: string) => void;
+	/** Корень грида: хост панелей, область вызова меню строки и запасной получатель фокуса. */
+	rootElement: Accessor<HTMLElement | undefined>;
+	hasRowMenu: Accessor<boolean>;
+	/** Открытое меню строки; `undefined`, пока закрыто. */
+	rowMenu: Accessor<RowMenuTarget | undefined>;
+	openRowMenu: (index: number, point: ContextMenuPoint, source: MenuOpenSource) => void;
+	closeRowMenu: () => void;
+	renderRowMenu: (row: unknown) => JSX.Element;
 	/** Ref шапки: Grid измеряет её высоту. */
 	headerRef: (element: HTMLTableSectionElement) => void;
 }

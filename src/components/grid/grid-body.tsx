@@ -2,6 +2,9 @@ import styles from './grid.module.css';
 
 import { createMemo, For, type JSX, Show } from 'solid-js';
 
+import { elementPoint } from '../context-menu/menu-point-anchor';
+
+import { closestRow } from './closest-row';
 import { useGrid } from './grid-context';
 import { GridRow } from './grid-row';
 import { isInteractiveTarget } from './is-interactive-target';
@@ -9,11 +12,8 @@ import { sameItems } from './same-items';
 
 /** Строка тела, в которую попало событие: `undefined` для spacer-строк и целей вне строки. */
 function rowOfEvent(event: Event): { tr: HTMLTableRowElement; index: number } | undefined {
-	const tr = event.target instanceof Element ? event.target.closest<HTMLTableRowElement>('tr[data-index]') : null;
-	if (tr === null || isInteractiveTarget(event.target, tr)) {
-		return undefined;
-	}
-	return { tr, index: Number(tr.dataset['index']) };
+	const hit = closestRow(event.target);
+	return hit === undefined || isInteractiveTarget(event.target, hit.tr) ? undefined : hit;
 }
 
 /**
@@ -32,6 +32,23 @@ export function GridBody(): JSX.Element {
 	const columnCount = (): number => grid.columnCount();
 	return (
 		<tbody
+			onContextMenu={(event) => {
+				const hit = grid.hasRowMenu() ? closestRow(event.target) : undefined;
+				if (hit !== undefined) {
+					event.preventDefault();
+					grid.openRowMenu(hit.index, { x: event.clientX, y: event.clientY }, 'pointer');
+				}
+			}}
+			onKeyDown={(event) => {
+				const hit = grid.hasRowMenu() && (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey))
+					? closestRow(event.target)
+					: undefined;
+				if (hit !== undefined) {
+					event.preventDefault();
+					const anchor = event.target instanceof Element ? event.target : event.currentTarget;
+					grid.openRowMenu(hit.index, elementPoint(anchor), 'keyboard');
+				}
+			}}
 			onClick={(event) => {
 				const hit = grid.selectable() ? rowOfEvent(event) : undefined;
 				if (hit !== undefined) {
