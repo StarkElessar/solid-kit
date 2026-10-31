@@ -28,15 +28,15 @@
     /* плотный слой данных: сплошной фон, материал панелей ему не подходит */
     background: var(--s-kit-dialog-bg, var(--s-kit-color-surface));
     box-shadow: var(--s-kit-shadow-popover);
-}
 
-/* display: flex только у открытого диалога: иначе закрытый `<dialog>` стал бы видимым */
-.dialog[open] {
-    display: flex;
-}
+    &::backdrop {
+        background: var(--s-kit-dialog-backdrop, color-mix(in oklch, var(--s-kit-color-text) 40%, transparent));
+    }
 
-.dialog::backdrop {
-    background: var(--s-kit-dialog-backdrop, color-mix(in oklch, var(--s-kit-color-text) 40%, transparent));
+    /* display: flex только у открытого диалога: иначе закрытый `<dialog>` стал бы видимым */
+    &[open] {
+        display: flex;
+    }
 }
 
 /* страница под модальным диалогом не прокручивается; gutter не даёт вёрстке прыгать при исчезновении полосы */

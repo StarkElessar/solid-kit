@@ -16,11 +16,9 @@
 
     /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
     background: var(--s-kit-popover-bg, var(--s-kit-color-surface));
-}
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
-        .content {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
             background: var(--s-kit-popover-bg, var(--s-kit-color-panel));
         }
     }

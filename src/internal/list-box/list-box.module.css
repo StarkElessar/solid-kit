@@ -15,6 +15,11 @@
     min-block-size: 0;
     max-block-size: var(--s-kit-listbox-max-height, 320px);
     padding: var(--s-kit-listbox-padding, 4px);
+
+    &[data-active-source="keyboard"] .option[data-active] {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
 }
 
 .option,
@@ -35,24 +40,19 @@
     border-radius: var(--s-kit-listbox-item-radius, var(--s-kit-radius));
 
     color: var(--s-kit-color-text);
-}
 
-.option[data-selected] {
-    background: var(--s-kit-color-row-selected);
-}
+    &[data-selected] {
+        background: var(--s-kit-color-row-selected);
+    }
 
-.option[data-active] {
-    background: var(--s-kit-color-tint);
-}
+    &[data-active] {
+        background: var(--s-kit-color-tint);
+    }
 
-.scroller[data-active-source="keyboard"] .option[data-active] {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
-
-.option[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: var(--s-kit-disabled-opacity);
+    &[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
 }
 
 /* место под отметку выбранной опции занято всегда: подписи не прыгают при выборе */

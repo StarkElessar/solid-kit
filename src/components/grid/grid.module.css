@@ -64,6 +64,29 @@
 
 .cell {
     block-size: var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md)));
+
+    &[data-sticky] {
+        position: sticky;
+        z-index: var(--s-kit-grid-z-sticky);
+        background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
+    }
+
+    &[data-sticky-last] {
+        border-inline-end-color: var(--s-kit-color-border-strong);
+    }
+
+    &[data-align="end"] {
+        text-align: end;
+    }
+
+    &[data-align="center"] {
+        text-align: center;
+    }
+
+    /* чекбокс не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают каждую строку на 1 px, и строки уходят с оценки окна */
+    &.select-cell > [data-s-kit] {
+        block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
+    }
 }
 
 .head-cell {
@@ -77,48 +100,57 @@
     color: var(--s-kit-color-muted);
 
     background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
-}
 
-.cell[data-sticky],
-.head-cell[data-sticky] {
-    position: sticky;
-    z-index: var(--s-kit-grid-z-sticky);
-    background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
-}
+    /* закреплённая ячейка шапки: слой угла и фон шапки перекрывают значения общего правила ячеек */
+    &[data-sticky] {
+        position: sticky;
+        z-index: var(--s-kit-grid-z-corner);
+        background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
+    }
 
-.head-cell[data-sticky] {
-    z-index: var(--s-kit-grid-z-corner);
-    background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
-}
+    &[data-sticky-last] {
+        border-inline-end-color: var(--s-kit-color-border-strong);
+    }
 
-.cell[data-sticky-last],
-.head-cell[data-sticky-last] {
-    border-inline-end-color: var(--s-kit-color-border-strong);
-}
+    &[data-align="end"] {
+        text-align: end;
 
-.cell[data-align="end"],
-.head-cell[data-align="end"] {
-    text-align: end;
-}
+        & .sort-button {
+            justify-content: flex-end;
+        }
+    }
 
-.cell[data-align="center"],
-.head-cell[data-align="center"] {
-    text-align: center;
-}
+    &[data-align="center"] {
+        text-align: center;
 
-@media (hover: hover) {
-    .row:hover > .cell {
-        --s-kit-grid-fill: var(--s-kit-grid-row-hover, var(--s-kit-color-hover));
+        & .sort-button {
+            justify-content: center;
+        }
+    }
 
-        background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
+    &.select-cell > [data-s-kit] {
+        block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 1px);
     }
 }
 
-/* заливка слоем-градиентом поверх фона ячейки: sticky-ячейки остаются непрозрачными даже при полупрозрачном токене */
-.row[data-selected] > .cell {
-    --s-kit-grid-fill: var(--s-kit-color-row-selected);
+/* у строки нет собственных объявлений: правила строки и её ячеек живут в правиле блока */
 
-    background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
+/* выбор идёт после наведения: при равной специфичности он побеждает */
+.row {
+    /* заливка слоем-градиентом поверх фона ячейки: sticky-ячейки остаются непрозрачными даже при полупрозрачном токене */
+    &[data-selected] > .cell {
+        --s-kit-grid-fill: var(--s-kit-color-row-selected);
+
+        background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
+    }
+
+    @media (hover: hover) {
+        &:hover > .cell {
+            --s-kit-grid-fill: var(--s-kit-grid-row-hover, var(--s-kit-color-hover));
+
+            background-image: linear-gradient(var(--s-kit-grid-fill), var(--s-kit-grid-fill));
+        }
+    }
 }
 
 .spacer {
@@ -136,24 +168,24 @@
     inset-inline-end: 0;
 
     inline-size: 8px;
-}
 
-.resize-handle::after {
-    content: "";
+    &::after {
+        content: "";
 
-    position: absolute;
-    inset-block: 4px;
-    inset-inline-end: 0;
+        position: absolute;
+        inset-block: 4px;
+        inset-inline-end: 0;
 
-    inline-size: 2px;
-    border-radius: 1px;
+        inline-size: 2px;
+        border-radius: 1px;
 
-    background: transparent;
-}
+        background: transparent;
+    }
 
-@media (hover: hover) {
-    .resize-handle:hover::after {
-        background: var(--s-kit-color-border-strong);
+    @media (hover: hover) {
+        &:hover::after {
+            background: var(--s-kit-color-border-strong);
+        }
     }
 }
 
@@ -184,19 +216,19 @@
 
     appearance: none;
     background: transparent;
-}
 
-.sort-button:focus-visible {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
 
-.head-cell[data-align="end"] .sort-button {
-    justify-content: flex-end;
-}
+    &[data-active] {
+        color: var(--s-kit-color-text);
 
-.head-cell[data-align="center"] .sort-button {
-    justify-content: center;
+        & .sort-arrow {
+            opacity: 1;
+        }
+    }
 }
 
 .sort-title {
@@ -209,21 +241,4 @@
     inline-size: 14px;
     block-size: 14px;
     opacity: 0.4;
-}
-
-.sort-button[data-active] {
-    color: var(--s-kit-color-text);
-}
-
-.sort-button[data-active] .sort-arrow {
-    opacity: 1;
-}
-
-/* чекбокс не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают каждую строку на 1 px, и строки уходят с оценки окна */
-.cell.select-cell > [data-s-kit] {
-    block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
-}
-
-.head-cell.select-cell > [data-s-kit] {
-    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 1px);
 }

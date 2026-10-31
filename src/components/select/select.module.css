@@ -21,14 +21,14 @@
     text-align: start;
 
     background: var(--s-kit-color-surface);
-}
 
-.trigger[aria-invalid="true"] {
-    border-color: var(--s-kit-color-danger);
-}
+    &[aria-invalid="true"] {
+        border-color: var(--s-kit-color-danger);
 
-.trigger[aria-invalid="true"]:focus-visible {
-    outline-color: var(--s-kit-color-danger);
+        &:focus-visible {
+            outline-color: var(--s-kit-color-danger);
+        }
+    }
 }
 
 .value {
@@ -52,11 +52,9 @@
 
 .content {
     --s-kit-listbox-bg: var(--s-kit-select-bg, var(--s-kit-color-surface));
-}
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
-        .content {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
             --s-kit-listbox-bg: var(--s-kit-select-bg, var(--s-kit-color-panel));
         }
     }

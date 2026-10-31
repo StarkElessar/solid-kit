@@ -27,24 +27,34 @@
     color: var(--s-kit-color-text);
 
     background: var(--s-kit-color-surface);
-}
 
-.shell:has(.input:focus-visible) {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
-}
+    &:has(.input:focus-visible) {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
 
-.shell[aria-invalid="true"] {
-    border-color: var(--s-kit-color-danger);
-}
+    &[aria-invalid="true"] {
+        border-color: var(--s-kit-color-danger);
 
-.shell[aria-invalid="true"]:has(.input:focus-visible) {
-    outline-color: var(--s-kit-color-danger);
-}
+        &:has(.input:focus-visible) {
+            outline-color: var(--s-kit-color-danger);
+        }
+    }
 
-.shell[data-disabled] {
-    cursor: not-allowed;
-    opacity: var(--s-kit-disabled-opacity);
+    &[data-disabled] {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
+
+    &[data-multiselect-overflow="wrap"] {
+        flex-wrap: wrap;
+        padding-block: 3px;
+
+        /* в режиме wrap чипы становятся элементами оболочки и переносятся вместе с полем ввода */
+        & .chips {
+            display: contents;
+        }
+    }
 }
 
 .chips {
@@ -55,16 +65,6 @@
     align-items: center;
 
     min-inline-size: 0;
-}
-
-.shell[data-multiselect-overflow="wrap"] {
-    flex-wrap: wrap;
-    padding-block: 3px;
-}
-
-/* в режиме wrap чипы становятся элементами оболочки и переносятся вместе с полем ввода */
-.shell[data-multiselect-overflow="wrap"] .chips {
-    display: contents;
 }
 
 .chip {
@@ -79,10 +79,10 @@
     border-radius: var(--s-kit-radius);
 
     background: var(--s-kit-color-tint);
-}
 
-.chip[hidden] {
-    display: none;
+    &[hidden] {
+        display: none;
+    }
 }
 
 .chip-label {
@@ -111,19 +111,19 @@
     color: var(--s-kit-color-muted);
 
     background: transparent;
-}
 
-.chip-remove:hover {
-    color: var(--s-kit-color-text);
-}
+    &:hover {
+        color: var(--s-kit-color-text);
+    }
 
-.chip-remove:focus-visible {
-    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
-    outline-offset: calc(var(--s-kit-focus-width) * -1);
-}
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: calc(var(--s-kit-focus-width) * -1);
+    }
 
-.chip-remove:disabled {
-    cursor: not-allowed;
+    &:disabled {
+        cursor: not-allowed;
+    }
 }
 
 .counter {
@@ -147,14 +147,14 @@
 
     /* кольцо рисует оболочка (.shell:has); outline-style: auto даже с прозрачным цветом рисует светлую подложку поверх рамки */
     outline: var(--s-kit-focus-width) solid transparent;
-}
 
-.input::placeholder {
-    color: var(--s-kit-color-muted);
-}
+    &::placeholder {
+        color: var(--s-kit-color-muted);
+    }
 
-.input:disabled {
-    cursor: not-allowed;
+    &:disabled {
+        cursor: not-allowed;
+    }
 }
 
 .toggle {
@@ -177,19 +177,17 @@
     color: var(--s-kit-color-muted);
 
     background: transparent;
-}
 
-.toggle:disabled {
-    cursor: not-allowed;
+    &:disabled {
+        cursor: not-allowed;
+    }
 }
 
 .content {
     --s-kit-listbox-bg: var(--s-kit-multiselect-bg, var(--s-kit-color-surface));
-}
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
-        .content {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
             --s-kit-listbox-bg: var(--s-kit-multiselect-bg, var(--s-kit-color-panel));
         }
     }
