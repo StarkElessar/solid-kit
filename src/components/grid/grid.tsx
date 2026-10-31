@@ -61,6 +61,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 	const [scroller, setScroller] = createSignal<HTMLElement | undefined>(undefined);
 	const [headerHeight, setHeaderHeight] = createSignal(0);
+
 	const estimate = createMemo(() => {
 		const element = scroller();
 		return props.rowHeight ?? (element === undefined ? FALLBACK_ROW_HEIGHT : readControlHeight(element));
@@ -75,6 +76,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		scrollMargin: headerHeight,
 		initialHeight: () => INITIAL_WINDOW_HEIGHT
 	};
+
 	const window = untrack(() => props.virtualized) === false ? createFullWindow(windowOptions) : createVirtualWindow(windowOptions);
 
 	// скроллер отдаётся окну рендера после вставки в документ: виртуализатор пропускает ещё не вставленный элемент
