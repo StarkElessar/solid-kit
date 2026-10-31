@@ -2,7 +2,9 @@ import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runComboboxChecks } from './combobox-checks';
 import { DemoComboboxes } from './demo-comboboxes';
+import { DemoMultiSelects } from './demo-multiselects';
 import { DemoSelects } from './demo-selects';
+import { runMultiSelectChecks } from './multiselect-checks';
 import { pick } from './pick';
 import { runSelectChecks } from './select-checks';
 import type { CheckResult } from './theme-checks';
@@ -11,7 +13,7 @@ type Theme = 'system' | 'light' | 'dark';
 
 const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 
-/** Страница «Списки» (раздел 8 зонтичного спека): наращивается частями этапа 3. Сейчас: Select и Combobox. */
+/** Страница «Списки» (раздел 8 зонтичного спека): наращивается частями этапа 3. Сейчас: Select, Combobox и MultiSelect. */
 export function ListsPage(): JSX.Element {
 	const [theme, setTheme] = createSignal<Theme>('system');
 	const [results, setResults] = createSignal<readonly CheckResult[]>([]);
@@ -31,7 +33,11 @@ export function ListsPage(): JSX.Element {
 		if (page) {
 			const root = page;
 			void (async () => {
-				setResults([...await runSelectChecks(root), ...await runComboboxChecks(root)]);
+				setResults([
+					...await runSelectChecks(root),
+					...await runComboboxChecks(root),
+					...await runMultiSelectChecks(root)
+				]);
 			})();
 		}
 	};
@@ -72,7 +78,19 @@ export function ListsPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>3. Проверки</h2>
+				<h2>3. MultiSelect</h2>
+				<p>
+					Ручная приёмка настоящими клавишами: открытие кнопкой (ArrowDown, ArrowUp, Enter, Space), фокус сразу в поле поиска,
+					стрелки и Enter переключают опции, панель не закрывается по выбору, Esc закрывает и возвращает фокус на кнопку, Tab из
+					поиска закрывает и оставляет фокус на кнопке; Tab по чипам останавливается на каждом × (Enter убирает чип); строка «Все»
+					даёт значение -1; режимы collapse (сузить окно: чипы уходят в «+N»), summary и wrap; 100 000 опций; внешний поиск; в
+					форме Enter не отправляет форму; в диалоге Esc закрывает сначала список, потом диалог.
+				</p>
+				<DemoMultiSelects/>
+			</section>
+
+			<section>
+				<h2>4. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>
