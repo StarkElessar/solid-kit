@@ -170,15 +170,18 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 	);
 
 	const controlHeight = readControlHeight(scroller);
-	const firstRowHeight = (bodyRows(table)[0] as HTMLElement).getBoundingClientRect().height;
+	// колонка с переносом делает часть строк выше (зависит от ширины окна): сравниваются самые низкие строки окна
+	const lowestRowHeight = Math.min(...bodyRows(table).map((row) => row.getBoundingClientRect().height));
 	check(
 		'Grid: строка с чекбоксом одной высоты с контролом (чекбокс не раздувает строку)',
-		Math.abs(firstRowHeight - controlHeight) <= 0.5,
-		`строка ${firstRowHeight} px, контрол ${controlHeight} px`
+		Math.abs(lowestRowHeight - controlHeight) <= 0.5,
+		`самая низкая строка ${lowestRowHeight} px, контрол ${controlHeight} px`
 	);
 
 	scroller.scrollTop = 0;
-	await frames();
+	for (let attempt = 0; attempt < 60 && bodyRows(table)[0]?.dataset['index'] !== '0'; attempt++) {
+		await frames();
+	}
 	const selectedCount = (): number => Number(required(page, '[data-grid-selected-count]').textContent);
 	const firstBodyRow = (): HTMLTableRowElement => bodyRows(table)[0] as HTMLTableRowElement;
 	const rowBox = (): HTMLInputElement => required(firstBodyRow(), 'input[type="checkbox"]') as HTMLInputElement;
@@ -296,12 +299,19 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 		`первая видимая строка ${firstVisible?.dataset['index'] ?? '—'}, строка под шапкой начинается на ${topOffset.toFixed(1)} px`
 	);
 
-	scroller.scrollTop = scroller.scrollHeight;
-	await frames(6);
-	const tail = bodyRows(table);
-	const tailLast = tail[tail.length - 1];
-	const tailBottom = tailLast?.getBoundingClientRect().bottom ?? Number.NaN;
+	// высоты строк измеряются по мере показа, поэтому scrollHeight растёт и первый прыжок в конец недолетает: прыгаем, пока не сойдётся
 	const scrollerBottom = scroller.getBoundingClientRect().top + scroller.clientHeight;
+	const lastRowOf = (): HTMLTableRowElement | undefined => bodyRows(table).at(-1);
+	for (let attempt = 0; attempt < 10; attempt++) {
+		scroller.scrollTop = scroller.scrollHeight;
+		await frames(6);
+		const candidate = lastRowOf();
+		if (candidate?.dataset['index'] === '99999' && Math.abs(candidate.getBoundingClientRect().bottom - scrollerBottom) <= 1.5) {
+			break;
+		}
+	}
+	const tailLast = lastRowOf();
+	const tailBottom = tailLast?.getBoundingClientRect().bottom ?? Number.NaN;
 	check(
 		'Grid: прокрутка в самый конец показывает последнюю строку впритык к нижнему краю, без пустого хвоста',
 		tailLast?.dataset['index'] === '99999' && Math.abs(tailBottom - scrollerBottom) <= 1.5,

@@ -245,6 +245,14 @@ describe('Grid: виртуализация', () => {
 		expect((bottom ?? 0) + rows.length * 20).toBe(1000 * 20);
 	});
 
+	it('измеряются все строки окна: к моменту измерения у строки уже есть data-index', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		renderGrid({ rows: manyRows(1000), virtualized: true, rowHeight: 20, overscan: 2 });
+		expect(bodyRows().length).toBeGreaterThan(0);
+		expect(warn).not.toHaveBeenCalled();
+	});
+
 	it('после прокрутки есть оба spacer, а первая строка окна учитывает высоту шапки (scrollMargin)', () => {
 		mockGeometry({ windowHeight: 100, rowHeight: 20, headerHeight: 36 });
 		renderGrid({ rows: manyRows(1000), virtualized: true, rowHeight: 20, overscan: 2 });

@@ -1,6 +1,6 @@
 import styles from './grid.module.css';
 
-import { For, type JSX, Show } from 'solid-js';
+import { For, type JSX, onMount, Show } from 'solid-js';
 
 import { GridCell } from './grid-cell';
 import { useGrid } from './grid-context';
@@ -15,6 +15,7 @@ export function GridRow(props: GridRowProps): JSX.Element {
 	const grid = useGrid();
 	// при сокращении rows Solid может пересчитать ячейки раньше, чем окно уберёт эту строку: до удаления она держит последнюю строку
 	let lastRow: unknown;
+	let element: HTMLTableRowElement | undefined;
 	const row = (): unknown => {
 		const rows = grid.rows();
 		if (props.index < rows.length) {
@@ -22,9 +23,16 @@ export function GridRow(props: GridRowProps): JSX.Element {
 		}
 		return lastRow;
 	};
+
+	// измерение читает data-index: ref вызывается раньше, чем Solid выставит атрибуты, к монтированию они уже на месте
+	onMount(() => {
+		if (element) {
+			grid.window.measure(element);
+		}
+	});
 	return (
 		<tr
-			ref={grid.window.measure}
+			ref={element}
 			class={styles['row']}
 			data-index={props.index}
 			data-row-key={grid.rowIndex().keys[props.index]}
