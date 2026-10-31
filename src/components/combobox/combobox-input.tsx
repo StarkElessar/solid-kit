@@ -9,10 +9,12 @@ import { useComboboxContext } from './combobox-context';
 export interface ComboboxInputProps
 	extends Omit<
 		InputProps,
-		'class' | 'style' | 'size' | 'value' | 'defaultValue' | 'onValueChange' | 'role' | 'disabled' | 'onKeyDown' | 'onBlur' | 'ref'
+		'class' | 'style' | 'size' | 'value' | 'defaultValue' | 'onValueChange' | 'role' | 'disabled' | 'ref'
+		| 'onKeyDown' | 'onBlur' | 'onClick'
 	> {
 	onKeyDown?: JSX.EventHandler<HTMLInputElement, KeyboardEvent> | undefined;
 	onBlur?: JSX.EventHandler<HTMLInputElement, FocusEvent> | undefined;
+	onClick?: JSX.EventHandler<HTMLInputElement, MouseEvent> | undefined;
 	/** Доступное имя кнопки-шеврона; по умолчанию «Показать список». */
 	toggleLabel?: string | undefined;
 	/** Класс и стиль оболочки поля (она задаёт ширину). */
@@ -22,7 +24,7 @@ export interface ComboboxInputProps
 
 export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
 	const context = useComboboxContext('Combobox.Input');
-	const [local, rest] = splitProps(props, ['toggleLabel', 'class', 'style', 'onKeyDown', 'onBlur']);
+	const [local, rest] = splitProps(props, ['toggleLabel', 'class', 'style', 'onKeyDown', 'onBlur', 'onClick']);
 
 	const handleKeyDown: JSX.EventHandler<HTMLInputElement, KeyboardEvent> = (event) => {
 		local.onKeyDown?.(event);
@@ -42,6 +44,14 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
 		}
 		if (context.controller.handleKeyDown(event)) {
 			event.preventDefault();
+		}
+	};
+
+	// клик по полю открывает закрытый список; при открытом списке клик только ставит курсор
+	const handleClick: JSX.EventHandler<HTMLInputElement, MouseEvent> = (event) => {
+		local.onClick?.(event);
+		if (!event.defaultPrevented && !context.disabled() && !context.open()) {
+			context.setOpen(true, 'pointer');
 		}
 	};
 
@@ -73,6 +83,7 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
 				value={context.query()}
 				onValueChange={context.handleInput}
 				onKeyDown={handleKeyDown}
+				onClick={handleClick}
 				onBlur={(event) => {
 					local.onBlur?.(event);
 					if (!event.defaultPrevented) {

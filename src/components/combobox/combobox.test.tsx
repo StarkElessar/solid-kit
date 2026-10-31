@@ -220,6 +220,20 @@ describe('Combobox: клавиши', () => {
 		expect(field().getAttribute('aria-expanded')).toBe('true');
 	});
 
+	it('клик по полю открывает закрытый список, повторный клик список не закрывает', () => {
+		render(() => <Basic/>);
+		fireEvent.click(field());
+		expect(field().getAttribute('aria-expanded')).toBe('true');
+		fireEvent.click(field());
+		expect(field().getAttribute('aria-expanded')).toBe('true');
+	});
+
+	it('клик по отключённому полю список не открывает', () => {
+		render(() => <Basic disabled/>);
+		fireEvent.click(field());
+		expect(field().getAttribute('aria-expanded')).toBe('false');
+	});
+
 	it('стрелки двигают подсветку мимо отключённой опции, aria-activedescendant совпадает с [data-active]', () => {
 		render(() => <Basic/>);
 		press('ArrowDown');
