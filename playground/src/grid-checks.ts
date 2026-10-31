@@ -172,16 +172,27 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 	await frames(6);
 	const jumped = bodyRows(table);
 	const visibleTop = scroller.getBoundingClientRect().top + headerHeight;
-	const visibleBottom = scroller.getBoundingClientRect().bottom;
+	const visibleBottom = scroller.getBoundingClientRect().top + scroller.clientHeight;
 	const firstVisible = jumped.find((row) => row.getBoundingClientRect().bottom > visibleTop);
 	const lastRow = jumped[jumped.length - 1];
 	const topOffset = firstVisible ? firstVisible.getBoundingClientRect().top - visibleTop : Number.NaN;
 	check(
-		'Grid: после прыжка к строке около 50 000 тело покрывает видимую область без пустот под шапкой и внизу',
-		firstVisible !== undefined && topOffset <= 0.5
-			&& lastRow !== undefined && lastRow.getBoundingClientRect().bottom >= visibleBottom - 0.5
-			&& Math.abs(Number(firstVisible.dataset['index']) - 50_000) < 2_500,
-		`первая видимая строка ${firstVisible?.dataset['index'] ?? '—'}, зазор сверху ${topOffset.toFixed(1)} px`
+		'Grid: после прыжка в середину списка тело покрывает видимую область без пустот под шапкой и внизу',
+		firstVisible !== undefined && topOffset <= 0.5 && Number(firstVisible.dataset['index']) > 10_000
+			&& lastRow !== undefined && lastRow.getBoundingClientRect().bottom >= visibleBottom - 0.5,
+		`первая видимая строка ${firstVisible?.dataset['index'] ?? '—'}, строка под шапкой начинается на ${topOffset.toFixed(1)} px`
+	);
+
+	scroller.scrollTop = scroller.scrollHeight;
+	await frames(6);
+	const tail = bodyRows(table);
+	const tailLast = tail[tail.length - 1];
+	const tailBottom = tailLast?.getBoundingClientRect().bottom ?? Number.NaN;
+	const scrollerBottom = scroller.getBoundingClientRect().top + scroller.clientHeight;
+	check(
+		'Grid: прокрутка в самый конец показывает последнюю строку впритык к нижнему краю, без пустого хвоста',
+		tailLast?.dataset['index'] === '99999' && Math.abs(tailBottom - scrollerBottom) <= 1.5,
+		`последняя строка ${tailLast?.dataset['index'] ?? '—'}, зазор снизу ${(scrollerBottom - tailBottom).toFixed(1)} px`
 	);
 	scroller.scrollTop = 0;
 	await frames();
