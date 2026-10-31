@@ -12,6 +12,9 @@ export interface GridContextValue<T> {
 	layout: Accessor<ColumnLayout<T>>;
 	/** Видимые колонки в порядке показа. Список не пересоздаётся при смене ширин: шапка и ячейки живут между ресайзами. */
 	columns: Accessor<readonly GridColumn<T>[]>;
+	selectable: Accessor<boolean>;
+	/** Число колонок таблицы с колонкой чекбоксов: `aria-colcount` и `colspan` spacer-строк. */
+	columnCount: Accessor<number>;
 	/** Индекс последней закреплённой колонки (правый разделитель закрепа), -1 если закреплённых нет. */
 	lastStickyIndex: Accessor<number>;
 	window: RenderWindow;

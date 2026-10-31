@@ -19,7 +19,7 @@ export function GridBody(): JSX.Element {
 		const last = all[all.length - 1];
 		return last === undefined ? 0 : Math.max(grid.window.totalSize() - (last.start + last.size), 0);
 	};
-	const columnCount = (): number => grid.columns().length;
+	const columnCount = (): number => grid.columnCount();
 	return (
 		<tbody>
 			<Show when={topSpace() > 0}>

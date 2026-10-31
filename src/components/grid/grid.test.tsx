@@ -449,3 +449,67 @@ describe('Grid: ресайз колонок', () => {
 		expect(tableVar('--s-kit-grid-w-2')).toBe('150px');
 	});
 });
+
+describe('Grid: колонка чекбоксов', () => {
+	function selectableGrid(overrides: Partial<Parameters<typeof Grid<Person>>[0]> = {}) {
+		return renderGrid({ selectable: true, ...overrides });
+	}
+
+	it('первая col принадлежит колонке чекбоксов, переменные учитывают её ширину', () => {
+		selectableGrid();
+		const cols = [...table().querySelectorAll<HTMLTableColElement>('colgroup > col')];
+		expect(cols).toHaveLength(5);
+		expect(cols[0]?.style.width).toBe('var(--s-kit-grid-select-w)');
+		expect(cols[1]?.style.width).toBe('var(--s-kit-grid-w-0)');
+		expect(tableVar('--s-kit-grid-select-w')).toBe('44px');
+		expect(tableVar('--s-kit-grid-table-w')).toBe('534px');
+		expect(tableVar('--s-kit-grid-left-0')).toBe('44px');
+		expect(tableVar('--s-kit-grid-left-1')).toBe('194px');
+		expect(table().getAttribute('aria-colcount')).toBe('5');
+	});
+
+	it('первая th и первая td строки закреплены у левого края, data-sticky-last у последней закреплённой колонки', () => {
+		selectableGrid();
+		const header = table().querySelector('thead th') as HTMLElement;
+		const cells = (bodyRows()[0] as HTMLTableRowElement).cells;
+		for (const cell of [header, cells[0] as HTMLElement]) {
+			expect(cell.hasAttribute('data-sticky')).toBe(true);
+			expect(cell.hasAttribute('data-grid-select')).toBe(true);
+			expect(cell.style.insetInlineStart).toBe('0px');
+			expect(cell.hasAttribute('data-sticky-last')).toBe(false);
+		}
+		expect(cells[2]?.hasAttribute('data-sticky-last')).toBe(true);
+	});
+
+	it('без закреплённых колонок data-sticky-last у колонки чекбоксов', () => {
+		selectableGrid({ columns: COLUMNS.map((column) => ({ ...column, locked: false })) });
+		const cells = (bodyRows()[0] as HTMLTableRowElement).cells;
+		expect(cells[0]?.hasAttribute('data-sticky-last')).toBe(true);
+		expect(table().querySelector('thead th')?.hasAttribute('data-sticky-last')).toBe(true);
+		expect(cells[1]?.hasAttribute('data-sticky-last')).toBe(false);
+	});
+
+	it('число ячеек строки и заголовков больше на единицу, spacer охватывает и колонку чекбоксов', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 20 });
+		selectableGrid({ rows: manyRows(1000), virtualized: true, rowHeight: 20, overscan: 2 });
+		expect(table().querySelectorAll('thead th')).toHaveLength(5);
+		expect((bodyRows()[0] as HTMLTableRowElement).cells).toHaveLength(5);
+		expect(table().querySelector('tbody > tr[aria-hidden="true"] > td')?.getAttribute('colspan')).toBe('5');
+	});
+
+	it('без selectable колонки чекбоксов нет', () => {
+		renderGrid();
+		expect(table().querySelector('[data-grid-select]')).toBeNull();
+		expect(table().style.getPropertyValue('--s-kit-grid-select-w')).toBe('');
+	});
+
+	it('ресайз закреплённой колонки двигает смещения от ширины колонки чекбоксов', () => {
+		selectableGrid();
+		const handle = handleOf('Имя');
+		handle.dispatchEvent(pointer('pointerdown', 150));
+		handle.dispatchEvent(pointer('pointermove', 180));
+		expect(tableVar('--s-kit-grid-left-1')).toBe('224px');
+		expect((table().parentElement as HTMLElement).style.getPropertyValue('scroll-padding-inline-start')).toBe('304px');
+		handle.dispatchEvent(pointer('pointerup', 180));
+	});
+});

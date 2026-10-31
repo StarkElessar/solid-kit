@@ -16,7 +16,7 @@ export interface GridResizeOptions<T> {
 	setWidths: (next: ColumnWidths) => void;
 	/** Раскладка из состояния: единственный источник переменных после завершения и отмены. */
 	layout: Accessor<ColumnLayout<T>>;
-	layoutOptions: ColumnLayoutOptions;
+	layoutOptions: Accessor<ColumnLayoutOptions>;
 	scroller: Accessor<HTMLElement | undefined>;
 }
 
@@ -63,7 +63,7 @@ export function createGridResize<T>(options: GridResizeOptions<T>): GridResize {
 			startWidth: item.width,
 			minWidth: item.column.minWidth ?? DEFAULT_MIN_COLUMN_WIDTH,
 			onMove: (width) => {
-				applyLayout(table, computeColumnLayout(options.columns(), { ...startWidths, [columnId]: width }, options.layoutOptions));
+				applyLayout(table, computeColumnLayout(options.columns(), { ...startWidths, [columnId]: width }, options.layoutOptions()));
 			},
 			onCommit: (width) => {
 				finish();

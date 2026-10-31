@@ -9,6 +9,8 @@ export interface GridProps<T> {
 	/** Уникальный и стабильный между загрузками ключ строки. */
 	getRowKey: (row: T) => RowKey;
 	columns: readonly GridColumn<T>[];
+	/** Колонка чекбоксов: первая, всегда закреплённая; клик по строке переключает выбор. */
+	selectable?: boolean | undefined;
 	columnWidths?: Readonly<Record<string, number>> | undefined;
 	defaultColumnWidths?: Readonly<Record<string, number>> | undefined;
 	/** Один раз по окончании ресайза; в аргументе полный словарь переопределённых ширин. */

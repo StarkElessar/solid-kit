@@ -1,6 +1,6 @@
-import { For, type JSX } from 'solid-js';
+import { For, type JSX, Show } from 'solid-js';
 
-import { widthVar } from './column-css-vars';
+import { SELECT_WIDTH_VAR, widthVar } from './column-css-vars';
 import { useGrid } from './grid-context';
 
 /**
@@ -12,6 +12,9 @@ export function GridColgroup(): JSX.Element {
 	const isLast = (index: number): boolean => index === grid.columns().length - 1;
 	return (
 		<colgroup>
+			<Show when={grid.selectable()}>
+				<col style={{ width: `var(${SELECT_WIDTH_VAR})` }}/>
+			</Show>
 			<For each={grid.columns()}>
 				{(_column, index) => <col style={{ width: isLast(index()) ? undefined : `var(${widthVar(index())})` }}/>}
 			</For>

@@ -19,7 +19,7 @@ export function GridTable(props: GridTableProps): JSX.Element {
 			class={styles['table']}
 			aria-label={props['aria-label']}
 			aria-rowcount={grid.rows().length + 1}
-			aria-colcount={grid.columns().length}
+			aria-colcount={grid.columnCount()}
 			style={layoutCssVars(grid.layout())}
 		>
 			<GridColgroup/>

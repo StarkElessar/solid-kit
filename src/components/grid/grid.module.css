@@ -147,3 +147,9 @@
         background: var(--s-kit-color-border-strong);
     }
 }
+
+.select-cell {
+    overflow: visible;
+    padding-inline: 0;
+    text-align: center;
+}

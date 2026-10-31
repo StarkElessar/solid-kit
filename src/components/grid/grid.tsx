@@ -6,6 +6,7 @@ import { createControllableSignal } from '../../utils/create-controllable-signal
 import { createFullWindow } from '../../utils/create-full-window';
 import { createVirtualWindow } from '../../utils/create-virtual-window';
 import { readControlHeight } from '../../utils/read-control-height';
+import { readTokenPx } from '../../utils/read-token-px';
 import type { RenderWindowOptions } from '../../utils/render-window';
 
 import { buildRowIndex } from './build-row-index';
@@ -19,6 +20,7 @@ import { sameItems } from './same-items';
 const FALLBACK_ROW_HEIGHT = 32;
 const DEFAULT_OVERSCAN = 12;
 const INITIAL_WINDOW_HEIGHT = 512;
+const DEFAULT_SELECT_WIDTH = 44;
 
 /**
  * Грид: «глупая» таблица с закреплённой шапкой, закреплёнными колонками и ресайзом колонок. Данные, ширины и (в следующих частях)
@@ -31,8 +33,10 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		defaultValue: () => props.defaultColumnWidths ?? {},
 		onChange: (next) => props.onColumnWidthsChange?.(next)
 	});
-	const layoutOptions = { selectable: false, selectWidth: 0 };
-	const layout = createMemo(() => computeColumnLayout(props.columns, widths(), layoutOptions));
+	const [selectWidth, setSelectWidth] = createSignal(DEFAULT_SELECT_WIDTH);
+	const selectable = (): boolean => props.selectable === true;
+	const layoutOptions = createMemo(() => ({ selectable: selectable(), selectWidth: selectWidth() }));
+	const layout = createMemo(() => computeColumnLayout(props.columns, widths(), layoutOptions()));
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
 	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
@@ -56,10 +60,14 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	const window = untrack(() => props.virtualized) === false ? createFullWindow(windowOptions) : createVirtualWindow(windowOptions);
 
 	// скроллер отдаётся окну рендера после вставки в документ: виртуализатор пропускает ещё не вставленный элемент
+	let rootElement: HTMLDivElement | undefined;
 	let scrollerElement: HTMLDivElement | undefined;
 	let header: HTMLTableSectionElement | undefined;
 	onMount(() => {
 		setScroller(scrollerElement);
+		if (rootElement !== undefined) {
+			setSelectWidth(readTokenPx(rootElement, ['--s-kit-grid-select-width'], DEFAULT_SELECT_WIDTH));
+		}
 		if (header === undefined) {
 			return;
 		}
@@ -90,6 +98,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		rows: () => props.rows,
 		rowIndex,
 		layout,
+		selectable,
+		columnCount: () => columns().length + (selectable() ? 1 : 0),
 		columns,
 		lastStickyIndex,
 		window,
@@ -103,6 +113,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	return (
 		<GridContext.Provider value={context as unknown as GridContextValue<unknown>}>
 			<div
+				ref={rootElement}
 				data-s-kit
 				data-s-kit-focus-inset
 				tabindex='-1'

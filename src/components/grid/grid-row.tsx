@@ -1,9 +1,10 @@
 import styles from './grid.module.css';
 
-import { For, type JSX } from 'solid-js';
+import { For, type JSX, Show } from 'solid-js';
 
 import { GridCell } from './grid-cell';
 import { useGrid } from './grid-context';
+import { GridSelectCell } from './grid-select-cell';
 
 export interface GridRowProps {
 	/** Индекс строки в `rows`. */
@@ -29,6 +30,9 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			data-row-key={grid.rowIndex().keys[props.index]}
 			aria-rowindex={props.index + 2}
 		>
+			<Show when={grid.selectable()}>
+				<GridSelectCell/>
+			</Show>
 			<For each={grid.columns()}>{(column, index) => <GridCell column={column} index={index()} row={row()}/>}</For>
 		</tr>
 	);
