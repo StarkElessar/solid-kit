@@ -1,0 +1,197 @@
+/*
+ * Компонентные токены MultiSelect (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-multiselect-bg (фон панели), --s-kit-multiselect-width (ширина оболочки триггера)
+ * Граница, радиус и фон оболочки общие со Select (--s-kit-select-border, --s-kit-select-radius).
+ * Список внутри панели: src/internal/list-box/list-box.module.css (--s-kit-listbox-*).
+ * Ошибка поля задаётся нативным aria-invalid="true" на триггере: красная граница и красное кольцо фокуса.
+ */
+
+.shell {
+    cursor: pointer;
+
+    display: flex;
+    gap: 4px;
+    align-items: center;
+
+    box-sizing: border-box;
+    inline-size: var(--s-kit-multiselect-width, 16rem);
+    min-block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-inline-start: 4px;
+    border: 1px solid var(--s-kit-select-border, var(--s-kit-color-control-edge));
+    border-radius: var(--s-kit-select-radius, var(--s-kit-radius));
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-color-surface);
+}
+
+.shell:has(.main:focus-visible) {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+}
+
+.shell[aria-invalid="true"] {
+    border-color: var(--s-kit-color-danger);
+}
+
+.shell[aria-invalid="true"]:has(.main:focus-visible) {
+    outline-color: var(--s-kit-color-danger);
+}
+
+.shell[data-disabled] {
+    cursor: not-allowed;
+    opacity: var(--s-kit-disabled-opacity);
+}
+
+.chips {
+    overflow: hidden;
+    display: flex;
+    flex: 0 1 auto;
+    gap: 4px;
+    align-items: center;
+
+    min-inline-size: 0;
+}
+
+.shell[data-multiselect-overflow="wrap"] {
+    padding-block: 3px;
+}
+
+.shell[data-multiselect-overflow="wrap"] .chips {
+    flex: 1 1 0;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+
+    box-sizing: border-box;
+    max-inline-size: 10rem;
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 12px);
+    padding-inline: 8px 2px;
+    border-radius: var(--s-kit-radius);
+
+    background: var(--s-kit-color-tint);
+}
+
+.chip[hidden] {
+    display: none;
+}
+
+.chip-label {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chip-remove {
+    cursor: pointer;
+
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    inline-size: 18px;
+    block-size: 18px;
+    margin-inline-start: 2px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--s-kit-radius);
+
+    color: var(--s-kit-color-muted);
+
+    background: transparent;
+}
+
+.chip-remove:hover {
+    color: var(--s-kit-color-text);
+}
+
+.chip-remove:focus-visible {
+    outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+    outline-offset: calc(var(--s-kit-focus-width) * -1);
+}
+
+.chip-remove:disabled {
+    cursor: not-allowed;
+}
+
+.main {
+    cursor: inherit;
+
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+
+    box-sizing: border-box;
+    min-inline-size: 3rem;
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 2px);
+    padding-block: 0;
+    padding-inline: 4px var(--s-kit-control-padding-x, var(--s-kit-control-padding-x-md));
+    border: 0;
+
+    font: inherit;
+    color: inherit;
+    text-align: start;
+
+    background: transparent;
+}
+
+.shell[data-multiselect-overflow="wrap"] .main {
+    flex: none;
+    min-inline-size: 0;
+}
+
+.main:focus-visible {
+    /* кольцо рисует оболочка (.shell:has), собственное кольцо кнопки прозрачно */
+    outline-color: transparent;
+}
+
+.value {
+    overflow: hidden;
+    flex: 1 1 auto;
+
+    min-inline-size: 0;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.placeholder {
+    color: var(--s-kit-color-muted);
+}
+
+.chevron {
+    flex: none;
+    color: var(--s-kit-color-muted);
+}
+
+.search {
+    flex: none;
+    padding: var(--s-kit-listbox-padding, 4px) var(--s-kit-listbox-padding, 4px) 0;
+}
+
+.search > * {
+    inline-size: 100%;
+}
+
+.content {
+    --s-kit-listbox-bg: var(--s-kit-multiselect-bg, var(--s-kit-color-surface));
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+        .content {
+            --s-kit-listbox-bg: var(--s-kit-multiselect-bg, var(--s-kit-color-panel));
+        }
+    }
+}
