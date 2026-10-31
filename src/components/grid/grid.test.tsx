@@ -2,7 +2,9 @@ import { cleanup, createEvent, fireEvent, render, screen } from '@solidjs/testin
 import { createSignal } from 'solid-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { installListGeometry } from '../../internal/testing/list-geometry';
 import { ContextMenu } from '../context-menu';
+import { Select } from '../select';
 
 import { Grid } from './grid';
 import type { GridColumn } from './grid-column';
@@ -990,5 +992,128 @@ describe('Grid: контекстное меню строки', () => {
 		setRows(ROWS.slice(0, 1));
 		press('Escape');
 		expect(document.activeElement).toBe(container.firstElementChild);
+	});
+});
+
+describe('Grid: панели из ячеек и фокус при уходе строки', () => {
+	interface Status {
+		id: number;
+		label: string;
+	}
+
+	const STATUSES: readonly Status[] = [
+		{ id: 1, label: 'Новый' },
+		{ id: 2, label: 'В работе' }
+	];
+
+	const CELL_COLUMNS: readonly GridColumn<Person>[] = [
+		{ id: 'name', title: 'Имя', value: (row) => row.name, width: 120 },
+		{
+			id: 'act',
+			title: 'Действие',
+			value: () => '',
+			width: 120,
+			cell: (row) => <button type='button' data-act>{row.name}</button>
+		},
+		{
+			id: 'status',
+			title: 'Статус',
+			value: () => '',
+			width: 160,
+			cell: (row) => (
+				<Select<Status>
+					items={STATUSES}
+					getKey={(status) => status.id}
+					getLabel={(status) => status.label}
+					aria-label={`Статус ${row.name}`}
+				/>
+			)
+		}
+	];
+
+	beforeEach(() => {
+		// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
+		HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
+			this.removeAttribute('popover');
+		});
+		HTMLElement.prototype.hidePopover = vi.fn();
+		installListGeometry({ rowHeight: 20, viewportHeight: 100 });
+		vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+	});
+
+	function CellsGrid(props: Partial<Parameters<typeof Grid<Person>>[0]>) {
+		return <Grid rows={ROWS} getRowKey={(row) => row.id} columns={CELL_COLUMNS} virtualized={false} aria-label='Люди' {...props}/>;
+	}
+
+	function renderCells(overrides: Partial<Parameters<typeof Grid<Person>>[0]> = {}) {
+		return render(() => <CellsGrid {...overrides}/>);
+	}
+
+	function actionButton(index: number): HTMLButtonElement {
+		return (bodyRows()[index] as HTMLTableRowElement).querySelector('button[data-act]') as HTMLButtonElement;
+	}
+
+	function statusSelect(index: number): HTMLElement {
+		return screen.getByRole('combobox', { name: `Статус ${ROWS[index]?.name ?? ''}` });
+	}
+
+	it('список опций Select из ячейки лежит в корне грида, а не внутри таблицы', () => {
+		const { container } = renderCells();
+		fireEvent.click(statusSelect(0));
+		const listbox = screen.getByRole('listbox');
+		expect(listbox.closest('table')).toBeNull();
+		expect(container.firstElementChild?.contains(listbox)).toBe(true);
+	});
+
+	it('клик и двойной клик по опции не выбирают строку и не вызывают onRowDoubleClick', () => {
+		const onSelectedKeysChange = vi.fn();
+		const onRowDoubleClick = vi.fn();
+		renderCells({ selectable: true, onSelectedKeysChange, onRowDoubleClick });
+		fireEvent.click(statusSelect(0));
+		const option = screen.getByRole('option', { name: 'В работе' });
+		fireEvent.dblClick(option);
+		fireEvent.click(option);
+		expect(screen.queryByRole('listbox')).toBeNull();
+		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+		expect(onRowDoubleClick).not.toHaveBeenCalled();
+	});
+
+	it('строка с сфокусированной кнопкой исчезла: после микрозадачи фокус на корне грида', async () => {
+		const [rows, setRows] = createSignal(ROWS);
+		const { container } = render(() => <CellsGrid rows={rows()}/>);
+		actionButton(2).focus();
+		setRows(ROWS.slice(0, 1));
+		await Promise.resolve();
+		expect(document.activeElement).toBe(container.firstElementChild);
+	});
+
+	it('Select открыт в исчезнувшей строке: список закрыт без ошибок, фокус на корне', async () => {
+		const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+		const [rows, setRows] = createSignal(ROWS);
+		const { container } = render(() => <CellsGrid rows={rows()}/>);
+		fireEvent.click(statusSelect(2));
+		expect(screen.getByRole('listbox')).toBeTruthy();
+		setRows(ROWS.slice(0, 1));
+		await Promise.resolve();
+		expect(screen.queryByRole('listbox')).toBeNull();
+		expect(error).not.toHaveBeenCalled();
+		expect(document.activeElement).toBe(container.firstElementChild);
+	});
+
+	it('фокус в строке, которая осталась, не трогается', async () => {
+		const [rows, setRows] = createSignal(ROWS);
+		render(() => <CellsGrid rows={rows()}/>);
+		actionButton(0).focus();
+		setRows(ROWS.slice(0, 2));
+		await Promise.resolve();
+		expect(document.activeElement).toBe(actionButton(0));
+	});
+
+	it('размонтирование всего грида с фокусом внутри не падает', async () => {
+		const { unmount } = renderCells();
+		actionButton(1).focus();
+		unmount();
+		await Promise.resolve();
+		expect(document.activeElement).toBe(document.body);
 	});
 });

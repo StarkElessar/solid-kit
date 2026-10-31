@@ -1,10 +1,11 @@
 import styles from './grid.module.css';
 
-import { For, type JSX, onMount, Show } from 'solid-js';
+import { createMemo, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
 
 import { GridCell } from './grid-cell';
 import { useGrid } from './grid-context';
 import { GridSelectCell } from './grid-select-cell';
+import { rescueFocus } from './rescue-focus';
 
 export interface GridRowProps {
 	/** Индекс строки в `rows`. */
@@ -18,18 +19,26 @@ export function GridRow(props: GridRowProps): JSX.Element {
 	// при сокращении rows Solid может пересчитать ячейки раньше, чем окно уберёт эту строку: до удаления она держит последнюю строку
 	let lastRow: unknown;
 
-	const row = (): unknown => {
+	// мемо по ссылке: смена массива `rows` с той же строкой не пересоздаёт её ячейки и не отнимает у них фокус
+	const row = createMemo((): unknown => {
 		const rows = grid.rows();
 		if (props.index < rows.length) {
 			lastRow = rows[props.index];
 		}
 		return lastRow;
-	};
+	});
 
 	// измерение читает data-index: ref вызывается раньше, чем Solid выставит атрибуты, к монтированию они уже на месте
 	onMount(() => {
 		if (element) {
 			grid.window.measure(element);
+		}
+	});
+
+	// очистка идёт до удаления DOM: фокус из уходящей строки (или вернувшийся в неё из панели) переносится на корень грида
+	onCleanup(() => {
+		if (element) {
+			rescueFocus(element, grid.rootElement);
 		}
 	});
 
