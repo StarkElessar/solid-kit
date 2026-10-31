@@ -145,10 +145,6 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 		setHeaderHeight(header.offsetHeight);
 
-		if (typeof ResizeObserver === 'undefined') {
-			return;
-		}
-
 		const observer = new ResizeObserver(() => {
 			setHeaderHeight(header?.offsetHeight ?? 0);
 		});

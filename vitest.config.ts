@@ -6,6 +6,7 @@ export default defineConfig({
 	resolve: { conditions: ['development', 'browser'] },
 	test: {
 		environment: 'jsdom',
+		setupFiles: ['src/test-setup.ts'],
 		include: ['src/**/*.test.{ts,tsx}'],
 		restoreMocks: true,
 		// tokens.css читается тестами как текст (?raw); по умолчанию Vitest подменяет любой CSS пустым модулем
