@@ -9,7 +9,14 @@ import { GridGroupingChip } from './grid-grouping-chip';
 export function GridGroupingPanel(): JSX.Element {
 	const grid = useGrid();
 	return (
-		<div class={styles['panel']} role='group' aria-label={grid.groupingLabels().panel} data-grouping-panel>
+		<div
+			class={styles['panel']}
+			role='group'
+			aria-label={grid.groupingLabels().panel}
+			data-grouping-panel
+			data-drop-active={grid.drag()?.overPanel === true ? '' : undefined}
+			data-drop-end={grid.drag()?.overPanel === true && (grid.drag()?.slot ?? 0) >= grid.grouping().length ? '' : undefined}
+		>
 			<Show when={grid.grouping().length === 0}>
 				<span class={styles['panel-hint']}>{grid.groupingLabels().hint}</span>
 			</Show>

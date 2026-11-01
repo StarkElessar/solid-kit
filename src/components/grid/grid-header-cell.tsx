@@ -37,6 +37,12 @@ export function GridHeaderCell(props: GridHeaderCellProps): JSX.Element {
 			data-sticky-last={props.index === grid.lastStickyIndex() ? '' : undefined}
 			data-align={props.column.align}
 			aria-sort={ariaSort()}
+			onPointerDown={(event) => {
+				// ручка ресайза и кнопка меню свои жесты ведут сами
+				if (!(event.target instanceof Element && event.target.closest('[data-grid-resize], [data-grid-column-menu]'))) {
+					grid.beginGroupingDrag(props.column.id, event);
+				}
+			}}
 			style={{ 'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined }}
 		>
 			<div class={styles['head-inner']}>

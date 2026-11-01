@@ -22,6 +22,7 @@ import { collapseLevelKeys } from './collapse-level-keys';
 import { computeColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import { createGridResize } from './create-grid-resize';
+import { createGroupingDrag } from './create-grouping-drag';
 import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
 import { DEFAULT_GROUPING_LABELS } from './default-grouping-labels';
 import { DEFAULT_TOTALS_LABELS } from './default-totals-labels';
@@ -109,6 +110,10 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		value: () => props.grouping,
 		defaultValue: () => props.defaultGrouping ?? NO_GROUPING,
 		onChange: (next) => props.onGroupingChange?.(next)
+	});
+	// чипы и жесты работают по колонкам, которые есть в `columns`: чужие id остаются на совести страницы
+	const visibleGrouping = createMemo(() => grouping().filter((id) => props.columns.some((column) => column.id === id)), [], {
+		equals: sameItems
 	});
 	const groupable = (): boolean => props.groupable === true;
 	const canGroup = (columnId: string): boolean => {
@@ -253,6 +258,14 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		scroller
 	});
 
+	const groupingDrag = createGroupingDrag({
+		root,
+		canStart: canGroup,
+		title: (columnId) => props.columns.find((column) => column.id === columnId)?.title ?? columnId,
+		grouping: visibleGrouping,
+		setGrouping
+	});
+
 	const context: GridContextValue<T> = {
 		rows: leafRows,
 		itemCount,
@@ -267,12 +280,14 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		},
 		groupingLabels: () => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels }),
 		groupable,
-		grouping: () => grouping().filter((id) => props.columns.some((column) => column.id === id)),
+		grouping: visibleGrouping,
 		canGroup,
 		setGrouping,
 		toggleGrouping: (columnId) => {
 			setGrouping(grouping().includes(columnId) ? removeGrouping(grouping(), columnId) : addGrouping(grouping(), columnId));
 		},
+		drag: groupingDrag.state,
+		beginGroupingDrag: groupingDrag.begin,
 		hasGroups: () => (props.groups?.length ?? 0) > 0,
 		collapseLevel: () => {
 			changeExpanded(collapseLevelKeys(props.groups ?? [], expandedGroups()));
@@ -409,6 +424,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
 					data-groupable={groupable() ? '' : undefined}
+					data-dragging={groupingDrag.state() === undefined ? undefined : ''}
 					style={{
 						...props.style,
 						'--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px`,

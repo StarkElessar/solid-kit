@@ -12,6 +12,7 @@ import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridItem } from './grid-item';
 import type { GridSort } from './grid-sort';
+import type { GroupingDragState } from './grouping-drag-state';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
 import type { TotalsRow } from './totals-row';
@@ -40,6 +41,9 @@ export interface GridContextValue<T> {
 	toggleGrouping: (columnId: string) => void;
 	/** Есть ли сгруппированные данные (`groups` не пуст): кнопки уровней работают только с ними. */
 	hasGroups: Accessor<boolean>;
+	/** Идущее перетаскивание заголовка или чипа; `undefined` вне жеста. */
+	drag: Accessor<GroupingDragState | undefined>;
+	beginGroupingDrag: (columnId: string, event: PointerEvent) => void;
 	collapseLevel: () => void;
 	collapseAll: () => void;
 	expandLevel: () => void;

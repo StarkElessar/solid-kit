@@ -37,10 +37,19 @@ export function GridGroupingChip(props: GridGroupingChipProps): JSX.Element {
 	});
 
 	return (
-		<span ref={element} class={styles['chip']} data-chip={props.columnId}>
+		<span
+			ref={element}
+			class={styles['chip']}
+			data-chip={props.columnId}
+			data-dragging={grid.drag()?.columnId === props.columnId ? '' : undefined}
+			data-drop-before={grid.drag()?.overPanel === true && grid.drag()?.slot === index() ? '' : undefined}
+		>
 			<button
 				type='button'
 				class={styles['chip-main']}
+				onPointerDown={(event) => {
+					grid.beginGroupingDrag(props.columnId, event);
+				}}
 				onKeyDown={(event) => {
 					const list = grid.grouping();
 					if (event.key === 'Delete' || event.key === 'Backspace') {

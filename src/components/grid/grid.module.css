@@ -36,6 +36,13 @@
     background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
 
     /* высота верхней полосы группировки: полоса фиксирована, полоса прогресса опускается под неё */
+
+    /* во время перетаскивания заголовка текст не выделяется */
+    &[data-dragging] {
+        cursor: grabbing;
+        user-select: none;
+    }
+
     &[data-groupable] {
         --s-kit-grid-bar-h: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) + 9px);
     }
@@ -370,6 +377,39 @@
         border-color: var(--s-kit-color-primary);
         background: var(--s-kit-color-tint);
     }
+
+    &[data-drop-end]::after {
+        content: "";
+
+        flex: none;
+
+        inline-size: 3px;
+        block-size: 70%;
+        border-radius: 2px;
+
+        background: var(--s-kit-color-primary);
+    }
+}
+
+.ghost {
+    pointer-events: none;
+
+    position: fixed;
+    z-index: 1000;
+
+    padding-block: 2px;
+    padding-inline: 8px;
+    border: 1px solid var(--s-kit-color-border-strong);
+    border-radius: 6px;
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    color: var(--s-kit-color-text);
+    white-space: nowrap;
+
+    opacity: 0.9;
+    background: var(--s-kit-color-surface);
+    box-shadow: var(--s-kit-shadow-popover);
 }
 
 .panel-hint {

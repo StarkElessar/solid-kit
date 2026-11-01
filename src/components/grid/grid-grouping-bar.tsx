@@ -3,6 +3,7 @@ import styles from './grid.module.css';
 import { type JSX, Show } from 'solid-js';
 
 import { useGrid } from './grid-context';
+import { GridDragGhost } from './grid-drag-ghost';
 import { GridGroupingPanel } from './grid-grouping-panel';
 import { GridGroupingToolbar } from './grid-grouping-toolbar';
 
@@ -14,6 +15,7 @@ export function GridGroupingBar(): JSX.Element {
 			<div class={styles['bar']}>
 				<GridGroupingPanel/>
 				<GridGroupingToolbar/>
+				<GridDragGhost/>
 			</div>
 		</Show>
 	);

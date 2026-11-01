@@ -2160,3 +2160,133 @@ describe('Grid: панель группировки', () => {
 		expect(screen.getByRole('button', { name: 'Expand all' })).toBeTruthy();
 	});
 });
+
+describe('Grid: перетаскивание в панель группировки', () => {
+	function drag(type: string, x: number, y: number, extra: Record<string, unknown> = {}): MouseEvent {
+		const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
+		Object.defineProperty(event, 'pointerId', { value: 1 });
+		for (const [key, value] of Object.entries(extra)) {
+			Object.defineProperty(event, key, { value });
+		}
+		return event;
+	}
+
+	function rect(left: number, top: number, width: number, height: number): DOMRect {
+		return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) };
+	}
+
+	function panel(): HTMLElement {
+		return screen.getByRole('group', { name: 'Группировка' });
+	}
+
+	// панель занимает x 0..400, y 0..30; чипы по 100 px шириной (центры 50, 150, ...)
+	function layoutPanel(): void {
+		vi.spyOn(panel(), 'getBoundingClientRect').mockReturnValue(rect(0, 0, 400, 30));
+		panel().querySelectorAll('[data-chip]').forEach((chip, index) => {
+			vi.spyOn(chip, 'getBoundingClientRect').mockReturnValue(rect(index * 100, 0, 100, 30));
+		});
+	}
+
+	function head(title: string): HTMLElement {
+		return [...table().querySelectorAll<HTMLElement>('thead th')].find((th) => th.textContent.includes(title)) as HTMLElement;
+	}
+
+	it('заголовок, отпущенный над панелью, становится группировкой на нужной позиции', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['name', 'id'], onGroupingChange });
+		layoutPanel();
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 120, 15));
+		expect(panel().hasAttribute('data-drop-active')).toBe(true);
+		expect(panel().querySelector('[data-chip="id"]')?.hasAttribute('data-drop-before')).toBe(true);
+		expect(document.querySelector('[class*="ghost"]')?.textContent).toBe('Возраст');
+		document.dispatchEvent(drag('pointerup', 120, 15));
+		expect(onGroupingChange).toHaveBeenCalledWith(['name', 'age', 'id']);
+		expect(document.querySelector('[class*="ghost"]')).toBeNull();
+	});
+
+	it('щель после последнего чипа ставит колонку в конец', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['name'], onGroupingChange });
+		layoutPanel();
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 300, 15));
+		expect(panel().hasAttribute('data-drop-end')).toBe(true);
+		document.dispatchEvent(drag('pointerup', 300, 15));
+		expect(onGroupingChange).toHaveBeenCalledWith(['name', 'age']);
+	});
+
+	it('чип переставляется перетаскиванием', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['age', 'name', 'id'], onGroupingChange });
+		layoutPanel();
+		const chip = panel().querySelector('[data-chip="age"] button') as HTMLElement;
+		chip.dispatchEvent(drag('pointerdown', 50, 15));
+		document.dispatchEvent(drag('pointermove', 260, 15));
+		expect(panel().querySelector('[data-chip="age"]')?.hasAttribute('data-dragging')).toBe(true);
+		document.dispatchEvent(drag('pointerup', 260, 15));
+		expect(onGroupingChange).toHaveBeenCalledWith(['name', 'id', 'age']);
+	});
+
+	it('смещение меньше порога остаётся кликом: жеста нет', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, onGroupingChange });
+		layoutPanel();
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 302, 101));
+		expect(document.querySelector('[class*="ghost"]')).toBeNull();
+		document.dispatchEvent(drag('pointerup', 15, 15));
+		expect(onGroupingChange).not.toHaveBeenCalled();
+	});
+
+	it('отпускание вне панели и Esc отменяют жест', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, onGroupingChange });
+		layoutPanel();
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 300, 200));
+		document.dispatchEvent(drag('pointerup', 300, 200));
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 100, 15));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(document.querySelector('[class*="ghost"]')).toBeNull();
+		document.dispatchEvent(drag('pointerup', 100, 15));
+		expect(onGroupingChange).not.toHaveBeenCalled();
+	});
+
+	it('после жеста следующий click гасится, сортировка не срабатывает', () => {
+		const onSortChange = vi.fn();
+		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, sortable: true } : column));
+		renderGrid({ groupable: true, columns, onSortChange });
+		layoutPanel();
+		const button = head('Возраст').querySelector('button:not([data-grid-column-menu])') as HTMLElement;
+		button.dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 100, 15));
+		document.dispatchEvent(drag('pointerup', 100, 15));
+		fireEvent.click(button);
+		expect(onSortChange).not.toHaveBeenCalled();
+	});
+
+	it('касание, колонка с groupable: false и грид без groupable жест не начинают', () => {
+		const onGroupingChange = vi.fn();
+		const columns = COLUMNS.map((column) => (column.id === 'name' ? { ...column, groupable: false } : column));
+		renderGrid({ groupable: true, columns, onGroupingChange });
+		layoutPanel();
+		head('Возраст').dispatchEvent(drag('pointerdown', 300, 100, { pointerType: 'touch' }));
+		document.dispatchEvent(drag('pointermove', 100, 15));
+		head('Имя').dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 100, 15));
+		expect(document.querySelector('[class*="ghost"]')).toBeNull();
+		document.dispatchEvent(drag('pointerup', 100, 15));
+		expect(onGroupingChange).not.toHaveBeenCalled();
+	});
+
+	it('ручка ресайза и кнопка меню колонки жест группировки не начинают', () => {
+		renderGrid({ groupable: true });
+		layoutPanel();
+		(head('Возраст').querySelector('[data-grid-resize]') as HTMLElement).dispatchEvent(drag('pointerdown', 300, 100));
+		document.dispatchEvent(drag('pointermove', 100, 15));
+		expect(document.querySelector('[class*="ghost"]')).toBeNull();
+		document.dispatchEvent(drag('pointerup', 100, 15));
+	});
+});
