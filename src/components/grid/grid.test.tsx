@@ -1994,3 +1994,169 @@ describe('Grid: группировка', () => {
 		expect(trs()[0]?.style.getPropertyValue('--s-kit-grid-indent')).toBe('');
 	});
 });
+
+describe('Grid: панель группировки', () => {
+	beforeEach(() => {
+		// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
+		HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
+			this.removeAttribute('popover');
+		});
+		HTMLElement.prototype.hidePopover = vi.fn();
+	});
+
+	function leaf(key: string, ids: number[]): GridGroup<Person> {
+		return {
+			key,
+			field: 'age',
+			value: key,
+			count: ids.length,
+			children: { kind: 'rows', items: ids.map((id) => ROWS[id - 1] as Person) }
+		};
+	}
+
+	// p: p1 (Анна), p2 (Борис); q: q1 (Вера)
+	const TREE: readonly GridGroup<Person>[] = [
+		{ key: 'p', field: 'name', value: 'p', count: 2, children: { kind: 'groups', items: [leaf('p/p1', [1]), leaf('p/p2', [2])] } },
+		{ key: 'q', field: 'name', value: 'q', count: 1, children: { kind: 'groups', items: [leaf('q/q1', [3])] } }
+	];
+
+	function panel(): HTMLElement {
+		return screen.getByRole('group', { name: 'Группировка' });
+	}
+
+	function chips(): string[] {
+		return [...panel().querySelectorAll('[data-chip]')].map((chip) => chip.textContent.trim());
+	}
+
+	function lastCall(mock: ReturnType<typeof vi.fn>): unknown {
+		return mock.mock.calls[mock.mock.calls.length - 1]?.[0];
+	}
+
+	it('без groupable верхней полосы нет, и у колонок нет пункта «Сгруппировать»', () => {
+		renderGrid();
+		expect(screen.queryByRole('group', { name: 'Группировка' })).toBeNull();
+		fireEvent.click(screen.getByRole('button', { name: 'Меню колонки «Возраст»' }));
+		expect(screen.queryByRole('menuitem', { name: 'Сгруппировать' })).toBeNull();
+	});
+
+	it('с groupable есть панель с подсказкой и четырьмя кнопками', () => {
+		renderGrid({ groupable: true });
+		expect(panel().textContent).toContain('Перетащите заголовок колонки сюда, чтобы сгруппировать');
+		for (const name of ['Свернуть уровень', 'Свернуть все', 'Развернуть уровень', 'Развернуть все']) {
+			expect(screen.getByRole('button', { name })).toBeTruthy();
+		}
+	});
+
+	it('чипы идут по порядку grouping, неизвестные колонки не показываются, подсказка исчезает', () => {
+		renderGrid({ groupable: true, grouping: ['age', 'нет-такой', 'name'] });
+		expect(chips()).toEqual(['Возраст', 'Имя']);
+		expect(panel().textContent).not.toContain('Перетащите');
+	});
+
+	it('«×» убирает колонку из группировки', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['age', 'name'], onGroupingChange });
+		fireEvent.click(screen.getByRole('button', { name: 'Убрать группировку по «Возраст»' }));
+		expect(lastCall(onGroupingChange)).toEqual(['name']);
+	});
+
+	it('без controlled-пропса группировка живёт в гриде', () => {
+		renderGrid({ groupable: true, defaultGrouping: ['age'] });
+		fireEvent.click(screen.getByRole('button', { name: 'Убрать группировку по «Возраст»' }));
+		expect(chips()).toEqual([]);
+	});
+
+	it('Delete и Backspace на чипе убирают колонку', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['age', 'name'], onGroupingChange });
+		const main = panel().querySelector('[data-chip="name"] button') as HTMLElement;
+		fireEvent.keyDown(main, { key: 'Delete' });
+		expect(lastCall(onGroupingChange)).toEqual(['age']);
+		fireEvent.keyDown(panel().querySelector('[data-chip="age"] button') as HTMLElement, { key: 'Backspace' });
+		expect(lastCall(onGroupingChange)).toEqual(['name']);
+	});
+
+	it('Alt+стрелки переставляют чип, на краях ничего не меняют', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['age', 'name', 'id'], onGroupingChange });
+		const main = (id: string): HTMLElement => panel().querySelector(`[data-chip="${id}"] button`) as HTMLElement;
+		fireEvent.keyDown(main('name'), { key: 'ArrowLeft', altKey: true });
+		expect(lastCall(onGroupingChange)).toEqual(['name', 'age', 'id']);
+		fireEvent.keyDown(main('name'), { key: 'ArrowRight', altKey: true });
+		expect(lastCall(onGroupingChange)).toEqual(['age', 'id', 'name']);
+		onGroupingChange.mockClear();
+		fireEvent.keyDown(main('age'), { key: 'ArrowLeft', altKey: true });
+		fireEvent.keyDown(main('id'), { key: 'ArrowRight', altKey: true });
+		fireEvent.keyDown(main('name'), { key: 'ArrowLeft' });
+		expect(onGroupingChange).not.toHaveBeenCalled();
+	});
+
+	it('пункт меню «Сгруппировать» добавляет колонку и закрывает меню, у сгруппированной «Убрать группировку»', () => {
+		const onGroupingChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['name'], onGroupingChange });
+		fireEvent.click(screen.getByRole('button', { name: 'Меню колонки «Возраст»' }));
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Сгруппировать' }));
+		expect(lastCall(onGroupingChange)).toEqual(['name', 'age']);
+		expect(screen.queryByRole('menu')).toBeNull();
+		fireEvent.click(screen.getByRole('button', { name: 'Меню колонки «Имя»' }));
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Убрать группировку' }));
+		expect(lastCall(onGroupingChange)).toEqual([]);
+	});
+
+	it('колонка с groupable: false не получает пункт меню', () => {
+		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, groupable: false } : column));
+		renderGrid({ groupable: true, columns });
+		fireEvent.click(screen.getByRole('button', { name: 'Меню колонки «Возраст»' }));
+		expect(screen.queryByRole('menuitem', { name: 'Сгруппировать' })).toBeNull();
+	});
+
+	it('кнопки уровней: развернуть уровень, развернуть все, свернуть уровень, свернуть все', () => {
+		let keys: ReadonlySet<string> = new Set();
+		const [current, setCurrent] = createSignal<ReadonlySet<string>>(keys);
+		render(() => (
+			<Grid
+				groupable
+				groups={TREE}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				expandedGroupKeys={current()}
+				onExpandedGroupKeysChange={(next) => {
+					keys = next;
+					setCurrent(next);
+				}}
+				aria-label='Люди'
+			/>
+		));
+		const click = (name: string): void => {
+			fireEvent.click(screen.getByRole('button', { name }));
+		};
+		click('Развернуть уровень');
+		expect([...keys].sort()).toEqual(['p', 'q']);
+		click('Развернуть уровень');
+		expect([...keys].sort()).toEqual(['p', 'p/p1', 'p/p2', 'q', 'q/q1']);
+		click('Свернуть уровень');
+		expect([...keys].sort()).toEqual(['p', 'q']);
+		click('Развернуть все');
+		expect(keys.size).toBe(5);
+		click('Свернуть все');
+		expect(keys.size).toBe(0);
+	});
+
+	it('кнопки отключены без groups и во время loading, включены с данными', () => {
+		const { unmount } = renderGrid({ groupable: true });
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть все' }).disabled).toBe(true);
+		unmount();
+		const second = renderGrid({ groupable: true, groups: TREE, loading: true });
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть все' }).disabled).toBe(true);
+		second.unmount();
+		renderGrid({ groupable: true, groups: TREE });
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть все' }).disabled).toBe(false);
+	});
+
+	it('groupingLabels переопределяют тексты', () => {
+		renderGrid({ groupable: true, groupingLabels: { panel: 'Groups', expandAll: 'Expand all' } });
+		expect(screen.getByRole('group', { name: 'Groups' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Expand all' })).toBeTruthy();
+	});
+});

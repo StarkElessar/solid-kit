@@ -29,6 +29,21 @@ export interface GridContextValue<T> {
 	/** Строка-заглушка ещё не загруженной группы смонтирована: `onGroupExpand(key)`. */
 	loadGroup: (key: string) => void;
 	groupingLabels: Accessor<GridGroupingLabels>;
+	/** Панель группировки, пункт меню колонки и перетаскивание включены. */
+	groupable: Accessor<boolean>;
+	/** Id группирующих колонок по порядку; только колонки, которые есть в `columns`. */
+	grouping: Accessor<readonly string[]>;
+	/** Можно ли группировать по колонке (`groupable` грида и `GridColumn.groupable !== false`). */
+	canGroup: (columnId: string) => boolean;
+	setGrouping: (next: readonly string[]) => void;
+	/** Колонка в группировке или вне её (пункт меню). */
+	toggleGrouping: (columnId: string) => void;
+	/** Есть ли сгруппированные данные (`groups` не пуст): кнопки уровней работают только с ними. */
+	hasGroups: Accessor<boolean>;
+	collapseLevel: () => void;
+	collapseAll: () => void;
+	expandLevel: () => void;
+	expandAll: () => void;
 	rowIndex: Accessor<RowIndex>;
 	layout: Accessor<ColumnLayout<T>>;
 	/** Видимые колонки в порядке показа. Список не пересоздаётся при смене ширин: шапка и ячейки живут между ресайзами. */

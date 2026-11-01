@@ -13,6 +13,7 @@
     --s-kit-grid-z-sticky: 1;
     --s-kit-grid-z-head: 2;
     --s-kit-grid-z-corner: 3;
+    --s-kit-grid-bar-h: 0px;
 
     position: relative;
 
@@ -33,6 +34,11 @@
     color: var(--s-kit-color-text);
 
     background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
+
+    /* высота верхней полосы группировки: полоса фиксирована, полоса прогресса опускается под неё */
+    &[data-groupable] {
+        --s-kit-grid-bar-h: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) + 9px);
+    }
 }
 
 .scroller {
@@ -332,6 +338,165 @@
     color: var(--s-kit-color-muted);
 }
 
+.bar {
+    display: flex;
+    flex: none;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+
+    box-sizing: border-box;
+    block-size: var(--s-kit-grid-bar-h);
+    padding-inline: 8px;
+    border-block-end: 1px solid var(--s-kit-color-hairline);
+
+    background: var(--s-kit-grid-footer-bg, var(--s-kit-color-surface-2));
+}
+
+.panel {
+    overflow: hidden;
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    align-items: center;
+
+    min-inline-size: 0;
+    block-size: calc(100% - 8px);
+    padding-inline: 8px;
+    border: 1px dashed transparent;
+    border-radius: 6px;
+
+    &[data-drop-active] {
+        border-color: var(--s-kit-color-primary);
+        background: var(--s-kit-color-tint);
+    }
+}
+
+.panel-hint {
+    overflow: hidden;
+    color: var(--s-kit-color-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+
+    box-sizing: border-box;
+    block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 8px);
+    border: 1px solid var(--s-kit-color-border-strong);
+    border-radius: 6px;
+
+    background: var(--s-kit-grid-bg, var(--s-kit-color-surface));
+
+    &[data-drop-before] {
+        box-shadow: -3px 0 0 -1px var(--s-kit-color-primary);
+    }
+
+    &[data-dragging] {
+        opacity: 0.4;
+    }
+}
+
+.chip-main,
+.chip-remove {
+    cursor: pointer;
+
+    box-sizing: border-box;
+    block-size: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    font: inherit;
+    color: inherit;
+
+    appearance: none;
+    background: transparent;
+
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
+}
+
+.chip-main {
+    padding-inline: 8px 4px;
+    border-start-start-radius: 5px;
+    border-end-start-radius: 5px;
+}
+
+.chip-remove {
+    display: grid;
+    place-items: center;
+
+    inline-size: 20px;
+    margin-inline-end: 2px;
+    border-radius: 4px;
+
+    color: var(--s-kit-color-muted);
+
+    & svg {
+        inline-size: 12px;
+        block-size: 12px;
+    }
+
+    @media (hover: hover) {
+        &:hover {
+            color: var(--s-kit-color-text);
+        }
+    }
+}
+
+.toolbar {
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.toolbar-button {
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+
+    box-sizing: border-box;
+    inline-size: 24px;
+    block-size: 24px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+
+    color: var(--s-kit-color-muted);
+
+    appearance: none;
+    background: transparent;
+
+    & svg {
+        inline-size: 16px;
+        block-size: 16px;
+    }
+
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
+
+    @media (hover: hover) {
+        &:hover:not(:disabled) {
+            color: var(--s-kit-color-text);
+        }
+    }
+}
+
 .resize-handle {
     touch-action: none;
     cursor: col-resize;
@@ -540,7 +705,7 @@
 
     position: absolute;
     z-index: var(--s-kit-grid-z-corner);
-    inset-block-start: var(--s-kit-grid-header-h, 0);
+    inset-block-start: calc(var(--s-kit-grid-bar-h) + var(--s-kit-grid-header-h, 0px));
     inset-inline: 0;
 
     overflow: hidden;

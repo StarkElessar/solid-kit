@@ -19,6 +19,13 @@ function ColumnMenuItems(props: ColumnMenuItemsProps): JSX.Element {
 					grid.toggleLocked(props.columnId);
 				}}
 			>{locked() ? grid.columnMenuLabels().unlock : grid.columnMenuLabels().lock}</ContextMenu.Item>
+			<Show when={grid.canGroup(props.columnId)}>
+				<ContextMenu.Item
+					onSelect={() => {
+						grid.toggleGrouping(props.columnId);
+					}}
+				>{grid.grouping().includes(props.columnId) ? grid.groupingLabels().ungroup : grid.groupingLabels().group}</ContextMenu.Item>
+			</Show>
 			<ContextMenu.Separator/>
 			<ContextMenu.Sub>
 				<ContextMenu.SubTrigger>{grid.columnMenuLabels().columns}</ContextMenu.SubTrigger>

@@ -12,21 +12,26 @@ import type { RenderWindowOptions } from '../../utils/render-window';
 import type { ContextMenuPoint } from '../context-menu';
 import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
+import { addGrouping } from './add-grouping';
+import { allGroupKeys } from './all-group-keys';
 import { applyColumnState } from './apply-column-state';
 import { buildRowIndex } from './build-row-index';
 import { buildTotalsRows } from './build-totals-rows';
 import { canHideColumn } from './can-hide-column';
+import { collapseLevelKeys } from './collapse-level-keys';
 import { computeColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import { createGridResize } from './create-grid-resize';
 import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
 import { DEFAULT_GROUPING_LABELS } from './default-grouping-labels';
 import { DEFAULT_TOTALS_LABELS } from './default-totals-labels';
+import { expandLevelKeys } from './expand-level-keys';
 import { flattenGroups } from './flatten-groups';
 import { foundText as defaultFoundText } from './found-text';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
+import { GridGroupingBar } from './grid-grouping-bar';
 import type { GridItem } from './grid-item';
 import { GridLiveRegion } from './grid-live-region';
 import { GridProgress } from './grid-progress';
@@ -36,6 +41,7 @@ import type { GridSort } from './grid-sort';
 import { GridTable } from './grid-table';
 import { idsWithFlag } from './ids-with-flag';
 import { nextSort } from './next-sort';
+import { removeGrouping } from './remove-grouping';
 import type { RowKey } from './row-key';
 import type { RowMenuTarget } from './row-menu-target';
 import { sameItems } from './same-items';
@@ -50,6 +56,7 @@ const DEFAULT_SELECT_WIDTH = 44;
 const MIN_SKELETON_ROWS = 5;
 const MAX_SKELETON_ROWS = 20;
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
+const NO_GROUPING: readonly string[] = [];
 const NO_ROWS: readonly never[] = [];
 const NO_GROUP_KEYS: ReadonlySet<string> = new Set();
 
@@ -97,6 +104,22 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		defaultValue: () => props.defaultExpandedGroupKeys ?? NO_GROUP_KEYS,
 		onChange: (next) => props.onExpandedGroupKeysChange?.(next)
 	});
+	const [grouping, setGrouping] = createControllableSignal<readonly string[]>({
+		name: 'Grid',
+		value: () => props.grouping,
+		defaultValue: () => props.defaultGrouping ?? NO_GROUPING,
+		onChange: (next) => props.onGroupingChange?.(next)
+	});
+	const groupable = (): boolean => props.groupable === true;
+	const canGroup = (columnId: string): boolean => {
+		return groupable() && props.columns.some((column) => column.id === columnId && column.groupable !== false);
+	};
+	// изменение набора ключей сообщается, только если оно есть: кнопки уровней на краю ничего не делают
+	const changeExpanded = (next: ReadonlySet<string>): void => {
+		if (next !== expandedGroups()) {
+			setExpandedGroups(next);
+		}
+	};
 	// сгруппированный режим определяет наличие `groups`; плоский список элементов строится только в нём
 	const flat = createMemo(() => (props.groups === undefined ? undefined : flattenGroups(props.groups, expandedGroups())));
 	const leafRows = createMemo((): readonly T[] => flat()?.rows ?? props.rows ?? NO_ROWS);
@@ -243,6 +266,26 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			props.onGroupExpand?.(key);
 		},
 		groupingLabels: () => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels }),
+		groupable,
+		grouping: () => grouping().filter((id) => props.columns.some((column) => column.id === id)),
+		canGroup,
+		setGrouping,
+		toggleGrouping: (columnId) => {
+			setGrouping(grouping().includes(columnId) ? removeGrouping(grouping(), columnId) : addGrouping(grouping(), columnId));
+		},
+		hasGroups: () => (props.groups?.length ?? 0) > 0,
+		collapseLevel: () => {
+			changeExpanded(collapseLevelKeys(props.groups ?? [], expandedGroups()));
+		},
+		collapseAll: () => {
+			changeExpanded(expandedGroups().size === 0 ? expandedGroups() : NO_GROUP_KEYS);
+		},
+		expandLevel: () => {
+			changeExpanded(expandLevelKeys(props.groups ?? [], expandedGroups()));
+		},
+		expandAll: () => {
+			changeExpanded(allGroupKeys(props.groups ?? []));
+		},
 		rowIndex,
 		layout,
 		selectable,
@@ -365,6 +408,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					tabindex='-1'
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
+					data-groupable={groupable() ? '' : undefined}
 					style={{
 						...props.style,
 						'--s-kit-grid-row-height': props.rowHeight === undefined ? undefined : `${props.rowHeight}px`,
@@ -372,6 +416,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 						'--s-kit-grid-view-w': viewWidth() > 0 ? `${viewWidth()}px` : undefined
 					}}
 				>
+					<GridGroupingBar/>
 					<GridProgress/>
 					<div
 						ref={scrollerElement}
