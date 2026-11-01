@@ -12,6 +12,7 @@ import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridSort } from './grid-sort';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
+import type { TotalsRow } from './totals-row';
 
 export interface GridContextValue<T> {
 	rows: Accessor<readonly T[]>;
@@ -77,6 +78,8 @@ export interface GridContextValue<T> {
 	/** `false` у последней видимой колонки. */
 	canHide: (columnId: string) => boolean;
 	columnMenuLabels: Accessor<GridColumnMenuLabels>;
+	/** Строки итогов в порядке «страница, выборка»; пусто, если ни `pageTotals`, ни `totals` не переданы. */
+	totalsRows: Accessor<readonly TotalsRow[]>;
 	/** Ref шапки: Grid измеряет её высоту. */
 	headerRef: (element: HTMLTableSectionElement) => void;
 }

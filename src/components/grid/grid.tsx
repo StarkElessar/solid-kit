@@ -14,11 +14,13 @@ import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
 import { applyColumnState } from './apply-column-state';
 import { buildRowIndex } from './build-row-index';
+import { buildTotalsRows } from './build-totals-rows';
 import { canHideColumn } from './can-hide-column';
 import { computeColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import { createGridResize } from './create-grid-resize';
 import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
+import { DEFAULT_TOTALS_LABELS } from './default-totals-labels';
 import { foundText as defaultFoundText } from './found-text';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
@@ -103,6 +105,15 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		return Math.max(base, ...layout().columns.map((item) => item.column.rowHeight ?? 0));
 	});
 
+	const totalsRows = createMemo(() => {
+		return buildTotalsRows(props.pageTotals, props.totals, { ...DEFAULT_TOTALS_LABELS, ...props.totalsLabels });
+	});
+	// строка итогов ровно высотой контрола (спек автосумм, раздел 3): строка, к которой прокручивают, не уходит под прилипшие итоги
+	const totalsHeight = createMemo(() => {
+		const element = scroller();
+		return element === undefined ? 0 : totalsRows().length * readControlHeight(element);
+	});
+
 	const [viewWidth, setViewWidth] = createSignal(0);
 	const loading = (): boolean => props.loading === true;
 	const isEmpty = (): boolean => !loading() && props.rows.length === 0;
@@ -138,6 +149,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		estimateSize: () => estimate(),
 		overscan: untrack(() => props.overscan) ?? DEFAULT_OVERSCAN,
 		scrollPaddingStart: headerHeight,
+		scrollPaddingEnd: totalsHeight,
 		scrollMargin: headerHeight,
 		initialHeight: () => INITIAL_WINDOW_HEIGHT
 	};
@@ -257,6 +269,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			setLockedColumns(toggleId(lockedColumns(), columnId));
 		},
 		canHide: (columnId) => canHideColumn(props.columns, hiddenColumns(), columnId),
+		totalsRows,
 		columnMenuLabels: () => ({ ...DEFAULT_COLUMN_MENU_LABELS, ...props.columnMenuLabels }),
 		selectAllLabel: () => props.selectAllLabel ?? 'Выбрать все строки',
 		selectRowLabel: () => props.selectRowLabel ?? 'Выбрать строку',
@@ -327,6 +340,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 						class={styles['scroller']}
 						style={{
 							'scroll-padding-block-start': `${headerHeight()}px`,
+							'scroll-padding-block-end': `${totalsHeight()}px`,
 							'scroll-padding-inline-start': `${layout().stickyWidth}px`
 						}}
 					>

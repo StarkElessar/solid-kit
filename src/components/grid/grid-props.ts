@@ -4,6 +4,7 @@ import type { GridColumn } from './grid-column';
 import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridPagerProps } from './grid-pager-props';
 import type { GridSort } from './grid-sort';
+import type { GridTotalsLabels } from './grid-totals-labels';
 import type { RowKey } from './row-key';
 
 /** Пропсы Grid, добавленные по частям этапа 4а: часть 2 это данные, колонки, ширины и виртуализация. */
@@ -49,6 +50,11 @@ export interface GridProps<T> extends GridPagerProps {
 	/** Кнопки меню колонки в шапке (по умолчанию `true`). */
 	columnMenu?: boolean | undefined;
 	columnMenuLabels?: Partial<GridColumnMenuLabels> | undefined;
+	/** Итоги страницы от сервера по id колонки; строка «Итого на странице» есть, только если проп передан. Грид ничего не считает. */
+	pageTotals?: Readonly<Record<string, unknown>> | undefined;
+	/** Итоги по всей выборке от сервера по id колонки; строка «Итого по выборке» есть, только если проп передан. */
+	totals?: Readonly<Record<string, unknown>> | undefined;
+	totalsLabels?: Partial<GridTotalsLabels> | undefined;
 	/** Идёт загрузка: тело заменено заглушками, корень получает `aria-busy`, главный чекбокс и ручки ресайза отключены. */
 	loading?: boolean | undefined;
 	/** Имя полосы прогресса ('Загрузка'). */

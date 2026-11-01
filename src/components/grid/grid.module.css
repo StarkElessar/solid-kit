@@ -180,6 +180,58 @@
     border: 0;
 }
 
+/* ячейки итогов прилипают к низу скроллера: последняя строка у края, строка выше неё на высоту одной строки */
+.totals-cell {
+    position: sticky;
+    z-index: var(--s-kit-grid-z-head);
+    inset-block-end: 0;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-block: 0;
+    padding-inline: 10px;
+    border-block-start: 1px solid var(--s-kit-color-hairline);
+    border-inline-end: 1px solid var(--s-kit-color-hairline);
+
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    background: var(--s-kit-grid-footer-bg, var(--s-kit-color-surface-2));
+
+    &[data-first] {
+        border-block-start-color: var(--s-kit-color-border-strong);
+    }
+
+    &[data-stacked] {
+        inset-block-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    }
+
+    &[data-sticky] {
+        z-index: var(--s-kit-grid-z-corner);
+    }
+
+    &[data-sticky-last] {
+        border-inline-end-color: var(--s-kit-color-border-strong);
+    }
+
+    &[data-align="end"] {
+        text-align: end;
+    }
+
+    &[data-align="center"] {
+        text-align: center;
+    }
+}
+
+.totals-label {
+    color: var(--s-kit-color-muted);
+}
+
 .resize-handle {
     touch-action: none;
     cursor: col-resize;
