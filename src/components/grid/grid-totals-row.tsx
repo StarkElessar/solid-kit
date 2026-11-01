@@ -1,9 +1,10 @@
 import styles from './grid.module.css';
 
-import { For, type JSX, Show } from 'solid-js';
+import { createMemo, For, type JSX, Show } from 'solid-js';
 
 import { useGrid } from './grid-context';
 import { GridTotalsCell } from './grid-totals-cell';
+import { totalsLabelSpan } from './totals-label-span';
 import type { TotalsRow } from './totals-row';
 
 export interface GridTotalsRowProps {
@@ -18,6 +19,7 @@ export interface GridTotalsRowProps {
 export function GridTotalsRow(props: GridTotalsRowProps): JSX.Element {
 	const grid = useGrid();
 	const first = (): boolean => props.index === 0;
+	const span = createMemo(() => totalsLabelSpan(grid.columns(), props.row.values));
 	const stacked = (): boolean => props.index < props.count - 1;
 	return (
 		<tr aria-rowindex={grid.rows().length + 2 + props.index}>
@@ -31,8 +33,15 @@ export function GridTotalsRow(props: GridTotalsRowProps): JSX.Element {
 					style={{ 'inset-inline-start': '0px' }}
 				/>
 			</Show>
-			<For each={grid.columns()}>
-				{(column, index) => <GridTotalsCell column={column} index={index()} row={props.row} first={first()} stacked={stacked()}/>}
+			<Show when={grid.columns()[0]}>
+				{(column) => (
+					<GridTotalsCell column={column()} index={0} span={span()} row={props.row} first={first()} stacked={stacked()}/>
+				)}
+			</Show>
+			<For each={grid.columns().slice(span())}>
+				{(column, index) => (
+					<GridTotalsCell column={column} index={span() + index()} span={1} row={props.row} first={first()} stacked={stacked()}/>
+				)}
 			</For>
 		</tr>
 	);

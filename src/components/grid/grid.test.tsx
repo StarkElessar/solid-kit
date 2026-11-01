@@ -1727,7 +1727,8 @@ describe('Grid: автосуммы', () => {
 		const aggregate = (value: unknown): JSX.Element => <i>{String(value)} лет</i>;
 		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, aggregate } : column));
 		renderGrid({ columns, pageTotals: { age: 76, id: undefined } });
-		expect(texts(footRows()[0])).toEqual(['Итого на странице', '', '76 лет', '']);
+		// id без значения входит в подпись
+		expect(texts(footRows()[0])).toEqual(['Итого на странице', '76 лет', '']);
 		expect(footRows()[0]?.querySelector('i')).not.toBeNull();
 	});
 
@@ -1738,7 +1739,19 @@ describe('Grid: автосуммы', () => {
 
 	it('пустой объект даёт строку только с подписью', () => {
 		renderGrid({ totals: {} });
-		expect(texts(footRows()[0])).toEqual(['Итого по выборке', '', '', '']);
+		// подпись занимает закреплённую колонку id без значения и не заходит на открепляемые
+		expect(texts(footRows()[0])).toEqual(['Итого по выборке', '', '']);
+		expect(footRows()[0]?.cells[0]?.getAttribute('colspan')).toBe('2');
+	});
+
+	it('подпись не растягивается на колонку со значением', () => {
+		renderGrid({ totals: ALL });
+		expect(footRows()[0]?.cells[0]?.getAttribute('colspan')).toBe('1');
+	});
+
+	it('разделитель закрепа получает подпись, под которой лежит последняя закреплённая колонка', () => {
+		renderGrid({ totals: {} });
+		expect(footRows()[0]?.cells[0]?.hasAttribute('data-sticky-last')).toBe(true);
 	});
 
 	it('выравнивание ячеек берётся из колонки, закреплённые колонки закреплены как в теле', () => {
@@ -1815,9 +1828,9 @@ describe('Grid: автосуммы', () => {
 				aria-label='Люди'
 			/>
 		));
-		expect(texts(footRows()[0])[2]).toBe('1');
+		expect(texts(footRows()[0])[1]).toBe('1');
 		setPageTotals({ age: 2 });
-		expect(texts(footRows()[0])[2]).toBe('2');
+		expect(texts(footRows()[0])[1]).toBe('2');
 		setTotals({ age: 9 });
 		expect(footRows()).toHaveLength(2);
 		setTotals(undefined);
