@@ -20,11 +20,14 @@ import { computeColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import { createGridResize } from './create-grid-resize';
 import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
+import { DEFAULT_GROUPING_LABELS } from './default-grouping-labels';
 import { DEFAULT_TOTALS_LABELS } from './default-totals-labels';
+import { flattenGroups } from './flatten-groups';
 import { foundText as defaultFoundText } from './found-text';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
+import type { GridItem } from './grid-item';
 import { GridLiveRegion } from './grid-live-region';
 import { GridProgress } from './grid-progress';
 import type { GridProps } from './grid-props';
@@ -47,6 +50,8 @@ const DEFAULT_SELECT_WIDTH = 44;
 const MIN_SKELETON_ROWS = 5;
 const MAX_SKELETON_ROWS = 20;
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
+const NO_ROWS: readonly never[] = [];
+const NO_GROUP_KEYS: ReadonlySet<string> = new Set();
 
 /**
  * Грид: «глупая» таблица с закреплённой шапкой, закреплёнными колонками и ресайзом колонок. Данные, ширины и (в следующих частях)
@@ -86,7 +91,29 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	const layout = createMemo(() => computeColumnLayout(stateColumns(), widths(), layoutOptions()));
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
-	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
+	const [expandedGroups, setExpandedGroups] = createControllableSignal<ReadonlySet<string>>({
+		name: 'Grid',
+		value: () => props.expandedGroupKeys,
+		defaultValue: () => props.defaultExpandedGroupKeys ?? NO_GROUP_KEYS,
+		onChange: (next) => props.onExpandedGroupKeysChange?.(next)
+	});
+	// сгруппированный режим определяет наличие `groups`; плоский список элементов строится только в нём
+	const flat = createMemo(() => (props.groups === undefined ? undefined : flattenGroups(props.groups, expandedGroups())));
+	const leafRows = createMemo((): readonly T[] => flat()?.rows ?? props.rows ?? NO_ROWS);
+	const itemCount = (): number => flat()?.items.length ?? leafRows().length;
+	const itemAt = (index: number): GridItem<unknown> | undefined => {
+		const grouped = flat();
+		if (grouped !== undefined) {
+			return grouped.items[index];
+		}
+		const rows = leafRows();
+		return index < rows.length ? { kind: 'row', row: rows[index], rowIndex: index, level: 0 } : undefined;
+	};
+	const rowIndexOfItem = (index: number): number | undefined => {
+		const item = itemAt(index);
+		return item?.kind === 'row' ? item.rowIndex : undefined;
+	};
+	const rowIndex = createMemo(() => buildRowIndex(leafRows(), props.getRowKey));
 	const [sort, setSort] = createControllableSignal<GridSort | null>({
 		name: 'Grid',
 		value: () => props.sort,
@@ -116,7 +143,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 	const [viewWidth, setViewWidth] = createSignal(0);
 	const loading = (): boolean => props.loading === true;
-	const isEmpty = (): boolean => !loading() && props.rows.length === 0;
+	const isEmpty = (): boolean => !loading() && itemCount() === 0;
 	const emptyText = (): string => props.emptyText ?? 'Ничего не найдено';
 	// число заглушек считается в момент начала загрузки: строки, помещающиеся в скроллер, но не меньше 5 и не больше 20
 	const skeletonCount = createMemo(() => {
@@ -137,14 +164,14 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			}
 			else if (was === true) {
 				// с пейджером найдено столько записей, сколько в выборке (`total`), а не сколько строк на странице
-				const found = props.total ?? props.rows.length;
-				setLiveMessage(props.rows.length === 0 ? emptyText() : (props.foundText ?? defaultFoundText)(found));
+				const found = props.total ?? leafRows().length;
+				setLiveMessage(itemCount() === 0 ? emptyText() : (props.foundText ?? defaultFoundText)(found));
 			}
 		})
 	);
 
 	const windowOptions: RenderWindowOptions = {
-		count: () => props.rows.length,
+		count: itemCount,
 		scroller,
 		estimateSize: () => estimate(),
 		overscan: untrack(() => props.overscan) ?? DEFAULT_OVERSCAN,
@@ -204,7 +231,18 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	});
 
 	const context: GridContextValue<T> = {
-		rows: () => props.rows,
+		rows: leafRows,
+		itemCount,
+		itemAt,
+		rowIndexOfItem,
+		expandedGroupKeys: expandedGroups,
+		toggleGroup: (key) => {
+			setExpandedGroups(toggleId(expandedGroups(), key));
+		},
+		loadGroup: (key) => {
+			props.onGroupExpand?.(key);
+		},
+		groupingLabels: () => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels }),
 		rowIndex,
 		layout,
 		selectable,
@@ -217,8 +255,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			return key !== undefined && selected().has(key);
 		},
 		activateRow: (index) => {
-			if (index < props.rows.length) {
-				props.onRowDoubleClick?.(props.rows[index] as T);
+			if (index < leafRows().length) {
+				props.onRowDoubleClick?.(leafRows()[index] as T);
 			}
 		},
 		toggleRow: (index) => {
@@ -244,8 +282,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		hasRowMenu: () => props.rowContextMenu !== undefined,
 		rowMenu,
 		openRowMenu: (index: number, point: ContextMenuPoint, source: MenuOpenSource) => {
-			if (index < props.rows.length) {
-				setRowMenu({ point, source, row: props.rows[index] });
+			if (index < leafRows().length) {
+				setRowMenu({ point, source, row: leafRows()[index] });
 			}
 		},
 		closeRowMenu: () => {

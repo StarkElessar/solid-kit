@@ -9,13 +9,26 @@ import type { ColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import type { GridColumn } from './grid-column';
 import type { GridColumnMenuLabels } from './grid-column-menu-labels';
+import type { GridGroupingLabels } from './grid-grouping-labels';
+import type { GridItem } from './grid-item';
 import type { GridSort } from './grid-sort';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
 import type { TotalsRow } from './totals-row';
 
 export interface GridContextValue<T> {
+	/** Листовые строки: все строки плоского режима или строки загруженных развёрнутых групп в порядке показа. */
 	rows: Accessor<readonly T[]>;
+	/** Число элементов тела (строки, заголовки и подвалы групп, заглушки): столько строк считает окно рендера. */
+	itemCount: Accessor<number>;
+	itemAt: (index: number) => GridItem<unknown> | undefined;
+	/** Индекс листовой строки для элемента `index`; `undefined` у заголовков, подвалов и заглушек. */
+	rowIndexOfItem: (index: number) => number | undefined;
+	expandedGroupKeys: Accessor<ReadonlySet<string>>;
+	toggleGroup: (key: string) => void;
+	/** Строка-заглушка ещё не загруженной группы смонтирована: `onGroupExpand(key)`. */
+	loadGroup: (key: string) => void;
+	groupingLabels: Accessor<GridGroupingLabels>;
 	rowIndex: Accessor<RowIndex>;
 	layout: Accessor<ColumnLayout<T>>;
 	/** Видимые колонки в порядке показа. Список не пересоздаётся при смене ширин: шапка и ячейки живут между ресайзами. */

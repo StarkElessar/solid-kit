@@ -8,6 +8,7 @@ import { Select } from '../select';
 
 import { Grid } from './grid';
 import type { GridColumn } from './grid-column';
+import type { GridGroup } from './grid-group';
 import type { GridSort } from './grid-sort';
 
 afterEach(cleanup);
@@ -1835,5 +1836,161 @@ describe('Grid: автосуммы', () => {
 		expect(footRows()).toHaveLength(2);
 		setTotals(undefined);
 		expect(footRows()).toHaveLength(1);
+	});
+});
+
+describe('Grid: группировка', () => {
+	const G1: GridGroup<Person> = {
+		key: 'g1',
+		field: 'age',
+		value: 31,
+		count: 2,
+		aggregates: { age: 62 },
+		children: { kind: 'rows', items: [ROWS[0] as Person, ROWS[1] as Person] }
+	};
+	const G2: GridGroup<Person> = { key: 'g2', field: 'age', value: 45, count: 1, children: { kind: 'rows', items: [ROWS[2] as Person] } };
+	const LAZY: GridGroup<Person> = { key: 'g3', field: 'age', value: 50, count: 40, children: { kind: 'not-loaded' } };
+
+	function trs(): HTMLTableRowElement[] {
+		return [...table().querySelectorAll<HTMLTableRowElement>('tbody > tr[data-index]')];
+	}
+
+	function kindsOf(): string[] {
+		return trs().map((row) => row.dataset['kind'] ?? '');
+	}
+
+	it('без groups плоский режим не меняется: все строки data-kind=row', () => {
+		renderGrid();
+		expect(kindsOf()).toEqual(['row', 'row', 'row']);
+	});
+
+	it('с groups rows игнорируется, свёрнутые группы дают только заголовки с aria-expanded=false', () => {
+		renderGrid({ groups: [G1, G2] });
+		expect(kindsOf()).toEqual(['group', 'group']);
+		const toggle = trs()[0]?.querySelector('button[aria-expanded]');
+		expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('развёрнутая группа: заголовок, строки, подвал (при агрегатах), затем следующий заголовок', () => {
+		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']) });
+		expect(kindsOf()).toEqual(['group', 'row', 'row', 'footer', 'group']);
+		expect(trs()[1]?.textContent).toContain('Анна');
+	});
+
+	it('заголовок: «Колонка: значение» и счётчик; groupValue колонки форматирует значение', () => {
+		renderGrid({ groups: [G1] });
+		expect(trs()[0]?.textContent).toContain('Возраст: 31');
+		expect(trs()[0]?.textContent).toContain('2');
+		cleanup();
+		const groupValue = (value: unknown): string => `${String(value)} лет`;
+		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, groupValue } : column));
+		renderGrid({ groups: [G1], columns });
+		expect(trs()[0]?.textContent).toContain('Возраст: 31 лет');
+	});
+
+	it('свёрнутая группа показывает агрегаты в заголовке, развёрнутая в подвале', () => {
+		const { unmount } = renderGrid({ groups: [G1] });
+		const collapsed = trs()[0];
+		expect(collapsed?.textContent).toContain('62');
+		unmount();
+		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']) });
+		expect(trs()[0]?.textContent).not.toContain('62');
+		expect(trs()[3]?.textContent).toContain('62');
+		expect(trs()[3]?.textContent).toContain('Итого: Возраст: 31');
+	});
+
+	it('подпись группы занимает колонки без агрегатов (colspan) и не заходит на колонку с агрегатом', () => {
+		renderGrid({ groups: [G1] });
+		const label = trs()[0]?.querySelector('td');
+		// порядок колонок: name, id (закреплены), age (агрегат), note
+		expect(label?.getAttribute('colspan')).toBe('2');
+	});
+
+	it('развёрнутая группа без агрегатов: подпись занимает все колонки', () => {
+		renderGrid({ groups: [G2], expandedGroupKeys: new Set(['g2']) });
+		expect(trs()[0]?.querySelector('td')?.getAttribute('colspan')).toBe('4');
+	});
+
+	it('клик по заголовку и по шеврону переключает группу через onExpandedGroupKeysChange, прежний Set не мутируется', () => {
+		const onChange = vi.fn();
+		const initial = new Set<string>();
+		renderGrid({ groups: [G1], expandedGroupKeys: initial, onExpandedGroupKeysChange: onChange });
+		fireEvent.click(trs()[0] as HTMLElement);
+		expect([...(onChange.mock.calls[0]?.[0] as Set<string>)]).toEqual(['g1']);
+		fireEvent.click(trs()[0]?.querySelector('button') as HTMLElement);
+		expect(onChange).toHaveBeenCalledTimes(2);
+		expect(initial.size).toBe(0);
+	});
+
+	it('без controlled-пропса группа разворачивается сама и свёрнутость переживает смену groups с теми же ключами', () => {
+		const [groups, setGroups] = createSignal<readonly GridGroup<Person>[]>([G1]);
+		render(() => <Grid getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} groups={groups()} aria-label='Люди'/>);
+		fireEvent.click(trs()[0]?.querySelector('button') as HTMLElement);
+		expect(kindsOf()).toEqual(['group', 'row', 'row', 'footer']);
+		setGroups([{ ...G1 }, G2]);
+		expect(kindsOf()).toEqual(['group', 'row', 'row', 'footer', 'group']);
+	});
+
+	it('aria-rowcount считает элементы, aria-rowindex идёт подряд', () => {
+		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']), pageTotals: {} });
+		expect(table().getAttribute('aria-rowcount')).toBe('7');
+		expect(trs().map((row) => row.getAttribute('aria-rowindex'))).toEqual(['2', '3', '4', '5', '6']);
+		expect(table().querySelector('tfoot > tr')?.getAttribute('aria-rowindex')).toBe('7');
+	});
+
+	it('выбор: строка внутри группы выбирается по ключу, заголовок и подвал не выбираются', () => {
+		const onSelectedKeysChange = vi.fn();
+		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']), selectable: true, onSelectedKeysChange });
+		fireEvent.click(trs()[1]?.cells[3] as HTMLElement);
+		expect([...(onSelectedKeysChange.mock.calls[0]?.[0] as Set<number>)]).toEqual([1]);
+		onSelectedKeysChange.mockClear();
+		fireEvent.click(trs()[3] as HTMLElement);
+		fireEvent.click(trs()[4] as HTMLElement);
+		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+	});
+
+	it('главный чекбокс выбирает загруженные строки развёрнутых групп', () => {
+		const onSelectedKeysChange = vi.fn();
+		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']), selectable: true, onSelectedKeysChange });
+		fireEvent.click(screen.getByRole('checkbox', { name: 'Выбрать все строки' }));
+		expect([...(onSelectedKeysChange.mock.calls[0]?.[0] as Set<number>)].sort()).toEqual([1, 2]);
+	});
+
+	it('двойной клик и меню строки на заголовке не срабатывают, на строке группы срабатывают', () => {
+		const onRowDoubleClick = vi.fn();
+		const rowContextMenu = (): JSX.Element => <ContextMenu.Item>Пункт</ContextMenu.Item>;
+		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']), onRowDoubleClick, rowContextMenu });
+		fireEvent.dblClick(trs()[0] as HTMLElement);
+		fireEvent.contextMenu(trs()[0] as HTMLElement);
+		expect(onRowDoubleClick).not.toHaveBeenCalled();
+		expect(screen.queryByRole('menu')).toBeNull();
+		fireEvent.dblClick(trs()[1]?.cells[0] as HTMLElement);
+		expect(onRowDoubleClick).toHaveBeenCalledWith(ROWS[0]);
+	});
+
+	it('не загруженная развёрнутая группа даёт заглушку и вызывает onGroupExpand', () => {
+		const onGroupExpand = vi.fn();
+		renderGrid({ groups: [LAZY], expandedGroupKeys: new Set(['g3']), onGroupExpand });
+		expect(kindsOf()).toEqual(['group', 'loading']);
+		expect(trs()[1]?.textContent).toContain('Загрузка…');
+		expect(onGroupExpand).toHaveBeenCalledWith('g3');
+		expect(onGroupExpand).toHaveBeenCalledTimes(1);
+	});
+
+	it('свёрнутая не загруженная группа onGroupExpand не вызывает', () => {
+		const onGroupExpand = vi.fn();
+		renderGrid({ groups: [LAZY], onGroupExpand });
+		expect(onGroupExpand).not.toHaveBeenCalled();
+	});
+
+	it('пустой groups даёт состояние «пусто»', () => {
+		renderGrid({ groups: [] });
+		expect(screen.getByText('Ничего не найдено')).toBeTruthy();
+	});
+
+	it('строки внутри группы получают отступ уровня, заголовок нет', () => {
+		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']) });
+		expect(trs()[1]?.style.getPropertyValue('--s-kit-grid-indent')).toBe('16px');
+		expect(trs()[0]?.style.getPropertyValue('--s-kit-grid-indent')).toBe('');
 	});
 });

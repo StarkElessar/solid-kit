@@ -31,6 +31,7 @@ export function GridCell(props: GridCellProps): JSX.Element {
 			data-sticky={sticky() ? '' : undefined}
 			data-sticky-last={props.index === grid.lastStickyIndex() ? '' : undefined}
 			data-align={props.column.align}
+			data-indent={props.index === 0 ? '' : undefined}
 			style={{
 				'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined,
 				'--s-kit-grid-cell-h': cellHeight(props.column)

@@ -1,6 +1,6 @@
 import styles from './grid.module.css';
 
-import { createMemo, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
+import { createMemo, For, type JSX, onCleanup, onMount, Show, untrack } from 'solid-js';
 
 import { GridCell } from './grid-cell';
 import { useGrid } from './grid-context';
@@ -8,7 +8,7 @@ import { GridSelectCell } from './grid-select-cell';
 import { rescueFocus } from './rescue-focus';
 
 export interface GridRowProps {
-	/** Индекс строки в `rows`. */
+	/** Индекс элемента тела: по нему окно рендера измеряет строку; индекс листовой строки (`rowIndex`) от него может отличаться. */
 	index: number;
 }
 
@@ -18,12 +18,19 @@ export function GridRow(props: GridRowProps): JSX.Element {
 	let element: HTMLTableRowElement | undefined;
 	// при сокращении rows Solid может пересчитать ячейки раньше, чем окно уберёт эту строку: до удаления она держит последнюю строку
 	let lastRow: unknown;
+	let lastRowIndex = untrack(() => grid.rowIndexOfItem(props.index) ?? 0);
+
+	const rowIndex = createMemo((): number => {
+		lastRowIndex = grid.rowIndexOfItem(props.index) ?? lastRowIndex;
+		return lastRowIndex;
+	});
+	const level = (): number => grid.itemAt(props.index)?.level ?? 0;
 
 	// мемо по ссылке: смена массива `rows` с той же строкой не пересоздаёт её ячейки и не отнимает у них фокус
 	const row = createMemo((): unknown => {
 		const rows = grid.rows();
-		if (props.index < rows.length) {
-			lastRow = rows[props.index];
+		if (rowIndex() < rows.length) {
+			lastRow = rows[rowIndex()];
 		}
 		return lastRow;
 	});
@@ -47,13 +54,15 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			ref={element}
 			class={styles['row']}
 			data-index={props.index}
-			data-row-key={grid.rowIndex().keys[props.index]}
-			data-selected={grid.isRowSelected(props.index) ? '' : undefined}
-			aria-selected={grid.isRowSelected(props.index) ? true : undefined}
+			data-kind='row'
+			data-row-key={grid.rowIndex().keys[rowIndex()]}
+			data-selected={grid.isRowSelected(rowIndex()) ? '' : undefined}
+			aria-selected={grid.isRowSelected(rowIndex()) ? true : undefined}
 			aria-rowindex={props.index + 2}
+			style={{ '--s-kit-grid-indent': level() > 0 ? `${level() * 16}px` : undefined }}
 		>
 			<Show when={grid.selectable()}>
-				<GridSelectCell index={props.index}/>
+				<GridSelectCell index={rowIndex()}/>
 			</Show>
 			<For each={grid.columns()}>
 				{(column, index) => <GridCell column={column} index={index()} row={row()}/>}

@@ -102,6 +102,11 @@
         text-align: center;
     }
 
+    /* отступ уровня группы: строки внутри групп смещены, у плоских строк переменной нет */
+    &[data-indent] {
+        padding-inline-start: calc(10px + var(--s-kit-grid-indent, 0px));
+    }
+
     /* высота контрола своя, но не больше ячейки: иначе высота контрола плюс нижняя рамка раздувают строку на 1 px */
     & > [data-s-kit] {
         max-block-size:
@@ -229,6 +234,101 @@
 }
 
 .totals-label {
+    color: var(--s-kit-color-muted);
+}
+
+.group-row {
+    /* ячейки заголовка и подвала группы: фон шапки (непрозрачный: закреплённые ячейки перекрывают прокручиваемые) */
+    & > .group-cell {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
+
+        &[data-sticky] {
+            background: var(--s-kit-grid-header-bg, var(--s-kit-color-surface-2));
+        }
+
+        &[data-align="end"] {
+            text-align: end;
+        }
+
+        &[data-align="center"] {
+            text-align: center;
+        }
+    }
+
+    &[data-kind="footer"] > .group-cell {
+        border-block-start: 1px solid var(--s-kit-color-border-strong);
+        font-weight: 600;
+    }
+}
+
+.group-label {
+    padding-inline-start: calc(10px + var(--s-kit-grid-indent, 0px));
+}
+
+.group-toggle {
+    cursor: pointer;
+
+    display: inline-grid;
+    place-items: center;
+
+    box-sizing: border-box;
+    inline-size: 20px;
+    block-size: 20px;
+    margin: 0;
+    margin-inline-end: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+
+    color: inherit;
+    vertical-align: middle;
+
+    appearance: none;
+    background: transparent;
+
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
+}
+
+.group-chevron {
+    inline-size: 14px;
+    block-size: 14px;
+    transition: transform 120ms ease;
+
+    &[data-expanded] {
+        transform: rotate(90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
+.group-text {
+    vertical-align: middle;
+}
+
+.group-count {
+    margin-inline-start: 6px;
+    font-weight: 400;
+    color: var(--s-kit-color-muted);
+    vertical-align: middle;
+}
+
+.group-loading {
+    position: sticky;
+    inset-inline-start: 0;
+
+    box-sizing: border-box;
+    inline-size: var(--s-kit-grid-view-w, 100%);
+    block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding-inline-start: calc(10px + var(--s-kit-grid-indent, 0px));
+
+    line-height: var(--s-kit-control-height, var(--s-kit-control-height-md));
     color: var(--s-kit-color-muted);
 }
 

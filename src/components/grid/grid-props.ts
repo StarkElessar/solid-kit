@@ -2,6 +2,8 @@ import type { JSX } from 'solid-js';
 
 import type { GridColumn } from './grid-column';
 import type { GridColumnMenuLabels } from './grid-column-menu-labels';
+import type { GridGroup } from './grid-group';
+import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridPagerProps } from './grid-pager-props';
 import type { GridSort } from './grid-sort';
 import type { GridTotalsLabels } from './grid-totals-labels';
@@ -9,7 +11,24 @@ import type { RowKey } from './row-key';
 
 /** Пропсы Grid, добавленные по частям этапа 4а: часть 2 это данные, колонки, ширины и виртуализация. */
 export interface GridProps<T> extends GridPagerProps {
-	rows: readonly T[];
+	/** Строки плоского режима. В сгруппированном режиме (передан `groups`) игнорируются. */
+	rows?: readonly T[] | undefined;
+	/** Серверная иерархия групп: есть (даже пустая) — сгруппированный режим. Грид строки не группирует и агрегаты не считает. */
+	groups?: readonly GridGroup<T>[] | undefined;
+	/** Панель группировки, пункт меню колонки и перетаскивание заголовков (по умолчанию `false`). */
+	groupable?: boolean | undefined;
+	/** Id колонок по порядку вложенности. Состав меняется из UI, данные перезапрашивает страница по `onGroupingChange`. */
+	grouping?: readonly string[] | undefined;
+	defaultGrouping?: readonly string[] | undefined;
+	/** Новый массив на каждое изменение; прежний не мутируется. */
+	onGroupingChange?: ((fields: readonly string[]) => void) | undefined;
+	/** Ключи развёрнутых групп; по умолчанию пусто (все свёрнуты). Ключи, которых нет в данных, остаются в наборе. */
+	expandedGroupKeys?: ReadonlySet<string> | undefined;
+	defaultExpandedGroupKeys?: ReadonlySet<string> | undefined;
+	onExpandedGroupKeysChange?: ((keys: ReadonlySet<string>) => void) | undefined;
+	/** Раскрыта группа, строки которой ещё не загружены (`children.kind === 'not-loaded'`): страница догружает их. */
+	onGroupExpand?: ((key: string) => void) | undefined;
+	groupingLabels?: Partial<GridGroupingLabels> | undefined;
 	/** Уникальный и стабильный между загрузками ключ строки. */
 	getRowKey: (row: T) => RowKey;
 	columns: readonly GridColumn<T>[];

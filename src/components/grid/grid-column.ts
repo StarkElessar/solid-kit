@@ -25,5 +25,9 @@ export interface GridColumn<T> {
 	hidden?: boolean | undefined;
 	sortable?: boolean | undefined;
 	/** Формат итога колонки (страничного, глобального и группового); без него значение показывается как текст ячейки. */
+	/** Можно ли группировать по колонке (по умолчанию да, если у грида `groupable`). */
+	groupable?: boolean | undefined;
+	/** Как показать значение группы в заголовке; без него значение форматируется как текст ячейки. */
+	groupValue?: ((value: unknown) => JSX.Element) | undefined;
 	aggregate?: ((value: unknown) => JSX.Element) | undefined;
 }

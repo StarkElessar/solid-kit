@@ -22,7 +22,7 @@ export function GridTotalsRow(props: GridTotalsRowProps): JSX.Element {
 	const span = createMemo(() => totalsLabelSpan(grid.columns(), props.row.values));
 	const stacked = (): boolean => props.index < props.count - 1;
 	return (
-		<tr aria-rowindex={grid.rows().length + 2 + props.index}>
+		<tr aria-rowindex={grid.itemCount() + 2 + props.index}>
 			<Show when={grid.selectable()}>
 				<td
 					class={`${styles['totals-cell']} ${styles['select-cell']}`}

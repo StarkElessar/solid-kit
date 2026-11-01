@@ -7,7 +7,7 @@ import { elementPoint } from '../context-menu/menu-point-anchor';
 import { closestRow } from './closest-row';
 import { useGrid } from './grid-context';
 import { GridEmpty } from './grid-empty';
-import { GridRow } from './grid-row';
+import { GridItemRow } from './grid-item-row';
 import { GridSkeleton } from './grid-skeleton';
 import { isInteractiveTarget } from './is-interactive-target';
 import { sameItems } from './same-items';
@@ -36,31 +36,42 @@ export function GridBody(): JSX.Element {
 		<tbody
 			onContextMenu={(event) => {
 				const hit = grid.hasRowMenu() ? closestRow(event.target) : undefined;
-				if (hit !== undefined) {
+				const rowIndex = hit === undefined ? undefined : grid.rowIndexOfItem(hit.index);
+				if (rowIndex !== undefined) {
 					event.preventDefault();
-					grid.openRowMenu(hit.index, { x: event.clientX, y: event.clientY }, 'pointer');
+					grid.openRowMenu(rowIndex, { x: event.clientX, y: event.clientY }, 'pointer');
 				}
 			}}
 			onKeyDown={(event) => {
 				const hit = grid.hasRowMenu() && (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey))
 					? closestRow(event.target)
 					: undefined;
-				if (hit !== undefined) {
+				const rowIndex = hit === undefined ? undefined : grid.rowIndexOfItem(hit.index);
+				if (rowIndex !== undefined) {
 					event.preventDefault();
 					const anchor = event.target instanceof Element ? event.target : event.currentTarget;
-					grid.openRowMenu(hit.index, elementPoint(anchor), 'keyboard');
+					grid.openRowMenu(rowIndex, elementPoint(anchor), 'keyboard');
 				}
 			}}
 			onClick={(event) => {
-				const hit = grid.selectable() ? rowOfEvent(event) : undefined;
-				if (hit !== undefined) {
-					grid.toggleRow(hit.index);
+				const hit = rowOfEvent(event);
+				if (hit === undefined) {
+					return;
+				}
+				const item = grid.itemAt(hit.index);
+				// клик по заголовку группы (мимо кнопки-шеврона) переключает группу; подвалы и заглушки не отзываются
+				if (item?.kind === 'group') {
+					grid.toggleGroup(item.group.key);
+				}
+				else if (grid.selectable() && item?.kind === 'row') {
+					grid.toggleRow(item.rowIndex);
 				}
 			}}
 			onDblClick={(event) => {
 				const hit = rowOfEvent(event);
-				if (hit !== undefined) {
-					grid.activateRow(hit.index);
+				const rowIndex = hit === undefined ? undefined : grid.rowIndexOfItem(hit.index);
+				if (rowIndex !== undefined) {
+					grid.activateRow(rowIndex);
 				}
 			}}
 		>
@@ -77,7 +88,7 @@ export function GridBody(): JSX.Element {
 							<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${topSpace()}px` }}/>
 						</tr>
 					</Show>
-					<For each={indexes()}>{(index) => <GridRow index={index}/>}</For>
+					<For each={indexes()}>{(index) => <GridItemRow index={index}/>}</For>
 					<Show when={bottomSpace() > 0}>
 						<tr aria-hidden='true' role='presentation'>
 							<td class={styles['spacer']} colSpan={columnCount()} style={{ height: `${bottomSpace()}px` }}/>
