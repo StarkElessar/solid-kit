@@ -1286,3 +1286,75 @@ describe('Grid: состояния', () => {
 		expect(live(container).textContent).toBe('Пусто');
 	});
 });
+
+describe('Grid: пейджер', () => {
+	function footer(): HTMLElement | null {
+		return document.querySelector<HTMLElement>('nav[aria-label="Постраничная навигация"]');
+	}
+
+	function live(): string {
+		return document.querySelector('[aria-live="polite"]')?.textContent ?? '';
+	}
+
+	it('без total полосы нет', () => {
+		renderGrid();
+		expect(footer()).toBeNull();
+	});
+
+	it('с total полоса внутри корпуса сразу после скроллера, сводка по total', () => {
+		renderGrid({ total: 1250, defaultPageSize: 20 });
+		const nav = footer();
+		expect(nav).not.toBeNull();
+		const root = document.querySelector('[data-s-kit-focus-inset]');
+		expect(root?.contains(nav ?? null)).toBe(true);
+		expect(nav?.parentElement?.previousElementSibling?.querySelector('table')).not.toBeNull();
+		expect((nav?.querySelector('[data-pager-summary]')?.textContent ?? '').replace(/\s/g, ' ')).toBe('Записей 1–20 из 1 250');
+	});
+
+	it('колбэки пейджера доходят до страницы, строки грид не режет', () => {
+		const onPageChange = vi.fn();
+		renderGrid({ total: 100, defaultPageSize: 10, onPageChange });
+		fireEvent.click(screen.getByRole('button', { name: 'Вперёд' }));
+		expect(onPageChange).toHaveBeenCalledWith(2);
+		expect(bodyRows()).toHaveLength(ROWS.length);
+	});
+
+	it('onRefresh показывает кнопку «Обновить»', () => {
+		const onRefresh = vi.fn();
+		renderGrid({ total: 100, onRefresh });
+		fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
+		expect(onRefresh).toHaveBeenCalledTimes(1);
+	});
+
+	it('loading грида блокирует пейджер', () => {
+		renderGrid({ total: 100, defaultPage: 3, loading: true, onRefresh: vi.fn() });
+		const buttons = [...(footer()?.querySelectorAll('button') ?? [])];
+		expect(buttons.length).toBeGreaterThan(0);
+		expect(buttons.every((button) => button.disabled)).toBe(true);
+	});
+
+	it('pagerLabels и pagerSummaryText переопределяют тексты', () => {
+		renderGrid({ total: 100, pagerLabels: { next: 'Next' }, pagerSummaryText: (range) => `${range.total}` });
+		expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+		expect(footer()?.querySelector('[data-pager-summary]')?.textContent).toBe('100');
+	});
+
+	it('объявление после загрузки считает total, а не строки страницы', () => {
+		const foundText = vi.fn((count: number) => `найдено ${count}`);
+		const [loading, setLoading] = createSignal(true);
+		render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} total={500} loading={loading()} foundText={foundText}/>
+		));
+		setLoading(false);
+		expect(foundText).toHaveBeenCalledWith(500);
+		expect(live()).toBe('найдено 500');
+	});
+
+	it('пустая страница при ненулевом total остаётся состоянием «пусто» с полосой', () => {
+		const [loading, setLoading] = createSignal(true);
+		render(() => <Grid rows={[]} getRowKey={(row: Person) => row.id} columns={COLUMNS} total={500} loading={loading()}/>);
+		setLoading(false);
+		expect(live()).toBe('Ничего не найдено');
+		expect(footer()).not.toBeNull();
+	});
+});

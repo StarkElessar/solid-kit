@@ -1,6 +1,6 @@
 import styles from './grid.module.css';
 
-import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, untrack } from 'solid-js';
+import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, Show, untrack } from 'solid-js';
 
 import { PanelHostContext } from '../../internal/panel/panel-host';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
@@ -17,6 +17,7 @@ import { computeColumnLayout } from './column-layout';
 import { createGridResize } from './create-grid-resize';
 import { foundText as defaultFoundText } from './found-text';
 import { GridContext, type GridContextValue } from './grid-context';
+import { GridFooter } from './grid-footer';
 import { GridLiveRegion } from './grid-live-region';
 import { GridProgress } from './grid-progress';
 import type { GridProps } from './grid-props';
@@ -101,7 +102,9 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 				setLiveMessage('');
 			}
 			else if (was === true) {
-				setLiveMessage(props.rows.length === 0 ? emptyText() : (props.foundText ?? defaultFoundText)(props.rows.length));
+				// с пейджером найдено столько записей, сколько в выборке (`total`), а не сколько строк на странице
+				const found = props.total ?? props.rows.length;
+				setLiveMessage(props.rows.length === 0 ? emptyText() : (props.foundText ?? defaultFoundText)(found));
 			}
 		})
 	);
@@ -257,6 +260,9 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					>
 						<GridTable aria-label={props['aria-label']}/>
 					</div>
+					<Show when={props.total !== undefined}>
+						<GridFooter pager={props} loading={loading()}/>
+					</Show>
 					<GridRowMenu/>
 				</div>
 				<GridLiveRegion/>

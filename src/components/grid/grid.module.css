@@ -1,6 +1,7 @@
 /*
  * Токены Grid (публичный API кастомизации, читаются с фолбэком на глобальные):
- *   --s-kit-grid-bg, --s-kit-grid-border, --s-kit-grid-radius, --s-kit-grid-header-bg, --s-kit-grid-max-height, --s-kit-grid-row-hover
+ *   --s-kit-grid-bg, --s-kit-grid-border, --s-kit-grid-radius, --s-kit-grid-header-bg, --s-kit-grid-footer-bg,
+ *   --s-kit-grid-max-height, --s-kit-grid-row-hover
  * Высота корня: block-size 100% родителя, но не больше --s-kit-grid-max-height (32rem); страница с более высокой областью ставит
  * токен в none. Внутренние переменные меняет код, а не потребитель: --s-kit-grid-w-<i>, --s-kit-grid-left-<i>, --s-kit-grid-table-w
  * (на <table>), --s-kit-grid-row-height (на корне, из rowHeight) и слои --s-kit-grid-z-*.
@@ -38,6 +39,12 @@
     overflow: auto;
     flex: 1 1 auto;
     min-block-size: 0;
+}
+
+.footer {
+    flex: none;
+    border-block-start: 1px solid var(--s-kit-color-hairline);
+    background: var(--s-kit-grid-footer-bg, var(--s-kit-color-surface-2));
 }
 
 .table {

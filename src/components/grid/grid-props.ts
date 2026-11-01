@@ -1,11 +1,12 @@
 import type { JSX } from 'solid-js';
 
 import type { GridColumn } from './grid-column';
+import type { GridPagerProps } from './grid-pager-props';
 import type { GridSort } from './grid-sort';
 import type { RowKey } from './row-key';
 
 /** Пропсы Grid, добавленные по частям этапа 4а: часть 2 это данные, колонки, ширины и виртуализация. */
-export interface GridProps<T> {
+export interface GridProps<T> extends GridPagerProps {
 	rows: readonly T[];
 	/** Уникальный и стабильный между загрузками ключ строки. */
 	getRowKey: (row: T) => RowKey;
