@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 
 import type { GridColumn } from './grid-column';
+import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridPagerProps } from './grid-pager-props';
 import type { GridSort } from './grid-sort';
 import type { RowKey } from './row-key';
@@ -34,6 +35,20 @@ export interface GridProps<T> extends GridPagerProps {
 	defaultColumnWidths?: Readonly<Record<string, number>> | undefined;
 	/** Один раз по окончании ресайза; в аргументе полный словарь переопределённых ширин. */
 	onColumnWidthsChange?: ((widths: Readonly<Record<string, number>>) => void) | undefined;
+	/** Скрытые колонки по id. Без пропса состояние стартует из `GridColumn.hidden` и дальше живёт в гриде. */
+	hiddenColumns?: ReadonlySet<string> | undefined;
+	defaultHiddenColumns?: ReadonlySet<string> | undefined;
+	/** На каждое изменение из меню колонки; новый `Set`, прежний не мутируется. */
+	onHiddenColumnsChange?: ((hidden: ReadonlySet<string>) => void) | undefined;
+	/** Закреплённые колонки по id. Без пропса состояние стартует из `GridColumn.locked`. */
+	lockedColumns?: ReadonlySet<string> | undefined;
+	defaultLockedColumns?: ReadonlySet<string> | undefined;
+	onLockedColumnsChange?: ((locked: ReadonlySet<string>) => void) | undefined;
+	/** Один раз при закрытии меню колонки, если набор видимых колонок изменился; id в порядке `columns`. */
+	onColumnMenuClose?: ((visibleIds: readonly string[]) => void) | undefined;
+	/** Кнопки меню колонки в шапке (по умолчанию `true`). */
+	columnMenu?: boolean | undefined;
+	columnMenuLabels?: Partial<GridColumnMenuLabels> | undefined;
 	/** Идёт загрузка: тело заменено заглушками, корень получает `aria-busy`, главный чекбокс и ручки ресайза отключены. */
 	loading?: boolean | undefined;
 	/** Имя полосы прогресса ('Загрузка'). */

@@ -4,6 +4,7 @@ import { type JSX, Show } from 'solid-js';
 
 import { leftVar } from './column-css-vars';
 import type { GridColumn } from './grid-column';
+import { GridColumnMenuButton } from './grid-column-menu-button';
 import { useGrid } from './grid-context';
 import { GridResizeHandle } from './grid-resize-handle';
 import { GridSortButton } from './grid-sort-button';
@@ -38,15 +39,18 @@ export function GridHeaderCell(props: GridHeaderCellProps): JSX.Element {
 			aria-sort={ariaSort()}
 			style={{ 'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined }}
 		>
-			<Show when={props.column.sortable === true} fallback={props.column.title}>
-				<GridSortButton
-					title={props.column.title}
-					direction={direction()}
-					onClick={() => {
-						grid.toggleSort(props.column.id);
-					}}
-				/>
-			</Show>
+			<div class={styles['head-inner']}>
+				<Show when={props.column.sortable === true} fallback={<span class={styles['head-title']}>{props.column.title}</span>}>
+					<GridSortButton
+						title={props.column.title}
+						direction={direction()}
+						onClick={() => {
+							grid.toggleSort(props.column.id);
+						}}
+					/>
+				</Show>
+				<GridColumnMenuButton columnId={props.column.id} title={props.column.title}/>
+			</div>
 			<GridResizeHandle index={props.index} columnId={props.column.id}/>
 		</th>
 	);

@@ -6,7 +6,9 @@ import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
 import type { RowIndex } from './build-row-index';
 import type { ColumnLayout } from './column-layout';
+import type { ColumnMenuTarget } from './column-menu-target';
 import type { GridColumn } from './grid-column';
+import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridSort } from './grid-sort';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
@@ -60,6 +62,21 @@ export interface GridContextValue<T> {
 	openRowMenu: (index: number, point: ContextMenuPoint, source: MenuOpenSource) => void;
 	closeRowMenu: () => void;
 	renderRowMenu: (row: unknown) => JSX.Element;
+	hasColumnMenu: Accessor<boolean>;
+	/** Открытое меню колонки; `undefined`, пока закрыто. */
+	columnMenu: Accessor<ColumnMenuTarget | undefined>;
+	/** Клик по кнопке колонки: закрывает меню этой колонки, если оно открыто, иначе открывает. */
+	toggleColumnMenu: (columnId: string, anchor: HTMLElement, source: MenuOpenSource) => void;
+	closeColumnMenu: () => void;
+	/** Все колонки в порядке `columns`, включая скрытые: пункты видимости меню. */
+	menuColumns: Accessor<readonly GridColumn<T>[]>;
+	hiddenColumns: Accessor<ReadonlySet<string>>;
+	lockedColumns: Accessor<ReadonlySet<string>>;
+	toggleHidden: (columnId: string) => void;
+	toggleLocked: (columnId: string) => void;
+	/** `false` у последней видимой колонки. */
+	canHide: (columnId: string) => boolean;
+	columnMenuLabels: Accessor<GridColumnMenuLabels>;
 	/** Ref шапки: Grid измеряет её высоту. */
 	headerRef: (element: HTMLTableSectionElement) => void;
 }

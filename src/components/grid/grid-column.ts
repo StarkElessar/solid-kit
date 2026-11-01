@@ -19,9 +19,9 @@ export interface GridColumn<T> {
 	/** Верхняя граница ширины, px (без ограничения, если не задана): и в раскладке, и при ресайзе. */
 	maxWidth?: number | undefined;
 	align?: 'start' | 'end' | 'center' | undefined;
-	/** Закреплена слева. В этапе 4а задаётся только пропсами. */
+	/** Закреплена слева. Начальное значение: текущее состояние это `lockedColumns` грида. */
 	locked?: boolean | undefined;
-	/** Скрыта. В этапе 4а задаётся только пропсами. */
+	/** Скрыта. Начальное значение: текущее состояние это `hiddenColumns` грида. */
 	hidden?: boolean | undefined;
 	sortable?: boolean | undefined;
 }

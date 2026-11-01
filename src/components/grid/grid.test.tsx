@@ -805,7 +805,7 @@ describe('Grid: сортировка', () => {
 
 	it('у несортируемой колонки нет кнопки и aria-sort, у сортируемой есть кнопка и aria-sort="none"', () => {
 		sortable();
-		expect(header('Заметка').querySelector('button')).toBeNull();
+		expect(header('Заметка').querySelector('button:not([data-grid-column-menu])')).toBeNull();
 		expect(header('Заметка').hasAttribute('aria-sort')).toBe(false);
 		expect(sortButton('Имя').type).toBe('button');
 		expect(header('Имя').getAttribute('aria-sort')).toBe('none');
@@ -1370,5 +1370,293 @@ describe('Grid: пейджер', () => {
 		setLoading(false);
 		expect(live()).toBe('Ничего не найдено');
 		expect(footer()).not.toBeNull();
+	});
+});
+
+describe('Grid: состояние колонок', () => {
+	function titles(): (string | null)[] {
+		return [...table().querySelectorAll('thead th')].map((th) => th.textContent);
+	}
+
+	it('hiddenColumns перекрывает поля hidden: скрыта Заметка, Секрет показан', () => {
+		renderGrid({ hiddenColumns: new Set(['note']) });
+		expect(titles()).toEqual(['Имя', 'Номер', 'Возраст', 'Секрет']);
+	});
+
+	it('lockedColumns перекрывает поля locked: закреплена только Возраст и идёт первой', () => {
+		renderGrid({ lockedColumns: new Set(['age']) });
+		expect(titles()).toEqual(['Возраст', 'Имя', 'Номер', 'Заметка']);
+		const sticky = [...table().querySelectorAll('thead th')].map((th) => th.hasAttribute('data-sticky'));
+		expect(sticky).toEqual([true, false, false, false]);
+	});
+
+	it('defaultHiddenColumns и defaultLockedColumns задают начальное состояние без пропсов', () => {
+		renderGrid({ defaultHiddenColumns: new Set(['age']), defaultLockedColumns: new Set(['note']) });
+		// поля колонок игнорируются: Секрет больше не скрыт, закреплена только Заметка
+		expect(titles()).toEqual(['Заметка', 'Имя', 'Секрет', 'Номер']);
+	});
+
+	it('controlled: смена hiddenColumns родителем скрывает и показывает колонку', () => {
+		const [hidden, setHidden] = createSignal<ReadonlySet<string>>(new Set(['secret']));
+		render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} hiddenColumns={hidden()} aria-label='Люди'/>
+		));
+		expect(titles()).toEqual(['Имя', 'Номер', 'Возраст', 'Заметка']);
+		setHidden(new Set(['secret', 'age']));
+		expect(titles()).toEqual(['Имя', 'Номер', 'Заметка']);
+		setHidden(new Set<string>());
+		expect(titles()).toEqual(['Имя', 'Номер', 'Возраст', 'Секрет', 'Заметка']);
+	});
+
+	it('скрытие другой колонки не пересоздаёт шапку остальных', () => {
+		const [hidden, setHidden] = createSignal<ReadonlySet<string>>(new Set(['secret']));
+		render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} hiddenColumns={hidden()} aria-label='Люди'/>
+		));
+		const before = [...table().querySelectorAll('thead th')].slice(0, 3);
+		setHidden(new Set(['secret', 'note']));
+		const after = [...table().querySelectorAll('thead th')].slice(0, 3);
+		expect(after).toEqual(before);
+		expect(after.every((cell) => cell.isConnected)).toBe(true);
+	});
+
+	it('ширины хранятся по id и переживают скрытие', () => {
+		const [hidden, setHidden] = createSignal<ReadonlySet<string>>(new Set(['secret']));
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				hiddenColumns={hidden()}
+				defaultColumnWidths={{ note: 300 }}
+				aria-label='Люди'
+			/>
+		));
+		expect(table().style.getPropertyValue('--s-kit-grid-w-3')).toBe('300px');
+		setHidden(new Set(['secret', 'note']));
+		setHidden(new Set(['secret']));
+		expect(table().style.getPropertyValue('--s-kit-grid-w-3')).toBe('300px');
+	});
+});
+
+describe('Grid: меню колонки', () => {
+	beforeEach(() => {
+		// jsdom не реализует Popover API и считает содержимое закрытого [popover] нефокусируемым: «показ» снимает атрибут
+		HTMLElement.prototype.showPopover = vi.fn(function (this: HTMLElement) {
+			this.removeAttribute('popover');
+		});
+		HTMLElement.prototype.hidePopover = vi.fn();
+	});
+
+	function menuButton(title: string): HTMLElement {
+		return screen.getByRole('button', { name: `Меню колонки «${title}»` });
+	}
+
+	function openMenu(title: string): HTMLElement {
+		fireEvent.click(menuButton(title));
+		return screen.getByRole('menu');
+	}
+
+	function headTitles(): (string | null)[] {
+		return [...table().querySelectorAll('thead th')].map((th) => th.textContent);
+	}
+
+	function stickyHeads(): boolean[] {
+		return [...table().querySelectorAll('thead th')].map((th) => th.hasAttribute('data-sticky'));
+	}
+
+	it('в каждой ячейке шапки есть кнопка с именем колонки и aria-haspopup', () => {
+		renderGrid();
+		expect(table().querySelectorAll('thead th [data-grid-column-menu]')).toHaveLength(4);
+		expect(menuButton('Возраст').getAttribute('aria-haspopup')).toBe('menu');
+		expect(menuButton('Возраст').getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('columnMenu={false} убирает кнопки', () => {
+		renderGrid({ columnMenu: false });
+		expect(table().querySelectorAll('[data-grid-column-menu]')).toHaveLength(0);
+	});
+
+	it('columnMenuLabels меняют подпись кнопки и пункты', () => {
+		renderGrid({ columnMenuLabels: { button: (title) => `Menu ${title}`, lock: 'Pin', columns: 'Columns' } });
+		fireEvent.click(screen.getByRole('button', { name: 'Menu Возраст' }));
+		expect(screen.getByRole('menuitem', { name: 'Pin' })).toBeTruthy();
+		expect(screen.getByRole('group', { name: 'Columns' })).toBeTruthy();
+	});
+
+	it('клик открывает меню: «Закрепить», группа «Колонки» с переключателями всех колонок, фокус на первом пункте', () => {
+		renderGrid();
+		const menu = openMenu('Возраст');
+		expect(menu.getAttribute('aria-label')).toBe('Меню колонки «Возраст»');
+		expect(menuButton('Возраст').getAttribute('aria-expanded')).toBe('true');
+		expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Закрепить' }));
+		const checkboxes = screen.getAllByRole('menuitemcheckbox');
+		expect(checkboxes.map((item) => item.textContent)).toEqual(['Возраст', 'Имя', 'Секрет', 'Номер', 'Заметка']);
+		expect(checkboxes.map((item) => item.getAttribute('aria-checked'))).toEqual(['true', 'true', 'false', 'true', 'true']);
+	});
+
+	it('у закреплённой колонки пункт называется «Открепить»', () => {
+		renderGrid();
+		openMenu('Имя');
+		expect(screen.getByRole('menuitem', { name: 'Открепить' })).toBeTruthy();
+	});
+
+	it('открытие мышью оставляет фокус на самом меню', () => {
+		renderGrid();
+		fireEvent.click(menuButton('Возраст'), { detail: 1 });
+		expect(document.activeElement).toBe(screen.getByRole('menu'));
+	});
+
+	it('повторный клик по кнопке закрывает меню, клик по другой кнопке переносит его', () => {
+		renderGrid();
+		openMenu('Возраст');
+		fireEvent.click(menuButton('Возраст'));
+		expect(screen.queryByRole('menu')).toBeNull();
+		openMenu('Возраст');
+		fireEvent.click(menuButton('Имя'));
+		expect(screen.getByRole('menu').getAttribute('aria-label')).toBe('Меню колонки «Имя»');
+	});
+
+	it('Esc закрывает меню', () => {
+		renderGrid();
+		openMenu('Возраст');
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('снятие галочки скрывает колонку: заголовок, ячейки и col исчезают, колбэк получает новый Set', () => {
+		const onChange = vi.fn<(hidden: ReadonlySet<string>) => void>();
+		renderGrid({ onHiddenColumnsChange: onChange });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
+		expect(headTitles()).toEqual(['Имя', 'Номер', 'Возраст']);
+		expect(table().querySelectorAll('colgroup > col')).toHaveLength(3);
+		expect(table().querySelectorAll('tbody > tr[data-index]:first-child > td')).toHaveLength(3);
+		expect(onChange).toHaveBeenCalledTimes(1);
+		expect([...(onChange.mock.calls[0]?.[0] ?? [])]).toEqual(['secret', 'note']);
+		expect(screen.getByRole('menu')).toBeTruthy();
+	});
+
+	it('галочка у скрытой колонки показывает её', () => {
+		renderGrid();
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
+		expect(headTitles()).toContain('Секрет');
+	});
+
+	it('скрытие колонки из её же меню закрывает меню, фокус уходит на корень грида', () => {
+		const { container } = renderGrid();
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }));
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(headTitles()).toEqual(['Имя', 'Номер', 'Заметка']);
+		expect(document.activeElement).toBe(container.firstElementChild);
+	});
+
+	it('последняя видимая колонка в меню отключена, остальные нет', () => {
+		renderGrid({ defaultHiddenColumns: new Set(['secret', 'age', 'id', 'note']) });
+		openMenu('Имя');
+		expect(screen.getByRole('menuitemcheckbox', { name: 'Имя' }).getAttribute('aria-disabled')).toBe('true');
+		expect(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }).hasAttribute('aria-disabled')).toBe(false);
+	});
+
+	it('«Закрепить» закрепляет колонку и закрывает меню', () => {
+		const onChange = vi.fn<(locked: ReadonlySet<string>) => void>();
+		renderGrid({ onLockedColumnsChange: onChange });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Закрепить' }));
+		expect(screen.queryByRole('menu')).toBeNull();
+		// закреплённые идут в порядке columns: Возраст стоит там раньше Имени
+		expect(headTitles()).toEqual(['Возраст', 'Имя', 'Номер', 'Заметка']);
+		expect(stickyHeads()).toEqual([true, true, true, false]);
+		expect([...(onChange.mock.calls[0]?.[0] ?? [])]).toEqual(['name', 'id', 'age']);
+	});
+
+	it('«Открепить» возвращает колонку в обычные', () => {
+		renderGrid();
+		openMenu('Имя');
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Открепить' }));
+		expect(stickyHeads()).toEqual([true, false, false, false]);
+	});
+
+	it('controlled: если родитель не принял изменение, колонка остаётся', () => {
+		renderGrid({ hiddenColumns: new Set(['secret']), onHiddenColumnsChange: vi.fn() });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
+		expect(headTitles()).toContain('Заметка');
+	});
+
+	it('на время loading кнопки отключены', () => {
+		renderGrid({ loading: true });
+		expect((menuButton('Возраст') as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	it('правый клик по заголовку меню не открывает', () => {
+		renderGrid();
+		fireEvent.contextMenu(table().querySelector('thead th') as Element);
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('onColumnMenuClose вызывается один раз при закрытии с видимыми id в порядке columns', () => {
+		const onClose = vi.fn();
+		renderGrid({ onColumnMenuClose: onClose });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }));
+		expect(onClose).toHaveBeenCalledTimes(1);
+		expect(onClose).toHaveBeenCalledWith(['name', 'id']);
+	});
+
+	it('onColumnMenuClose при закрытии Esc после изменения видимости', () => {
+		const onClose = vi.fn();
+		renderGrid({ onColumnMenuClose: onClose });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).toHaveBeenCalledTimes(1);
+		expect(onClose).toHaveBeenCalledWith(['age', 'name', 'secret', 'id', 'note']);
+	});
+
+	it('onColumnMenuClose не вызывается, если видимость не менялась или менялось только закрепление', () => {
+		const onClose = vi.fn();
+		renderGrid({ onColumnMenuClose: onClose });
+		openMenu('Возраст');
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Закрепить' }));
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('controlled: если родитель не принял изменения, onColumnMenuClose не вызывается', () => {
+		const onClose = vi.fn();
+		renderGrid({ hiddenColumns: new Set(['secret']), onHiddenColumnsChange: vi.fn(), onColumnMenuClose: onClose });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
+		fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('размонтирование грида при открытом меню onColumnMenuClose не вызывает', () => {
+		const onClose = vi.fn();
+		const { unmount } = renderGrid({ onColumnMenuClose: onClose });
+		openMenu('Возраст');
+		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
+		unmount();
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('колонка, скрытая родителем при открытом меню, закрывает его', () => {
+		const [hidden, setHidden] = createSignal<ReadonlySet<string>>(new Set(['secret']));
+		render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} hiddenColumns={hidden()} aria-label='Люди'/>
+		));
+		openMenu('Возраст');
+		setHidden(new Set(['secret', 'age']));
+		expect(screen.queryByRole('menu')).toBeNull();
 	});
 });

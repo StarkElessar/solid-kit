@@ -12,10 +12,15 @@ import type { RenderWindowOptions } from '../../utils/render-window';
 import type { ContextMenuPoint } from '../context-menu';
 import type { MenuOpenSource } from '../context-menu/context-menu-context';
 
+import { applyColumnState } from './apply-column-state';
 import { buildRowIndex } from './build-row-index';
+import { canHideColumn } from './can-hide-column';
 import { computeColumnLayout } from './column-layout';
+import type { ColumnMenuTarget } from './column-menu-target';
 import { createGridResize } from './create-grid-resize';
+import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
 import { foundText as defaultFoundText } from './found-text';
+import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
 import { GridLiveRegion } from './grid-live-region';
@@ -24,11 +29,14 @@ import type { GridProps } from './grid-props';
 import { GridRowMenu } from './grid-row-menu';
 import type { GridSort } from './grid-sort';
 import { GridTable } from './grid-table';
+import { idsWithFlag } from './ids-with-flag';
 import { nextSort } from './next-sort';
 import type { RowKey } from './row-key';
 import type { RowMenuTarget } from './row-menu-target';
 import { sameItems } from './same-items';
 import { clearKeys, selectAllKeys, selectionOf, toggleKey } from './selection-state';
+import { toggleId } from './toggle-id';
+import { visibleColumnIds } from './visible-column-ids';
 
 const FALLBACK_ROW_HEIGHT = 32;
 const DEFAULT_OVERSCAN = 12;
@@ -55,10 +63,25 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		defaultValue: () => props.defaultSelectedKeys ?? NO_KEYS,
 		onChange: (next) => props.onSelectedKeysChange?.(next)
 	});
+	const [hiddenColumns, setHiddenColumns] = createControllableSignal<ReadonlySet<string>>({
+		name: 'Grid',
+		value: () => props.hiddenColumns,
+		defaultValue: () => props.defaultHiddenColumns ?? idsWithFlag(props.columns, 'hidden'),
+		onChange: (next) => props.onHiddenColumnsChange?.(next)
+	});
+	const [lockedColumns, setLockedColumns] = createControllableSignal<ReadonlySet<string>>({
+		name: 'Grid',
+		value: () => props.lockedColumns,
+		defaultValue: () => props.defaultLockedColumns ?? idsWithFlag(props.columns, 'locked'),
+		onChange: (next) => props.onLockedColumnsChange?.(next)
+	});
+	// состояние колонок собирается из наборов; колонка, чьи флаги не менялись, остаётся прежним объектом
+	const stateColumns = createMemo(() => applyColumnState(props.columns, hiddenColumns(), lockedColumns()), [], { equals: sameItems });
+	const visibleIds = createMemo(() => visibleColumnIds(props.columns, hiddenColumns()), [], { equals: sameItems });
 	const [selectWidth, setSelectWidth] = createSignal(DEFAULT_SELECT_WIDTH);
 	const selectable = (): boolean => props.selectable === true;
 	const layoutOptions = createMemo(() => ({ selectable: selectable(), selectWidth: selectWidth() }));
-	const layout = createMemo(() => computeColumnLayout(props.columns, widths(), layoutOptions()));
+	const layout = createMemo(() => computeColumnLayout(stateColumns(), widths(), layoutOptions()));
 	const columns = createMemo(() => layout().columns.map((item) => item.column), [], { equals: sameItems });
 	const lastStickyIndex = createMemo(() => layout().columns.findLastIndex((item) => item.sticky));
 	const rowIndex = createMemo(() => buildRowIndex(props.rows, props.getRowKey));
@@ -125,6 +148,37 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 	let rootElement: HTMLDivElement | undefined;
 	const [root, setRoot] = createSignal<HTMLDivElement>();
 	const [rowMenu, setRowMenu] = createSignal<RowMenuTarget>();
+	const [columnMenu, setColumnMenu] = createSignal<ColumnMenuTarget>();
+	// видимые колонки в момент открытия: onColumnMenuClose сообщает итог, только если он изменился
+	let visibleAtOpen: readonly string[] | undefined;
+	const closeColumnMenu = (): void => {
+		if (columnMenu() === undefined) {
+			return;
+		}
+		setColumnMenu(undefined);
+		const before = visibleAtOpen;
+		visibleAtOpen = undefined;
+		if (before !== undefined && !sameItems(before, visibleIds())) {
+			props.onColumnMenuClose?.(visibleIds());
+		}
+	};
+	const toggleColumnMenu = (columnId: string, anchor: HTMLElement, source: MenuOpenSource): void => {
+		if (columnMenu()?.columnId === columnId) {
+			closeColumnMenu();
+			return;
+		}
+		if (columnMenu() === undefined) {
+			visibleAtOpen = visibleIds();
+		}
+		setColumnMenu({ columnId, anchor, source });
+	};
+	// якорь исчез (колонку скрыли из её же меню или это сделал родитель): меню закрывается, фокус возвращается гриду
+	createEffect(() => {
+		const target = columnMenu();
+		if (target !== undefined && !visibleIds().includes(target.columnId)) {
+			untrack(closeColumnMenu);
+		}
+	});
 	let scrollerElement: HTMLDivElement | undefined;
 	let header: HTMLTableSectionElement | undefined;
 
@@ -186,6 +240,24 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			setRowMenu(undefined);
 		},
 		renderRowMenu: (row) => props.rowContextMenu?.(row as T),
+		hasColumnMenu: () => props.columnMenu !== false,
+		columnMenu,
+		toggleColumnMenu,
+		closeColumnMenu,
+		menuColumns: () => props.columns,
+		hiddenColumns,
+		lockedColumns,
+		toggleHidden: (columnId) => {
+			// последнюю видимую колонку скрыть нельзя (меню её отключает, это страховка)
+			if (hiddenColumns().has(columnId) || canHideColumn(props.columns, hiddenColumns(), columnId)) {
+				setHiddenColumns(toggleId(hiddenColumns(), columnId));
+			}
+		},
+		toggleLocked: (columnId) => {
+			setLockedColumns(toggleId(lockedColumns(), columnId));
+		},
+		canHide: (columnId) => canHideColumn(props.columns, hiddenColumns(), columnId),
+		columnMenuLabels: () => ({ ...DEFAULT_COLUMN_MENU_LABELS, ...props.columnMenuLabels }),
 		selectAllLabel: () => props.selectAllLabel ?? 'Выбрать все строки',
 		selectRowLabel: () => props.selectRowLabel ?? 'Выбрать строку',
 		columnCount: () => columns().length + (selectable() ? 1 : 0),
@@ -264,6 +336,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 						<GridFooter pager={props} loading={loading()}/>
 					</Show>
 					<GridRowMenu/>
+					<GridColumnMenu/>
 				</div>
 				<GridLiveRegion/>
 			</PanelHostContext.Provider>
