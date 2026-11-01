@@ -37,6 +37,9 @@
 
 .scroller {
     overflow: auto;
+
+    /* без упругого «отрыва» тела на macOS при доскролле до края; цена: колесо над гридом не прокручивает страницу */
+    overscroll-behavior: none;
     flex: 1 1 auto;
     min-block-size: 0;
 }
