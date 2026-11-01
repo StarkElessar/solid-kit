@@ -63,10 +63,11 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 	button(frame, 'Развернуть уровень').click();
 	await frames();
 	const first = kinds(frame, 'group')[0]?.querySelector('button[aria-expanded]');
+	// подвал первой группы лежит за 25 000 строк и в окно не попадает: подвалы проверяют юнит-тесты
 	check(
-		'Группировка: «Развернуть уровень» раскрывает группы: строки данных, подвал, aria-expanded',
-		first?.getAttribute('aria-expanded') === 'true' && kinds(frame, 'row').length > 0 && kinds(frame, 'footer').length > 0,
-		`строк ${kinds(frame, 'row').length}, подвалов ${kinds(frame, 'footer').length}`
+		'Группировка: «Развернуть уровень» раскрывает группы: строки данных, aria-expanded',
+		first?.getAttribute('aria-expanded') === 'true' && kinds(frame, 'row').length > 0,
+		`строк ${kinds(frame, 'row').length}`
 	);
 	check(
 		'Группировка: DOM содержит не больше окна плюс overscan при 100 000 строках в группах',
@@ -93,10 +94,15 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 
 	button(frame, 'Развернуть все').click();
 	await frames();
+	// внутри первой команды раскрыта первая вложенная группа: её заголовок смещён на уровень
+	const indentOf = (row: HTMLElement): string => {
+		return row.querySelector<HTMLElement>('td[title]')?.style.getPropertyValue('--s-kit-grid-indent') ?? '';
+	};
+	const indents = kinds(frame, 'group').map(indentOf);
 	check(
-		'Группировка: «Развернуть все» показывает вложенные группы второго уровня',
-		kinds(frame, 'group').length > 4 && kinds(frame, 'row').length > 0,
-		`заголовков ${kinds(frame, 'group').length}`
+		'Группировка: «Развернуть все» показывает вложенные группы второго уровня с отступом',
+		indents.includes('0px') && indents.includes('16px') && kinds(frame, 'row').length > 0,
+		indents.join(', ')
 	);
 	closeWithEscape();
 
