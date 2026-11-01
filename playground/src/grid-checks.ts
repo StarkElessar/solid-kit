@@ -1,6 +1,7 @@
 import { readControlHeight } from '../../src/utils/read-control-height';
 
 import { closeWithEscape, frames, required } from './check-helpers';
+import { DEMO_MIN_ROW_HEIGHT } from './demo-grid';
 import type { CheckResult } from './theme-checks';
 
 const OVERSCAN = 12;
@@ -169,13 +170,14 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 		`ширина ${widthReset.toFixed(0)}, было ${widthBefore.toFixed(0)}`
 	);
 
-	const controlHeight = readControlHeight(scroller);
-	// колонка с переносом делает часть строк выше (зависит от ширины окна): сравниваются самые низкие строки окна
+	// колонка с переносом делает часть строк выше (зависит от ширины окна): сравниваются самые низкие строки окна;
+	// ниже требуемой колонками высоты строка быть не должна, а контролы в ячейках её не раздувают
+	const requiredHeight = Math.max(readControlHeight(scroller), DEMO_MIN_ROW_HEIGHT);
 	const lowestRowHeight = Math.min(...bodyRows(table).map((row) => row.getBoundingClientRect().height));
 	check(
-		'Grid: строка с чекбоксом одной высоты с контролом (чекбокс не раздувает строку)',
-		Math.abs(lowestRowHeight - controlHeight) <= 0.5,
-		`самая низкая строка ${lowestRowHeight} px, контрол ${controlHeight} px`
+		'Grid: строка равна требуемой высоте (контролы в ячейках её не раздувают)',
+		Math.abs(lowestRowHeight - requiredHeight) <= 0.5,
+		`самая низкая строка ${lowestRowHeight} px, требуется ${requiredHeight} px`
 	);
 
 	scroller.scrollTop = 0;

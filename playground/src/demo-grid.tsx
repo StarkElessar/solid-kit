@@ -3,6 +3,7 @@ import { Grid, type GridColumn, type GridSort, type RowKey } from '@stark/solid-
 import { Select } from '@stark/solid-kit/select';
 import { createMemo, createSignal, For, type JSX } from 'solid-js';
 
+import { runGridPerf } from './grid-perf';
 import { pick } from './pick';
 
 export interface Order {
@@ -101,6 +102,9 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 	{ id: 'active', title: 'Активен', value: (row) => row.active, width: 110, align: 'center' }
 ];
 
+/** Высота, которую требуют колонки демо: ниже строки быть не могут. */
+export const DEMO_MIN_ROW_HEIGHT = Math.max(...COLUMNS.map((column) => column.rowHeight ?? 0));
+
 const ROW_COUNTS = ['10', '1000', '100000'] as const;
 const COLLATOR = new Intl.Collator('ru');
 
@@ -172,6 +176,11 @@ export function DemoGrid(): JSX.Element {
 	const [empty, setEmpty] = createSignal(false);
 	const [menuEnabled, setMenuEnabled] = createSignal(true);
 	const [menuLog, setMenuLog] = createSignal('ещё не было');
+	const [selectColumn, setSelectColumn] = createSignal(true);
+	const [perfLog, setPerfLog] = createSignal<readonly string[]>([]);
+	const [perfRunning, setPerfRunning] = createSignal(false);
+	const columns = createMemo(() => (selectColumn() ? COLUMNS : COLUMNS.filter((column) => column.id !== 'edit-status')));
+	let frame: HTMLDivElement | undefined;
 	const rows = createMemo(() => (empty() ? [] : sortRows(ALL_ORDERS.slice(0, Number(count())), sort())));
 
 	return (
@@ -213,6 +222,29 @@ export function DemoGrid(): JSX.Element {
 				<label>
 					<input
 						type='checkbox'
+						data-grid-select-column
+						checked={selectColumn()}
+						onChange={(event) => setSelectColumn(event.currentTarget.checked)}
+					/>
+					Колонка со Select
+				</label>
+				<button
+					type='button'
+					data-grid-perf-run
+					disabled={perfRunning()}
+					onClick={() => {
+						const scroller = frame?.querySelector<HTMLElement>('[data-s-kit] > div');
+						if (scroller === null || scroller === undefined) {
+							return;
+						}
+						setPerfLog([]);
+						setPerfRunning(true);
+						void runGridPerf(scroller, (line) => setPerfLog((lines) => [...lines, line])).finally(() => setPerfRunning(false));
+					}}
+				>Замер прокрутки</button>
+				<label>
+					<input
+						type='checkbox'
 						data-grid-loading
 						checked={loading()}
 						onChange={(event) => setLoading(event.currentTarget.checked)}
@@ -229,11 +261,11 @@ export function DemoGrid(): JSX.Element {
 					Пусто
 				</label>
 			</div>
-			<div class='grid-frame' data-grid-demo>
+			<div ref={frame} class='grid-frame' data-grid-demo>
 				<Grid<Order>
 					rows={rows()}
 					getRowKey={(row) => row.id}
-					columns={COLUMNS}
+					columns={columns()}
 					virtualized={virtualized()}
 					selectable={selectable()}
 					selectedKeys={selected()}
@@ -255,6 +287,7 @@ export function DemoGrid(): JSX.Element {
 				<output data-grid-widths>{widthsLog()}</output>. Последний пункт меню строки:{' '}
 				<output data-grid-menu-log>{menuLog()}</output>
 			</p>
+			<output data-grid-perf>{perfLog().length === 0 ? 'замер не запускался' : perfLog().join('; ')}</output>
 		</div>
 	);
 }
