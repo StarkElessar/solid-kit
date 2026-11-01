@@ -1143,6 +1143,20 @@ describe('Grid: состояния', () => {
 		return container.querySelector('[aria-live="polite"]') as HTMLElement;
 	}
 
+	it('заглушки закреплены так же, как строки: чекбокс и locked-колонки sticky со смещением', () => {
+		renderGrid({ loading: true, selectable: true });
+		const row = table().querySelector('tbody > tr') as HTMLTableRowElement;
+		const sticky = [...row.cells].map((cell) => cell.hasAttribute('data-sticky'));
+		// порядок: чекбокс, затем locked-колонки name и id, затем обычные age и note
+		expect(sticky).toEqual([true, true, true, false, false]);
+		expect(row.cells[0]?.style.insetInlineStart).toBe('0px');
+		expect(row.cells[1]?.style.insetInlineStart).toBe('var(--s-kit-grid-left-0)');
+		expect(row.cells[2]?.style.insetInlineStart).toBe('var(--s-kit-grid-left-1)');
+		expect(row.cells[3]?.style.insetInlineStart).toBe('');
+		expect(row.cells[2]?.hasAttribute('data-sticky-last')).toBe(true);
+		expect(row.cells[1]?.hasAttribute('data-sticky-last')).toBe(false);
+	});
+
 	it('загрузка: вместо строк заглушки, progressbar с именем, aria-busy только на время загрузки', () => {
 		const [loading, setLoading] = createSignal(true);
 		const { container } = render(() => (
