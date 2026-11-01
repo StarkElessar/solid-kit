@@ -64,6 +64,7 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		id: 'edit-status',
 		title: 'Изменить статус',
 		value: (row) => row.status,
+		rowHeight: 56,
 		width: 170,
 		minWidth: 140,
 		maxWidth: 200,
