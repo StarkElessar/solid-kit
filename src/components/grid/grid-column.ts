@@ -24,4 +24,6 @@ export interface GridColumn<T> {
 	/** Скрыта. Начальное значение: текущее состояние это `hiddenColumns` грида. */
 	hidden?: boolean | undefined;
 	sortable?: boolean | undefined;
+	/** Формат итога колонки (страничного, глобального и группового); без него значение показывается как текст ячейки. */
+	aggregate?: ((value: unknown) => JSX.Element) | undefined;
 }
