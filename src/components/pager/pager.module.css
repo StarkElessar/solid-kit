@@ -1,0 +1,75 @@
+/*
+ * Токены Pager (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-pager-gap (8px), --s-kit-pager-padding (6px 10px), --s-kit-pager-bg (прозрачный), --s-kit-pager-select-width (6.5rem).
+ * Корень это <nav>: слева группа кнопок и размер страницы, справа сводка и «Обновить»; при нехватке ширины полоса переносится.
+ */
+
+.root {
+    --s-kit-select-width: var(--s-kit-pager-select-width, 6.5rem);
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-kit-pager-gap, 8px);
+    align-items: center;
+    justify-content: space-between;
+
+    box-sizing: border-box;
+    padding: var(--s-kit-pager-padding, 6px 10px);
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-pager-bg, transparent);
+
+    &:focus-visible {
+        outline: 1px solid transparent;
+    }
+}
+
+.start,
+.end {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-kit-pager-gap, 8px);
+    align-items: center;
+}
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+}
+
+.pages {
+    display: contents;
+}
+
+.gap {
+    user-select: none;
+    min-inline-size: 1.5em;
+    color: var(--s-kit-color-muted);
+    text-align: center;
+}
+
+.summary {
+    font-variant-numeric: tabular-nums;
+    color: var(--s-kit-color-muted);
+    white-space: nowrap;
+}
+
+.spin {
+    animation: pager-spin 0.9s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        opacity: 0.5;
+        animation: none;
+    }
+}
+
+@keyframes pager-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
