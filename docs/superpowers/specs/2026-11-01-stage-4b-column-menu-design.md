@@ -10,7 +10,7 @@
 
 **Решения владельца, принятые в диалоге 2026-11-01:**
 
-1. **Состав меню:** «Закрепить / Открепить» для этой колонки и список всех колонок с галочками видимости. Пункт «Сгруппировать» добавляется вместе с группировкой (её в гриде пока нет). Пункты сортировки в меню не входят.
+1. **Состав меню:** «Закрепить / Открепить» для этой колонки и отдельный пункт-подменю «Список колонок» (решение владельца после первой версии с плоским списком) со списком всех колонок и галочками видимости. Пункт «Сгруппировать» добавляется вместе с группировкой (её в гриде пока нет). Пункты сортировки в меню не входят.
 2. **Состояние:** тройки по id колонок, как `columnWidths`: наборы `hiddenColumns` и `lockedColumns`; поля `GridColumn.hidden` и `GridColumn.locked` становятся начальными значениями.
 3. **Решения исполнителя, подтверждённые владельцем:** уведомление о закрытии срабатывает только при реальном изменении набора видимых колонок; скрытие колонки из её же меню закрывает меню; последнюю видимую колонку скрыть нельзя; правый клик по заголовку меню не открывает; кнопка отключается на время `loading`; меню отключается пропсом `columnMenu={false}`.
 
@@ -36,7 +36,7 @@ columnMenuLabels?: Partial<GridColumnMenuLabels>;
 
 - Тройки работают через `createControllableSignal` (имя `Grid`, предупреждение при смене режима). Без пропса начальные наборы строятся из `GridColumn.hidden` и `GridColumn.locked` и читаются один раз; если пропс передан, поля колонок игнорируются.
 - Прежний набор не мутируется: колбэк получает новый `Set`.
-- `GridColumnMenuLabels` (отдельный файл-тип): `button` (функция `(title: string) => string`, «Меню колонки «Заказчик»»), `lock` («Закрепить»), `unlock` («Открепить»), `columns` («Колонки»).
+- `GridColumnMenuLabels` (отдельный файл-тип): `button` (функция `(title: string) => string`, «Меню колонки «Заказчик»»), `lock` («Закрепить»), `unlock` («Открепить»), `columns` («Список колонок»: пункт-подменю).
 - Если в наборах есть id, которых нет в `columns`, они игнорируются.
 - **Оговорка:** колонка, добавленная в `columns` позже с `hidden: true`, в неконтролируемом режиме не будет скрыта (начальные значения читаются один раз); для динамических наборов колонок страница передаёт `hiddenColumns`.
 
@@ -47,7 +47,6 @@ columnMenuLabels?: Partial<GridColumnMenuLabels>;
 ### 2.3. ContextMenu (дополнения)
 
 - `ContextMenu.CheckboxItem`: `checked: boolean`, `onCheckedChange?: (checked: boolean) => void`, `disabled`, `closeOnSelect` (по умолчанию **`false`**), `variant`, `class`, `style`. `role="menuitemcheckbox"`, `aria-checked`, отметка слева.
-- `ContextMenu.Group`: `label: string`, `children`. Видимая подпись и `role="group"` с `aria-labelledby`; сама в навигации не участвует.
 - `ContextMenu.Root`: проп `anchorElement?: HTMLElement`. Меню якорится по прямоугольнику элемента, а не по точке. Клик по самому якорю не считается dismiss (иначе повторный клик по кнопке закрыл бы меню и открыл снова): переключением занимается обработчик кнопки.
 - `ContextMenu.Content`: проп `placement?: Placement` (по умолчанию `'bottom-start'`; меню колонки задаёт `'bottom-end'`).
 
@@ -74,7 +73,7 @@ columnMenuLabels?: Partial<GridColumnMenuLabels>;
 
 1. `ContextMenu.Item`: «Закрепить» или «Открепить» (по `lockedColumns`); закрывает меню.
 2. `ContextMenu.Separator`.
-3. `ContextMenu.Group` «Колонки»: по `ContextMenu.CheckboxItem` на каждую колонку из `columns` (в порядке `columns`, включая текущую), `checked` = не скрыта, `closeOnSelect={false}`. Переключатель последней видимой колонки отключён.
+3. `ContextMenu.Sub` «Список колонок» (`SubTrigger` со стрелкой, открывается кликом, Enter, Space, ArrowRight и наведением): внутри по `ContextMenu.CheckboxItem` на каждую колонку из `columns` (в порядке `columns`, включая текущую), `checked` = не скрыта, `closeOnSelect={false}`. Переключатель последней видимой колонки отключён. Подменю названо по своему `SubTrigger`; длинный список прокручивается внутри панели подменю. Esc закрывает по одному слою: сначала подменю, затем меню.
 
 Закрытие меню: Esc, клик снаружи, Tab, прокрутка грида или страницы и изменение размера окна (`createCloseOnViewportChange`, как у меню строки; правило раздела 8.4). Фокус возвращается на кнопку.
 
@@ -107,7 +106,7 @@ columnMenuLabels?: Partial<GridColumnMenuLabels>;
 
 ## 7. Файлы
 
-`src/components/context-menu/`: `context-menu-checkbox-item.tsx`, `context-menu-group.tsx`; правки `context-menu-root.tsx`, `context-menu-content.tsx`, `context-menu-context.ts`, `menu-item-element.tsx` (проп `role`), `menu-items.ts` и `menu-navigation.ts` (учёт обеих ролей), `context-menu.module.css`, `index.ts`; тесты рядом.
+`src/components/context-menu/`: `context-menu-checkbox-item.tsx`; правки `context-menu-root.tsx`, `context-menu-content.tsx`, `context-menu-context.ts`, `menu-item-element.tsx` (проп `role`), `menu-items.ts` и `menu-navigation.ts` (учёт обеих ролей), `context-menu.module.css`, `index.ts`; тесты рядом.
 
 `src/components/grid/`:
 - компоненты: `grid-column-menu.tsx` (меню), `grid-column-menu-button.tsx`;
@@ -139,7 +138,7 @@ Playground: `demo-grid.tsx` (переключатель меню, журнал `
 ## 9. Тестирование и playground
 
 - Юнит-тесты функций (раздел 3): пустые наборы, неизвестный id, последняя колонка, все закреплены, порядок id.
-- Тесты ContextMenu: `CheckboxItem` (роль, `aria-checked`, Enter и Space, стрелки, Home и End, `closeOnSelect` по умолчанию `false` и `true`, disabled), `Group`, `anchorElement` и `placement`, клик по якорю не закрывает, меню строки по-прежнему работает.
+- Тесты ContextMenu: `CheckboxItem` (роль, `aria-checked`, Enter и Space, стрелки, Home и End, `closeOnSelect` по умолчанию `false` и `true`, disabled), `anchorElement` и `placement`, клик по якорю не закрывает, меню строки по-прежнему работает.
 - Тесты Grid: кнопка есть в каждой ячейке шапки и нет при `columnMenu={false}`; открытие; скрытие убирает шапку, ячейки и `col`; закрепление создаёт sticky; controlled и uncontrolled; `onColumnMenuClose` один раз и только при изменении; последняя колонка отключена; скрытие своей колонки закрывает меню и фокус на корне; прокрутка закрывает; `loading` отключает кнопку; ширины переживают скрытие. Старые тесты шапки обновляются под обёртку и кнопку.
 - Playground: переключатель меню и журнал последнего `onColumnMenuClose`; автопроверки (кнопки, открытие, скрытие, закрепление, закрытие, последняя колонка).
 - Приёмка руками по критериям выше, результаты в разделе итогов.

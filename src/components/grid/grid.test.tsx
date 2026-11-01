@@ -1458,6 +1458,18 @@ describe('Grid: меню колонки', () => {
 		return screen.getByRole('menu');
 	}
 
+	function openList(title: string): void {
+		openMenu(title);
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Список колонок' }));
+	}
+
+	// Esc закрывает по одному слою: сначала подменю, затем само меню
+	function closeAll(): void {
+		for (let step = 0; step < 2 && screen.queryAllByRole('menu').length > 0; step++) {
+			fireEvent.keyDown(document.body, { key: 'Escape' });
+		}
+	}
+
 	function headTitles(): (string | null)[] {
 		return [...table().querySelectorAll('thead th')].map((th) => th.textContent);
 	}
@@ -1482,15 +1494,20 @@ describe('Grid: меню колонки', () => {
 		renderGrid({ columnMenuLabels: { button: (title) => `Menu ${title}`, lock: 'Pin', columns: 'Columns' } });
 		fireEvent.click(screen.getByRole('button', { name: 'Menu Возраст' }));
 		expect(screen.getByRole('menuitem', { name: 'Pin' })).toBeTruthy();
-		expect(screen.getByRole('group', { name: 'Columns' })).toBeTruthy();
+		fireEvent.click(screen.getByRole('menuitem', { name: 'Columns' }));
+		expect(screen.getByRole('menu', { name: 'Columns' })).toBeTruthy();
 	});
 
-	it('клик открывает меню: «Закрепить», группа «Колонки» с переключателями всех колонок, фокус на первом пункте', () => {
+	it('клик открывает меню: «Закрепить» и подменю «Список колонок» с переключателями всех колонок, фокус на первом пункте', () => {
 		renderGrid();
 		const menu = openMenu('Возраст');
 		expect(menu.getAttribute('aria-label')).toBe('Меню колонки «Возраст»');
 		expect(menuButton('Возраст').getAttribute('aria-expanded')).toBe('true');
 		expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Закрепить' }));
+		const list = screen.getByRole('menuitem', { name: 'Список колонок' });
+		expect(list.getAttribute('aria-haspopup')).toBe('menu');
+		expect(screen.queryByRole('menuitemcheckbox')).toBeNull();
+		fireEvent.click(list);
 		const checkboxes = screen.getAllByRole('menuitemcheckbox');
 		expect(checkboxes.map((item) => item.textContent)).toEqual(['Возраст', 'Имя', 'Секрет', 'Номер', 'Заметка']);
 		expect(checkboxes.map((item) => item.getAttribute('aria-checked'))).toEqual(['true', 'true', 'false', 'true', 'true']);
@@ -1528,26 +1545,26 @@ describe('Grid: меню колонки', () => {
 	it('снятие галочки скрывает колонку: заголовок, ячейки и col исчезают, колбэк получает новый Set', () => {
 		const onChange = vi.fn<(hidden: ReadonlySet<string>) => void>();
 		renderGrid({ onHiddenColumnsChange: onChange });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
 		expect(headTitles()).toEqual(['Имя', 'Номер', 'Возраст']);
 		expect(table().querySelectorAll('colgroup > col')).toHaveLength(3);
 		expect(table().querySelectorAll('tbody > tr[data-index]:first-child > td')).toHaveLength(3);
 		expect(onChange).toHaveBeenCalledTimes(1);
 		expect([...(onChange.mock.calls[0]?.[0] ?? [])]).toEqual(['secret', 'note']);
-		expect(screen.getByRole('menu')).toBeTruthy();
+		expect(screen.getByRole('menu', { name: 'Список колонок' })).toBeTruthy();
 	});
 
 	it('галочка у скрытой колонки показывает её', () => {
 		renderGrid();
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
 		expect(headTitles()).toContain('Секрет');
 	});
 
 	it('скрытие колонки из её же меню закрывает меню, фокус уходит на корень грида', () => {
 		const { container } = renderGrid();
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }));
 		expect(screen.queryByRole('menu')).toBeNull();
 		expect(headTitles()).toEqual(['Имя', 'Номер', 'Заметка']);
@@ -1556,7 +1573,7 @@ describe('Grid: меню колонки', () => {
 
 	it('последняя видимая колонка в меню отключена, остальные нет', () => {
 		renderGrid({ defaultHiddenColumns: new Set(['secret', 'age', 'id', 'note']) });
-		openMenu('Имя');
+		openList('Имя');
 		expect(screen.getByRole('menuitemcheckbox', { name: 'Имя' }).getAttribute('aria-disabled')).toBe('true');
 		expect(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }).hasAttribute('aria-disabled')).toBe(false);
 	});
@@ -1582,7 +1599,7 @@ describe('Grid: меню колонки', () => {
 
 	it('controlled: если родитель не принял изменение, колонка остаётся', () => {
 		renderGrid({ hiddenColumns: new Set(['secret']), onHiddenColumnsChange: vi.fn() });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
 		expect(headTitles()).toContain('Заметка');
 	});
@@ -1601,7 +1618,7 @@ describe('Grid: меню колонки', () => {
 	it('onColumnMenuClose вызывается один раз при закрытии с видимыми id в порядке columns', () => {
 		const onClose = vi.fn();
 		renderGrid({ onColumnMenuClose: onClose });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Возраст' }));
 		expect(onClose).toHaveBeenCalledTimes(1);
@@ -1611,9 +1628,9 @@ describe('Grid: меню колонки', () => {
 	it('onColumnMenuClose при закрытии Esc после изменения видимости', () => {
 		const onClose = vi.fn();
 		renderGrid({ onColumnMenuClose: onClose });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
-		fireEvent.keyDown(document.body, { key: 'Escape' });
+		closeAll();
 		expect(onClose).toHaveBeenCalledTimes(1);
 		expect(onClose).toHaveBeenCalledWith(['age', 'name', 'secret', 'id', 'note']);
 	});
@@ -1621,30 +1638,30 @@ describe('Grid: меню колонки', () => {
 	it('onColumnMenuClose не вызывается, если видимость не менялась или менялось только закрепление', () => {
 		const onClose = vi.fn();
 		renderGrid({ onColumnMenuClose: onClose });
-		openMenu('Возраст');
-		fireEvent.keyDown(document.body, { key: 'Escape' });
-		openMenu('Возраст');
+		openList('Возраст');
+		closeAll();
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitem', { name: 'Закрепить' }));
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Секрет' }));
-		fireEvent.keyDown(document.body, { key: 'Escape' });
+		closeAll();
 		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it('controlled: если родитель не принял изменения, onColumnMenuClose не вызывается', () => {
 		const onClose = vi.fn();
 		renderGrid({ hiddenColumns: new Set(['secret']), onHiddenColumnsChange: vi.fn(), onColumnMenuClose: onClose });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
-		fireEvent.keyDown(document.body, { key: 'Escape' });
+		closeAll();
 		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it('размонтирование грида при открытом меню onColumnMenuClose не вызывает', () => {
 		const onClose = vi.fn();
 		const { unmount } = renderGrid({ onColumnMenuClose: onClose });
-		openMenu('Возраст');
+		openList('Возраст');
 		fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Заметка' }));
 		unmount();
 		expect(onClose).not.toHaveBeenCalled();

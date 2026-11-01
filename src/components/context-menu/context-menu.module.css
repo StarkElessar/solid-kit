@@ -105,12 +105,3 @@
         visibility: visible;
     }
 }
-
-.group-label {
-    padding-block: 6px 2px;
-    padding-inline: 10px;
-
-    font-size: 0.85em;
-    font-weight: 600;
-    color: var(--s-kit-color-muted);
-}

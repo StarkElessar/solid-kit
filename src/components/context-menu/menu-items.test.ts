@@ -26,7 +26,7 @@ describe('menuItems', () => {
 		expect(menuItems(panel).map((item) => item.id)).toEqual(['a', 'b']);
 	});
 
-	it('finds toggle items too, also inside a group', () => {
+	it('finds toggle items too, also inside a wrapper', () => {
 		const panel = build(`
 			<div role="menu" data-panel>
 				<div role="menuitem" id="a"></div>

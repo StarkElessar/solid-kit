@@ -26,15 +26,13 @@ function Harness(props: HarnessProps) {
 		<ContextMenu.Root open anchorPoint={{ x: 10, y: 20 }} onOpenChange={props.onOpenChange}>
 			<ContextMenu.Content aria-label='Меню'>
 				<ContextMenu.Item>Обычный</ContextMenu.Item>
-				<ContextMenu.Group label='Колонки'>
-					<ContextMenu.CheckboxItem
-						checked={checked()}
-						onCheckedChange={setChecked}
-						closeOnSelect={props.closeOnSelect}
-						disabled={props.disabled}
-					>Первая</ContextMenu.CheckboxItem>
-					<ContextMenu.CheckboxItem checked>Вторая</ContextMenu.CheckboxItem>
-				</ContextMenu.Group>
+				<ContextMenu.CheckboxItem
+					checked={checked()}
+					onCheckedChange={setChecked}
+					closeOnSelect={props.closeOnSelect}
+					disabled={props.disabled}
+				>Первая</ContextMenu.CheckboxItem>
+				<ContextMenu.CheckboxItem checked>Вторая</ContextMenu.CheckboxItem>
 			</ContextMenu.Content>
 		</ContextMenu.Root>
 	);
@@ -85,7 +83,7 @@ describe('ContextMenu.CheckboxItem', () => {
 		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
-	it('стрелки ходят между обычным пунктом и переключателями внутри группы', () => {
+	it('стрелки ходят между обычным пунктом и переключателями', () => {
 		render(() => <Harness/>);
 		const first = screen.getByRole('menuitem', { name: 'Обычный' });
 		first.focus();
@@ -93,12 +91,5 @@ describe('ContextMenu.CheckboxItem', () => {
 		expect(document.activeElement).toBe(screen.getByRole('menuitemcheckbox', { name: 'Первая' }));
 		fireEvent.keyDown(document.activeElement ?? first, { key: 'End' });
 		expect(document.activeElement).toBe(screen.getByRole('menuitemcheckbox', { name: 'Вторая' }));
-	});
-});
-
-describe('ContextMenu.Group', () => {
-	it('это role=group с именем из подписи', () => {
-		render(() => <Harness/>);
-		expect(screen.getByRole('group', { name: 'Колонки' })).toBeTruthy();
 	});
 });

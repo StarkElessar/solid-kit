@@ -4,6 +4,6 @@ export interface GridColumnMenuLabels {
 	button: (title: string) => string;
 	lock: string;
 	unlock: string;
-	/** Подпись группы переключателей видимости. */
+	/** Пункт-подменю со списком переключателей видимости. */
 	columns: string;
 }

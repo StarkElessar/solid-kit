@@ -8,7 +8,7 @@ interface ColumnMenuItemsProps {
 	columnId: string;
 }
 
-/** Пункты меню одной колонки: закрепление и переключатели видимости всех колонок. */
+/** Пункты меню одной колонки: закрепление и подменю «Список колонок» с переключателями видимости всех колонок. */
 function ColumnMenuItems(props: ColumnMenuItemsProps): JSX.Element {
 	const grid = useGrid();
 	const locked = (): boolean => grid.lockedColumns().has(props.columnId);
@@ -20,19 +20,22 @@ function ColumnMenuItems(props: ColumnMenuItemsProps): JSX.Element {
 				}}
 			>{locked() ? grid.columnMenuLabels().unlock : grid.columnMenuLabels().lock}</ContextMenu.Item>
 			<ContextMenu.Separator/>
-			<ContextMenu.Group label={grid.columnMenuLabels().columns}>
-				<For each={grid.menuColumns()}>
-					{(column) => (
-						<ContextMenu.CheckboxItem
-							checked={!grid.hiddenColumns().has(column.id)}
-							disabled={!grid.canHide(column.id)}
-							onCheckedChange={() => {
-								grid.toggleHidden(column.id);
-							}}
-						>{column.title}</ContextMenu.CheckboxItem>
-					)}
-				</For>
-			</ContextMenu.Group>
+			<ContextMenu.Sub>
+				<ContextMenu.SubTrigger>{grid.columnMenuLabels().columns}</ContextMenu.SubTrigger>
+				<ContextMenu.SubContent>
+					<For each={grid.menuColumns()}>
+						{(column) => (
+							<ContextMenu.CheckboxItem
+								checked={!grid.hiddenColumns().has(column.id)}
+								disabled={!grid.canHide(column.id)}
+								onCheckedChange={() => {
+									grid.toggleHidden(column.id);
+								}}
+							>{column.title}</ContextMenu.CheckboxItem>
+						)}
+					</For>
+				</ContextMenu.SubContent>
+			</ContextMenu.Sub>
 		</>
 	);
 }

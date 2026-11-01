@@ -4,5 +4,5 @@ export const DEFAULT_COLUMN_MENU_LABELS: GridColumnMenuLabels = {
 	button: (title) => `Меню колонки «${title}»`,
 	lock: 'Закрепить',
 	unlock: 'Открепить',
-	columns: 'Колонки'
+	columns: 'Список колонок'
 };

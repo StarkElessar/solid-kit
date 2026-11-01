@@ -17,6 +17,14 @@ function menuIsOpen(): boolean {
 	return document.querySelector('[role="menu"]') !== null;
 }
 
+/** Esc закрывает по одному слою: сначала подменю «Список колонок», затем само меню. */
+async function closeMenus(): Promise<void> {
+	for (let step = 0; step < 2 && menuIsOpen(); step++) {
+		closeWithEscape();
+		await frames();
+	}
+}
+
 /**
  * Автопроверки меню колонки: кнопки в шапке, открытие, скрытие и показ, закрепление, журнал onColumnMenuClose.
  * Кольца фокуса, настоящие Tab и закрытие прокруткой проверяются вручную в Chrome. Состояние колонок в конце возвращается.
@@ -36,10 +44,13 @@ export async function runColumnMenuChecks(page: HTMLElement): Promise<CheckResul
 
 	menuButton(frame, 'note').click();
 	await frames();
+	const hasLock = menuItem('menuitem', 'Закрепить') !== undefined;
+	menuItem('menuitem', 'Список колонок')?.click();
+	await frames();
 	const toggles = document.querySelectorAll('[role="menuitemcheckbox"]').length;
 	check(
-		'Меню колонки: открывается с пунктом закрепления и переключателем на каждую колонку',
-		menuIsOpen() && menuItem('menuitem', 'Закрепить') !== undefined && toggles === buttons,
+		'Меню колонки: пункт закрепления и подменю «Список колонок» с переключателем на каждую колонку',
+		menuIsOpen() && hasLock && toggles === buttons,
 		`${document.querySelector('[role="menu"]')?.getAttribute('aria-label') ?? 'нет меню'}; переключателей ${toggles}`
 	);
 
@@ -51,8 +62,7 @@ export async function runColumnMenuChecks(page: HTMLElement): Promise<CheckResul
 		headTitles(frame).join(', ')
 	);
 
-	closeWithEscape();
-	await frames();
+	await closeMenus();
 	check(
 		'Меню колонки: Esc закрывает меню, журнал получает видимые колонки без city',
 		!menuIsOpen() && !log.textContent.includes('city') && log.textContent.includes('note'),
@@ -79,10 +89,11 @@ export async function runColumnMenuChecks(page: HTMLElement): Promise<CheckResul
 
 	menuButton(frame, 'note').click();
 	await frames();
+	menuItem('menuitem', 'Список колонок')?.click();
+	await frames();
 	menuItem('menuitemcheckbox', 'Город')?.click();
 	await frames();
 	check('Меню колонки: галочка у скрытой колонки возвращает её', headTitles(frame).includes('Город'), headTitles(frame).join(', '));
-	closeWithEscape();
-	await frames();
+	await closeMenus();
 	return results;
 }
