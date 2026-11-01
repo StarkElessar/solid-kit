@@ -424,6 +424,115 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 			+ `строк после сброса ${bodyRows(table).length}`
 	);
 	scroller.scrollTop = 0;
+	await frames(6);
+
+	// меню строки закрывается прокруткой грида; Select из ячейки остаётся открытым, пока строка смонтирована
+	const menuCell = required(menuRow(), '[data-grid-action]').parentElement as HTMLElement;
+	menuCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 200 }));
+	await frames(4);
+	const menuWasOpen = openMenu() !== null;
+	scroller.scrollTop += 40;
+	await frames(6);
+	check(
+		'Grid: прокрутка грида закрывает меню строки',
+		menuWasOpen && openMenu() === null,
+		`до прокрутки ${menuWasOpen ? 'открыто' : 'закрыто'}, после ${openMenu() === null ? 'закрыто' : 'открыто'}`
+	);
+	scroller.scrollTop = 0;
+	await frames(6);
+
+	const errors: unknown[] = [];
+	const originalError = console.error;
+	console.error = (...args: unknown[]): void => {
+		errors.push(args);
+	};
+	const cellSelect = required(menuRow(), '[role="combobox"]');
+	cellSelect.click();
+	await frames(6);
+	const openedAtTop = document.querySelector('[role="listbox"]') !== null;
+	scroller.scrollTop = 3 * rowHeight;
+	await frames(6);
+	const openAfterShortScroll = document.querySelector('[role="listbox"]') !== null && menuRow().dataset['index'] === '0';
+	scroller.scrollTop = 30_000 * rowHeight;
+	await frames(10);
+	const leftWindow = bodyRows(table).every((row) => row.dataset['index'] !== '0');
+	const closedAfterLeaving = document.querySelector('[role="listbox"]') === null;
+	console.error = originalError;
+	check(
+		'Grid: Select из ячейки остаётся открытым при прокрутке, пока строка в окне, и закрывается без ошибок, когда строка ушла',
+		openedAtTop && openAfterShortScroll && leftWindow && closedAfterLeaving && errors.length === 0
+			&& (document.activeElement === gridRoot || document.activeElement === document.body),
+		`открыт ${String(openedAtTop)}, после короткой прокрутки ${String(openAfterShortScroll)}, строка ушла ${String(leftWindow)}, `
+			+ `закрыт ${String(closedAfterLeaving)}, ошибок ${errors.length}, фокус ${document.activeElement?.tagName ?? '—'}`
+	);
+	scroller.scrollTop = 0;
+	await frames(8);
+
+	// кольцо фокуса не под шапкой и не под закреплёнными колонками: браузер доводит сфокусированный элемент с учётом scroll-padding
+	const stickyHeads = headers(table).filter((th) => th.hasAttribute('data-sticky'));
+	const stickyRight = (): number => Math.max(...stickyHeads.map((th) => th.getBoundingClientRect().right));
+	// закреплены ячейки шапки, а не сам thead: его прямоугольник уезжает вместе с прокруткой
+	const headBottom = (): number => (headers(table)[0] as HTMLElement).getBoundingClientRect().bottom;
+	scroller.scrollLeft = 0;
+	await frames(3);
+	const lastSort = [...table.querySelectorAll<HTMLElement>('thead th button')].at(-1);
+	lastSort?.focus();
+	await frames(4);
+	const sortLeft = lastSort?.getBoundingClientRect().left ?? Number.NaN;
+	scroller.scrollTop = 6 * rowHeight + 4;
+	await frames(6);
+	const lowerRow = bodyRows(table).find((row) => {
+		const box = row.getBoundingClientRect();
+		return box.top < headBottom() && box.bottom > headBottom();
+	});
+	const lowerBox = lowerRow?.querySelector<HTMLElement>('input[type="checkbox"]');
+	lowerBox?.focus();
+	await frames(4);
+	const boxTop = lowerBox?.getBoundingClientRect().top ?? Number.NaN;
+	check(
+		'Grid: сфокусированный элемент выводится из-под закреплённых колонок и шапки (scroll-padding)',
+		sortLeft >= stickyRight() - 0.5 && sortLeft < scroller.getBoundingClientRect().right
+			&& boxTop >= headBottom() - 0.5 && lowerBox !== undefined && lowerBox !== null,
+		`кнопка сортировки слева ${sortLeft.toFixed(1)} при закреплённых до ${stickyRight().toFixed(1)}, `
+			+ `чекбокс сверху ${boxTop.toFixed(1)} при шапке до ${headBottom().toFixed(1)}`
+	);
+	scroller.scrollLeft = 0;
+	scroller.scrollTop = 0;
+	await frames(8);
+	(document.activeElement as HTMLElement | null)?.blur();
+
+	// смена размера на обёртке: шапка и строки перемеряются, после прыжка тело по-прежнему сразу под шапкой, окно не разрастается
+	const headBefore = required(table, 'thead').getBoundingClientRect().height;
+	const sizeResults: string[] = [];
+	let sizeOk = true;
+	for (const size of ['lg', 'sm']) {
+		frame.setAttribute('data-s-kit-size', size);
+		await frames(10);
+		const head = required(table, 'thead').getBoundingClientRect().height;
+		scroller.scrollTop = head + 20_000 * rowHeight;
+		await frames(10);
+		const visible = scroller.getBoundingClientRect().top + head;
+		const bottom = scroller.getBoundingClientRect().top + scroller.clientHeight;
+		const inWindow = bodyRows(table);
+		const first = inWindow.find((row) => row.getBoundingClientRect().bottom > visible);
+		const last = inWindow.at(-1);
+		const topGap = first ? first.getBoundingClientRect().top - visible : Number.NaN;
+		const covered = first !== undefined && topGap <= 0.5 && last !== undefined && last.getBoundingClientRect().bottom >= bottom - 0.5;
+		sizeOk &&= covered && inWindow.length <= 40;
+		sizeResults.push(`${size}: шапка ${head.toFixed(0)}, строк в DOM ${inWindow.length}, зазор сверху ${topGap.toFixed(1)}`);
+		scroller.scrollTop = 0;
+		await frames(6);
+	}
+	frame.removeAttribute('data-s-kit-size');
+	await frames(8);
+	check(
+		'Grid: смена data-s-kit-size: тело сразу под шапкой после прыжка, окно рендера не разрастается',
+		sizeOk && Math.abs(required(table, 'thead').getBoundingClientRect().height - headBefore) <= 0.5,
+		`${sizeResults.join('; ')}; шапка вернулась к ${required(table, 'thead').getBoundingClientRect().height.toFixed(0)} (было ${
+			headBefore.toFixed(0)
+		})`
+	);
+	scroller.scrollTop = 0;
 	await frames();
 
 	return results;
