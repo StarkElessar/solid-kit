@@ -78,16 +78,17 @@ aggregate?: (value: unknown) => JSX.Element;   // формат значения 
 
 - `grid-totals-labels.ts`: тип `GridTotalsLabels`.
 - `default-totals-labels.ts`: `DEFAULT_TOTALS_LABELS`.
-- `totals-rows.ts` (+ `.test.ts`): чистая функция `totalsRows(pageTotals, totals, labels)` → массив `{ kind: 'page' | 'all', label, values }` в порядке «страница, выборка», только для переданных источников.
+- `totals-row.ts`: тип `TotalsRow { kind: 'page' | 'all', label, values }`.
+- `build-totals-rows.ts` (+ `.test.ts`): чистая функция `buildTotalsRows(pageTotals, totals, labels)` → `TotalsRow[]` в порядке «страница, выборка», только для переданных источников.
 - `totals-cell-content.ts` (+ тест): `totalsCellContent(column, values)` → `JSX.Element | string` (пусто для отсутствующего значения, `column.aggregate(value)` или `formatCellValue(value)`).
 - `grid-totals.tsx`: `<tfoot>` со строками итогов (рендерит `GridTotalsRow`).
 - `grid-totals-row.tsx`: одна строка итогов.
 
-Изменяются: `grid-column.ts` (`aggregate`), `grid-props.ts` (пропсы), `grid-context.ts` (`totalsRows`, `totalsLabels`, `totalsRef`), `grid.tsx` (контекст, измерение высоты, `scrollPaddingEnd`, `aria-rowcount`), `grid-table.tsx` (`GridTotals`, `aria-rowcount`), `grid.module.css`, `index.ts` (экспорт `GridTotalsLabels`), `grid.test.tsx`, playground (`demo-grid.tsx`, `totals-checks.ts`, `grid-page.tsx`).
+Изменяются: `grid-column.ts` (`aggregate`), `grid-props.ts` (пропсы), `grid-context.ts` (`totalsRows`), `grid.tsx` (контекст, измерение высоты, `scrollPaddingEnd`, `aria-rowcount`), `grid-table.tsx` (`GridTotals`, `aria-rowcount`), `grid.module.css`, `index.ts` (экспорт `GridTotalsLabels`), `grid.test.tsx`, playground (`demo-grid.tsx`, `totals-checks.ts`, `grid-page.tsx`).
 
 ## 7. Части и критерии приёмки
 
-Часть 1: чистые функции и типы (`totalsRows`, `totalsCellContent`, подписи). Часть 2: компоненты, интеграция в Grid, стили, тесты. Часть 3: playground (демо-переключатели, автопроверки) и приёмка в Chrome.
+Часть 1: чистые функции и типы (`buildTotalsRows`, `totalsCellContent`, подписи). Часть 2: компоненты, интеграция в Grid, стили, тесты. Часть 3: playground (демо-переключатели, автопроверки) и приёмка в Chrome.
 
 Критерии приёмки:
 
