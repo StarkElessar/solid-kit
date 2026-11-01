@@ -50,6 +50,11 @@ describe('computeColumnLayout', () => {
 		expect(layout.columns.map((item) => item.width)).toEqual([160, 200, 300, 60, 100]);
 	});
 
+	it('ширина из словаря и width не превышают maxWidth колонки', () => {
+		const layout = computeColumnLayout([column('a', { maxWidth: 200 }), column('b', { width: 300, maxWidth: 200 })], { a: 500 }, none);
+		expect(layout.columns.map((item) => item.width)).toEqual([200, 200]);
+	});
+
 	it('ширина из словаря не опускается ниже minWidth колонки', () => {
 		const layout = computeColumnLayout([column('a', { minWidth: 90 })], { a: 20 }, none);
 		expect(layout.columns[0]?.width).toBe(90);

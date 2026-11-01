@@ -62,6 +62,7 @@ export function createGridResize<T>(options: GridResizeOptions<T>): GridResize {
 			startX: event.clientX,
 			startWidth: item.width,
 			minWidth: item.column.minWidth ?? DEFAULT_MIN_COLUMN_WIDTH,
+			maxWidth: item.column.maxWidth,
 			onMove: (width) => {
 				applyLayout(table, computeColumnLayout(options.columns(), { ...startWidths, [columnId]: width }, options.layoutOptions()));
 			},

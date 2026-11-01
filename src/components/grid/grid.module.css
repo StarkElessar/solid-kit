@@ -65,6 +65,12 @@
 }
 
 .cell {
+    /* контрол в ячейке занимает всю её ширину */
+    --s-kit-select-width: 100%;
+    --s-kit-input-width: 100%;
+    --s-kit-combobox-width: 100%;
+    --s-kit-multiselect-width: 100%;
+
     block-size: var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md)));
 
     &[data-sticky] {
@@ -85,9 +91,9 @@
         text-align: center;
     }
 
-    /* контрол не выше ячейки: иначе высота контрола плюс нижняя рамка раздувают строку на 1 px, и она уходит с оценки окна */
+    /* высота контрола своя, но не больше ячейки: иначе высота контрола плюс нижняя рамка раздувают строку на 1 px */
     & > [data-s-kit] {
-        block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
+        max-block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
     }
 }
 

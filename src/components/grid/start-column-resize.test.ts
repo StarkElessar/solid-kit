@@ -6,7 +6,7 @@ function pointer(type: string, clientX: number): MouseEvent {
 	return new MouseEvent(type, { clientX, bubbles: true });
 }
 
-function setup(overrides: { startWidth?: number; minWidth?: number } = {}) {
+function setup(overrides: { startWidth?: number; minWidth?: number; maxWidth?: number } = {}) {
 	const handle = document.createElement('span');
 	document.body.append(handle);
 	const onMove = vi.fn();
@@ -18,6 +18,7 @@ function setup(overrides: { startWidth?: number; minWidth?: number } = {}) {
 		startX: 100,
 		startWidth: overrides.startWidth ?? 200,
 		minWidth: overrides.minWidth ?? 60,
+		maxWidth: overrides.maxWidth,
 		onMove,
 		onCommit,
 		onCancel
@@ -41,6 +42,13 @@ describe('startColumnResize', () => {
 		const { handle, onMove } = setup({ minWidth: 80 });
 		handle.dispatchEvent(pointer('pointermove', -500));
 		expect(onMove).toHaveBeenCalledExactlyOnceWith(80);
+	});
+
+	it('ширина зажимается по maxWidth, дальше колонка не растёт', () => {
+		const { handle, onMove } = setup({ startWidth: 160, maxWidth: 200 });
+		handle.dispatchEvent(pointer('pointermove', 500));
+		handle.dispatchEvent(pointer('pointermove', 900));
+		expect(onMove).toHaveBeenCalledExactlyOnceWith(200);
 	});
 
 	it('onMove не зовётся, если ширина не изменилась', () => {

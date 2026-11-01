@@ -11,6 +11,8 @@ export interface GridColumn<T> {
 	width?: number | undefined;
 	/** Нижняя граница ширины при ресайзе, px (60, если не задана). */
 	minWidth?: number | undefined;
+	/** Верхняя граница ширины, px (без ограничения, если не задана): и в раскладке, и при ресайзе. */
+	maxWidth?: number | undefined;
 	align?: 'start' | 'end' | 'center' | undefined;
 	/** Закреплена слева. В этапе 4а задаётся только пропсами. */
 	locked?: boolean | undefined;

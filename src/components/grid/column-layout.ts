@@ -30,8 +30,8 @@ export interface ColumnLayoutOptions {
 
 /**
  * Раскладка видимых колонок: закреплённые идут первыми (внутри групп порядок массива), скрытые пропускаются. Ширина колонки: значение
- * из `widths`, иначе `column.width`, иначе 160, но не меньше `minWidth`. Единственный источник чисел для `<col>`, sticky-смещений
- * и ширины таблицы (раздел 4.2 спека этапа 4а).
+ * из `widths`, иначе `column.width`, иначе 160, но в пределах `minWidth`…`maxWidth`. Единственный источник чисел для `<col>`,
+ * sticky-смещений и ширины таблицы (раздел 4.2 спека этапа 4а).
  */
 export function computeColumnLayout<T>(
 	columns: readonly GridColumn<T>[],
@@ -45,7 +45,7 @@ export function computeColumnLayout<T>(
 	let left = selectWidth;
 	let total = selectWidth;
 	const result: LayoutColumn<T>[] = ordered.map((column, index) => {
-		const width = clampColumnWidth(widths[column.id] ?? column.width ?? DEFAULT_COLUMN_WIDTH, column.minWidth);
+		const width = clampColumnWidth(widths[column.id] ?? column.width ?? DEFAULT_COLUMN_WIDTH, column.minWidth, column.maxWidth);
 		const sticky = column.locked === true;
 		const item: LayoutColumn<T> = { column, index, width, sticky, left: sticky ? left : 0 };
 		if (sticky) {

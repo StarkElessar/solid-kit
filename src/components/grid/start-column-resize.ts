@@ -9,6 +9,8 @@ export interface ColumnResizeParams {
 	/** Ширина колонки в начале перетаскивания, px. */
 	startWidth: number;
 	minWidth: number;
+	/** Верхняя граница ширины, px; без неё колонка растягивается без предела. */
+	maxWidth?: number | undefined;
 	/** Во время перетаскивания; ширина уже зажата. */
 	onMove: (width: number) => void;
 	/** Один раз на `pointerup`. */
@@ -22,7 +24,7 @@ export interface ColumnResizeParams {
  * Возвращает функцию принудительной отмены (размонтирование во время перетаскивания).
  */
 export function startColumnResize(params: ColumnResizeParams): () => void {
-	const { handle, pointerId, startX, startWidth, minWidth } = params;
+	const { handle, pointerId, startX, startWidth, minWidth, maxWidth } = params;
 	let lastWidth = startWidth;
 	let finished = false;
 
@@ -46,7 +48,7 @@ export function startColumnResize(params: ColumnResizeParams): () => void {
 	}
 
 	function handleMove(event: PointerEvent | MouseEvent): void {
-		const width = clampColumnWidth(startWidth + (event.clientX - startX), minWidth);
+		const width = clampColumnWidth(startWidth + (event.clientX - startX), minWidth, maxWidth);
 		if (width === lastWidth) {
 			return;
 		}

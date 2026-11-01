@@ -65,6 +65,8 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		title: 'Изменить статус',
 		value: (row) => row.status,
 		width: 170,
+		minWidth: 140,
+		maxWidth: 200,
 		cell: (row) => (
 			<Select<string>
 				items={STATUSES}

@@ -24,6 +24,17 @@ describe('clampColumnWidth', () => {
 		expect(clampColumnWidth(59.6)).toBe(60);
 	});
 
+	it('больше максимума даёт максимум', () => {
+		expect(clampColumnWidth(260, 140, 200)).toBe(200);
+		expect(clampColumnWidth(200, 140, 200)).toBe(200);
+		expect(clampColumnWidth(170, 140, 200)).toBe(170);
+		expect(clampColumnWidth(100, 140, 200)).toBe(140);
+	});
+
+	it('максимум меньше минимума: побеждает минимум', () => {
+		expect(clampColumnWidth(100, 140, 120)).toBe(140);
+	});
+
 	it('нечисло даёт минимум', () => {
 		expect(clampColumnWidth(Number.NaN)).toBe(60);
 		expect(clampColumnWidth(Number.POSITIVE_INFINITY)).toBe(60);
