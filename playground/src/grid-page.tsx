@@ -6,6 +6,7 @@ import { runGridChecks } from './grid-checks';
 import { runPagerChecks } from './pager-checks';
 import { pick } from './pick';
 import type { CheckResult } from './theme-checks';
+import { runTotalsChecks } from './totals-checks';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -31,7 +32,12 @@ export function GridPage(): JSX.Element {
 		if (page) {
 			const root = page;
 			void (async () => {
-				setResults([...(await runGridChecks(root)), ...(await runPagerChecks(root)), ...(await runColumnMenuChecks(root))]);
+				setResults([
+					...(await runGridChecks(root)),
+					...(await runPagerChecks(root)),
+					...(await runColumnMenuChecks(root)),
+					...(await runTotalsChecks(root))
+				]);
 			})();
 		}
 	};

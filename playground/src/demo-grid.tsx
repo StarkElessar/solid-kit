@@ -87,7 +87,15 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		width: 130,
 		cell: (row) => <span class='grid-status' data-status={row.status}>{row.status}</span>
 	},
-	{ id: 'amount', title: 'Сумма', value: (row) => row.amount, align: 'end', width: 120, sortable: true },
+	{
+		id: 'amount',
+		title: 'Сумма',
+		value: (row) => row.amount,
+		align: 'end',
+		width: 120,
+		sortable: true,
+		aggregate: (value) => `${Number(value).toLocaleString('ru-RU')} ₽`
+	},
 	{ id: 'city', title: 'Город', value: (row) => row.city },
 	{ id: 'email', title: 'Почта', value: (row) => row.email, width: 220 },
 	{ id: 'phone', title: 'Телефон', value: (row) => row.phone, width: 150 },
@@ -116,6 +124,17 @@ interface PageRequest {
 	readonly size: number;
 }
 const COLLATOR = new Intl.Collator('ru');
+
+/** Итоги «сервера» по набору строк: суммы денег и оценок и число заказчиков (последнее попадает в первую колонку и игнорируется). */
+function sumTotals(orders: readonly Order[]): Readonly<Record<string, unknown>> {
+	let amount = 0;
+	let score = 0;
+	for (const order of orders) {
+		amount += order.amount;
+		score += order.score;
+	}
+	return { amount, score, id: orders.length };
+}
 
 function compareValues(first: unknown, second: unknown): number {
 	if (typeof first === 'number' && typeof second === 'number') {
@@ -188,6 +207,8 @@ export function DemoGrid(): JSX.Element {
 	const [columnsLog, setColumnsLog] = createSignal('ещё не было');
 	const [menuLog, setMenuLog] = createSignal('ещё не было');
 	const [selectColumn, setSelectColumn] = createSignal(true);
+	const [pageTotalsOn, setPageTotalsOn] = createSignal(false);
+	const [allTotalsOn, setAllTotalsOn] = createSignal(false);
 	const [perfLog, setPerfLog] = createSignal<readonly string[]>([]);
 	const [perfRunning, setPerfRunning] = createSignal(false);
 	const columns = createMemo(() => (selectColumn() ? COLUMNS : COLUMNS.filter((column) => column.id !== 'edit-status')));
@@ -207,6 +228,9 @@ export function DemoGrid(): JSX.Element {
 		const { page, size } = served();
 		return sorted().slice((page - 1) * size, page * size);
 	});
+
+	const pageTotals = createMemo(() => (pageTotalsOn() ? sumTotals(rows()) : undefined));
+	const totals = createMemo(() => (allTotalsOn() ? sumTotals(sorted()) : undefined));
 
 	/** Поддельный сервер: запрос сразу виден в пейджере, строки приходят через задержку. */
 	function ask(next: PageRequest): void {
@@ -274,6 +298,24 @@ export function DemoGrid(): JSX.Element {
 						onChange={(event) => setColumnMenuEnabled(event.currentTarget.checked)}
 					/>
 					Меню колонок
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-page-totals
+						checked={pageTotalsOn()}
+						onChange={(event) => setPageTotalsOn(event.currentTarget.checked)}
+					/>
+					Итоги страницы
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-all-totals
+						checked={allTotalsOn()}
+						onChange={(event) => setAllTotalsOn(event.currentTarget.checked)}
+					/>
+					Итоги по выборке
 				</label>
 				<label>
 					<input
@@ -364,6 +406,8 @@ export function DemoGrid(): JSX.Element {
 					onEmptyReset={() => setEmpty(false)}
 					rowContextMenu={menuEnabled() ? (row) => <RowMenu row={row} log={setMenuLog}/> : undefined}
 					columnMenu={columnMenuEnabled()}
+					pageTotals={pageTotals()}
+					totals={totals()}
 					onColumnMenuClose={(ids) => {
 						setColumnsLog(ids.join(', '));
 					}}
