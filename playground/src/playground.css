@@ -334,6 +334,12 @@ h2 {
     block-size: 28rem;
 }
 
+.pager-standalone {
+    margin-block-start: 12px;
+    border: 1px solid var(--s-kit-color-border-strong);
+    border-radius: var(--s-kit-radius);
+}
+
 .grid-status {
     padding: 2px 8px;
     border-radius: 999px;

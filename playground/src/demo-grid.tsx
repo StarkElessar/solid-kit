@@ -1,7 +1,8 @@
 import { ContextMenu } from '@stark/solid-kit/context-menu';
 import { Grid, type GridColumn, type GridSort, type RowKey } from '@stark/solid-kit/grid';
+import { Pager } from '@stark/solid-kit/pager';
 import { Select } from '@stark/solid-kit/select';
-import { createMemo, createSignal, For, type JSX } from 'solid-js';
+import { createMemo, createSignal, For, type JSX, onCleanup } from 'solid-js';
 
 import { runGridPerf } from './grid-perf';
 import { pick } from './pick';
@@ -106,6 +107,13 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 export const DEMO_MIN_ROW_HEIGHT = Math.max(...COLUMNS.map((column) => column.rowHeight ?? 0));
 
 const ROW_COUNTS = ['10', '1000', '100000'] as const;
+const DELAYS = ['0', '400', '2000'] as const;
+const DEFAULT_PAGE_SIZE = 20;
+
+interface PageRequest {
+	readonly page: number;
+	readonly size: number;
+}
 const COLLATOR = new Intl.Collator('ru');
 
 function compareValues(first: unknown, second: unknown): number {
@@ -180,15 +188,51 @@ export function DemoGrid(): JSX.Element {
 	const [perfLog, setPerfLog] = createSignal<readonly string[]>([]);
 	const [perfRunning, setPerfRunning] = createSignal(false);
 	const columns = createMemo(() => (selectColumn() ? COLUMNS : COLUMNS.filter((column) => column.id !== 'edit-status')));
+	const [paged, setPaged] = createSignal(false);
+	const [delay, setDelay] = createSignal<(typeof DELAYS)[number]>('400');
+	const [wanted, setWanted] = createSignal<PageRequest>({ page: 1, size: DEFAULT_PAGE_SIZE });
+	const [served, setServed] = createSignal<PageRequest>({ page: 1, size: DEFAULT_PAGE_SIZE });
+	const [serverLoading, setServerLoading] = createSignal(false);
+	const [pageLog, setPageLog] = createSignal('ещё не было');
+	let timer: number | undefined;
 	let frame: HTMLDivElement | undefined;
-	const rows = createMemo(() => (empty() ? [] : sortRows(ALL_ORDERS.slice(0, Number(count())), sort())));
+	const sorted = createMemo(() => (empty() ? [] : sortRows(ALL_ORDERS.slice(0, Number(count())), sort())));
+	const rows = createMemo(() => {
+		if (!paged()) {
+			return sorted();
+		}
+		const { page, size } = served();
+		return sorted().slice((page - 1) * size, page * size);
+	});
+
+	/** Поддельный сервер: запрос сразу виден в пейджере, строки приходят через задержку. */
+	function ask(next: PageRequest): void {
+		setWanted(next);
+		setPageLog(`страница ${next.page}, размер ${next.size}`);
+		window.clearTimeout(timer);
+		setServerLoading(true);
+		timer = window.setTimeout(() => {
+			setServed(next);
+			setServerLoading(false);
+		}, Number(delay()));
+	}
+
+	onCleanup(() => {
+		window.clearTimeout(timer);
+	});
 
 	return (
 		<div class='grid-demo'>
 			<div class='control-row'>
 				<label>
 					Строк
-					<select data-grid-count onChange={(event) => setCount(pick(ROW_COUNTS, event.currentTarget.value, '100000'))}>
+					<select
+						data-grid-count
+						onChange={(event) => {
+							setCount(pick(ROW_COUNTS, event.currentTarget.value, '100000'));
+							ask({ page: 1, size: wanted().size });
+						}}
+					>
 						<For each={ROW_COUNTS}>{(value) => <option value={value} selected={value === count()}>{value}</option>}</For>
 					</select>
 				</label>
@@ -254,6 +298,24 @@ export function DemoGrid(): JSX.Element {
 				<label>
 					<input
 						type='checkbox'
+						data-grid-paged
+						checked={paged()}
+						onChange={(event) => {
+							setPaged(event.currentTarget.checked);
+							ask({ page: 1, size: DEFAULT_PAGE_SIZE });
+						}}
+					/>
+					Постраничная загрузка
+				</label>
+				<label>
+					Задержка, мс
+					<select data-grid-delay onChange={(event) => setDelay(pick(DELAYS, event.currentTarget.value, '400'))}>
+						<For each={DELAYS}>{(value) => <option value={value} selected={value === delay()}>{value}</option>}</For>
+					</select>
+				</label>
+				<label>
+					<input
+						type='checkbox'
 						data-grid-empty
 						checked={empty()}
 						onChange={(event) => setEmpty(event.currentTarget.checked)}
@@ -273,7 +335,19 @@ export function DemoGrid(): JSX.Element {
 					sort={sort()}
 					onSortChange={setSort}
 					onRowDoubleClick={(row) => setDoubleLog(row.name)}
-					loading={loading()}
+					loading={loading() || (paged() && serverLoading())}
+					total={paged() ? Number(count()) : undefined}
+					page={wanted().page}
+					pageSize={wanted().size}
+					onPageChange={(page) => {
+						ask({ page, size: wanted().size });
+					}}
+					onPageSizeChange={(size) => {
+						ask({ page: wanted().page, size });
+					}}
+					onRefresh={() => {
+						ask(wanted());
+					}}
 					emptyHint='Измените условия поиска или сбросьте фильтры.'
 					onEmptyReset={() => setEmpty(false)}
 					rowContextMenu={menuEnabled() ? (row) => <RowMenu row={row} log={setMenuLog}/> : undefined}
@@ -288,6 +362,12 @@ export function DemoGrid(): JSX.Element {
 				<output data-grid-menu-log>{menuLog()}</output>
 			</p>
 			<output data-grid-perf>{perfLog().length === 0 ? 'замер не запускался' : perfLog().join('; ')}</output>
+			<p>
+				Последний запрос страницы: <output data-grid-page-log>{pageLog()}</output>
+			</p>
+			<div data-pager-standalone class='pager-standalone'>
+				<Pager total={1250} defaultPageSize={20} onRefresh={() => setPageLog('отдельный Pager: обновить')}/>
+			</div>
 		</div>
 	);
 }
