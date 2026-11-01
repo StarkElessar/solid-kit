@@ -108,6 +108,7 @@ export const DEMO_MIN_ROW_HEIGHT = Math.max(...COLUMNS.map((column) => column.ro
 
 const ROW_COUNTS = ['10', '1000', '100000'] as const;
 const DELAYS = ['0', '400', '2000'] as const;
+const PAGER_SIZES = ['sm', 'md', 'lg'] as const;
 const DEFAULT_PAGE_SIZE = 20;
 
 interface PageRequest {
@@ -365,9 +366,20 @@ export function DemoGrid(): JSX.Element {
 			<p>
 				Последний запрос страницы: <output data-grid-page-log>{pageLog()}</output>
 			</p>
-			<div data-pager-standalone class='pager-standalone'>
-				<Pager total={1250} defaultPageSize={20} onRefresh={() => setPageLog('отдельный Pager: обновить')}/>
-			</div>
+			<For each={PAGER_SIZES}>
+				{(size) => (
+					<div data-pager-standalone={size} class='pager-standalone'>
+						<Pager
+							total={1250}
+							defaultPageSize={20}
+							size={size}
+							onRefresh={() => {
+								setPageLog(`отдельный Pager ${size}: обновить`);
+							}}
+						/>
+					</div>
+				)}
+			</For>
 		</div>
 	);
 }

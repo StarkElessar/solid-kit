@@ -145,7 +145,7 @@ export async function runPagerChecks(page: HTMLElement): Promise<CheckResult[]> 
 	);
 
 	keyDown(required(nav, '[role="combobox"]'), 'Escape');
-	const standalone = required(page, '[data-pager-standalone]');
+	const standalone = required(page, '[data-pager-standalone="md"]');
 	check(
 		'Pager: отдельный Pager вне грида работает (сводка «Записей 1–20 из 1 250»)',
 		summaryOf(standalone) === 'Записей 1–20 из 1 250',
