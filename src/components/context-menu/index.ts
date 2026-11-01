@@ -1,4 +1,6 @@
+import { ContextMenuCheckboxItem } from './context-menu-checkbox-item';
 import { ContextMenuContent } from './context-menu-content';
+import { ContextMenuGroup } from './context-menu-group';
 import { ContextMenuItem } from './context-menu-item';
 import { ContextMenuRoot } from './context-menu-root';
 import { ContextMenuSeparator } from './context-menu-separator';
@@ -7,7 +9,9 @@ import { ContextMenuSubContent } from './context-menu-sub-content';
 import { ContextMenuSubTrigger } from './context-menu-sub-trigger';
 import { ContextMenuTrigger } from './context-menu-trigger';
 
+export type { ContextMenuCheckboxItemProps } from './context-menu-checkbox-item';
 export type { ContextMenuContentProps } from './context-menu-content';
+export type { ContextMenuGroupProps } from './context-menu-group';
 export type { ContextMenuItemProps } from './context-menu-item';
 export type { ContextMenuPoint } from './context-menu-point';
 export type { ContextMenuRootProps } from './context-menu-root';
@@ -22,6 +26,8 @@ export const ContextMenu = {
 	Trigger: ContextMenuTrigger,
 	Content: ContextMenuContent,
 	Item: ContextMenuItem,
+	CheckboxItem: ContextMenuCheckboxItem,
+	Group: ContextMenuGroup,
 	Separator: ContextMenuSeparator,
 	Sub: ContextMenuSub,
 	SubTrigger: ContextMenuSubTrigger,

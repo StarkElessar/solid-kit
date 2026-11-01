@@ -10,7 +10,7 @@ import { useSubContext } from './sub-context';
 const HOVER_OPEN_DELAY = 120;
 
 export interface ContextMenuSubTriggerProps
-	extends Omit<MenuItemElementProps, 'rootRef' | 'trailing' | 'onKeyDown' | 'onPointerLeave'> {
+	extends Omit<MenuItemElementProps, 'rootRef' | 'trailing' | 'leading' | 'role' | 'onKeyDown' | 'onPointerLeave'> {
 	onKeyDown?: JSX.EventHandler<HTMLDivElement, KeyboardEvent> | undefined;
 	onPointerLeave?: JSX.EventHandler<HTMLDivElement, PointerEvent> | undefined;
 }

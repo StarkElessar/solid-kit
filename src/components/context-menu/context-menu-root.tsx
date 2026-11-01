@@ -15,6 +15,8 @@ export interface ContextMenuRootProps {
 	anchorSource?: MenuOpenSource | undefined;
 	/** Область вызова без `ContextMenu.Trigger`: от неё считается хост панели, она получает фокус, если прежний владелец фокуса ушёл. */
 	anchorArea?: HTMLElement | undefined;
+	/** Якорь-элемент: меню позиционируется по его прямоугольнику, `ContextMenu.Trigger` и точка не нужны. */
+	anchorElement?: HTMLElement | undefined;
 	children?: JSX.Element;
 }
 
@@ -50,6 +52,7 @@ export function ContextMenuRoot(props: ContextMenuRootProps): JSX.Element {
 			setOpen(true);
 		},
 		point: () => props.anchorPoint ?? ownPoint(),
+		anchorElement: () => props.anchorElement,
 		source: () => props.anchorSource ?? source(),
 		area: () => props.anchorArea ?? area(),
 		setArea: (element) => {

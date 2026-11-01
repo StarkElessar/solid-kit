@@ -25,6 +25,15 @@ describe('menuItems', () => {
 			</div>`);
 		expect(menuItems(panel).map((item) => item.id)).toEqual(['a', 'b']);
 	});
+
+	it('finds toggle items too, also inside a group', () => {
+		const panel = build(`
+			<div role="menu" data-panel>
+				<div role="menuitem" id="a"></div>
+				<div role="group"><div role="menuitemcheckbox" id="b"></div></div>
+			</div>`);
+		expect(menuItems(panel).map((item) => item.id)).toEqual(['a', 'b']);
+	});
 });
 
 describe('isItemDisabled and itemOf', () => {
@@ -43,6 +52,11 @@ describe('isItemDisabled and itemOf', () => {
 		expect(itemOf(panel, panel.querySelector('#nested'))).toBeUndefined();
 		expect(itemOf(panel, panel)).toBeUndefined();
 		expect(itemOf(panel, null)).toBeUndefined();
+	});
+
+	it('returns a toggle item for a target inside it', () => {
+		const panel = build('<div role="menu" data-panel><div role="menuitemcheckbox" id="c"><span id="inner">x</span></div></div>');
+		expect(itemOf(panel, panel.querySelector('#inner'))?.id).toBe('c');
 	});
 });
 

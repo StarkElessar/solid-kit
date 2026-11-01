@@ -93,3 +93,24 @@
     margin-block: 4px;
     background: var(--s-kit-color-hairline);
 }
+
+/* отметка переключателя: место под неё занято всегда, чтобы подписи не прыгали */
+.check {
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+    visibility: hidden;
+
+    &[data-checked] {
+        visibility: visible;
+    }
+}
+
+.group-label {
+    padding-block: 6px 2px;
+    padding-inline: 10px;
+
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--s-kit-color-muted);
+}

@@ -3,7 +3,7 @@ import { type JSX, splitProps } from 'solid-js';
 import { MenuItemElement, type MenuItemElementProps } from './menu-item-element';
 import { useMenuLevelContext } from './menu-level-context';
 
-export interface ContextMenuItemProps extends Omit<MenuItemElementProps, 'rootRef' | 'trailing'> {
+export interface ContextMenuItemProps extends Omit<MenuItemElementProps, 'rootRef' | 'trailing' | 'role' | 'leading'> {
 	/** По умолчанию `true`: закрывает всю цепочку меню, а не только подменю. */
 	closeOnSelect?: boolean | undefined;
 	onSelect?: (() => void) | undefined;

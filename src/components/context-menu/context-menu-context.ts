@@ -11,6 +11,8 @@ export interface ContextMenuContextValue {
 	/** Открывает меню в точке; `source` решает, куда уйдёт фокус. */
 	openAt: (point: ContextMenuPoint, source: MenuOpenSource) => void;
 	point: Accessor<ContextMenuPoint | undefined>;
+	/** Элемент-якорь (кнопка меню колонки): приоритетнее точки, клик по нему не считается кликом снаружи. */
+	anchorElement: Accessor<HTMLElement | undefined>;
 	source: Accessor<MenuOpenSource>;
 	/** Область вызова: от неё считается хост панели, она же запасной получатель фокуса. */
 	area: Accessor<HTMLElement | undefined>;

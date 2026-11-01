@@ -1,4 +1,7 @@
+import type { Placement } from '@floating-ui/dom';
 import { createMemo, type JSX, splitProps } from 'solid-js';
+
+import type { AnchorElement } from '../../utils/create-anchored-position';
 
 import { useContextMenuContext } from './context-menu-context';
 import { createCloseOnViewportChange } from './create-close-on-viewport-change';
@@ -8,6 +11,8 @@ import { pointAnchor } from './menu-point-anchor';
 
 export interface ContextMenuContentProps extends MenuPanelAttributes {
 	size?: 'sm' | 'md' | 'lg' | undefined;
+	/** Сторона и выравнивание относительно якоря; по умолчанию `bottom-start`. */
+	placement?: Placement | undefined;
 	/** Вызывается раньше клавиатуры меню. */
 	onKeyDown?: ((event: KeyboardEvent & { currentTarget: HTMLDivElement }) => void) | undefined;
 	/** Корневой элемент меню. */
@@ -19,8 +24,12 @@ export interface ContextMenuContentProps extends MenuPanelAttributes {
 
 export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element {
 	const context = useContextMenuContext('ContextMenu.Content');
-	const [local, rest] = splitProps(props, ['size', 'onKeyDown', 'ref', 'class', 'style', 'children']);
-	const anchor = createMemo(() => {
+	const [local, rest] = splitProps(props, ['size', 'placement', 'onKeyDown', 'ref', 'class', 'style', 'children']);
+	const anchor = createMemo<AnchorElement | undefined>(() => {
+		const element = context.anchorElement();
+		if (element) {
+			return element;
+		}
 		const point = context.point();
 		return point ? pointAnchor(point) : undefined;
 	});
@@ -40,13 +49,17 @@ export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element 
 			anchor={anchor}
 			anchorElement={context.area}
 			restoreFocusTo={() => {
-				// строка грида с инициатором могла выйти из документа: тогда фокус получает область вызова
+				// инициатора или строки грида могло не стать в документе: тогда фокус получает якорь, а если и его нет, область вызова
 				const opener = context.opener();
-				return opener?.isConnected === true ? opener : context.area();
+				if (opener?.isConnected === true) {
+					return opener;
+				}
+				const anchored = context.anchorElement();
+				return anchored?.isConnected === true ? anchored : context.area();
 			}}
-			// область вызова не часть меню: клик в другом месте области закрывает меню (раздел 3.3 спека)
-			dismissExempt={() => undefined}
-			placement='bottom-start'
+			// клик по якорю-элементу не снаружи: переключением занимается его обработчик; область вызова не часть меню (раздел 3.3 спека)
+			dismissExempt={context.anchorElement}
+			placement={local.placement ?? 'bottom-start'}
 			gap={2}
 			initialFocus={context.source() === 'keyboard' ? focusFirstItem : 'panel'}
 			closeAll={close}

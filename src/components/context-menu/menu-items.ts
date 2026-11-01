@@ -1,4 +1,4 @@
-const ITEM = '[role="menuitem"]';
+const ITEM = '[role="menuitem"], [role="menuitemcheckbox"]';
 const MENU = '[role="menu"]';
 
 /**

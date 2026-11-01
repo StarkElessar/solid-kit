@@ -5,15 +5,19 @@ import { type JSX, splitProps } from 'solid-js';
 import { revealTruncatedTitle } from './menu-items';
 import { useMenuLevelContext } from './menu-level-context';
 
-type OwnedAttribute = 'class' | 'style' | 'role' | 'ref' | 'onClick' | 'onPointerMove' | 'onFocus' | 'children';
+type OwnedAttribute = 'class' | 'style' | 'ref' | 'onClick' | 'onPointerMove' | 'onFocus' | 'children';
 
-export interface MenuItemElementProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, OwnedAttribute> {
+export interface MenuItemElementProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, OwnedAttribute | 'role'> {
+	/** `menuitemcheckbox` у переключателей; по умолчанию `menuitem`. */
+	role?: 'menuitem' | 'menuitemcheckbox' | undefined;
 	variant?: 'default' | 'danger' | undefined;
 	disabled?: boolean | undefined;
 	onClick?: JSX.EventHandler<HTMLDivElement, MouseEvent> | undefined;
 	onPointerMove?: JSX.EventHandler<HTMLDivElement, PointerEvent> | undefined;
 	/** Корневой элемент пункта. */
 	rootRef?: ((element: HTMLDivElement) => void) | undefined;
+	/** Содержимое перед подписью (отметка переключателя). */
+	leading?: JSX.Element;
 	/** Содержимое после подписи, не обрезаемое многоточием (стрелка подменю). */
 	trailing?: JSX.Element;
 	class?: string | undefined;
@@ -25,6 +29,8 @@ export interface MenuItemElementProps extends Omit<JSX.HTMLAttributes<HTMLDivEle
 export function MenuItemElement(props: MenuItemElementProps): JSX.Element {
 	const level = useMenuLevelContext('ContextMenu.Item');
 	const [local, rest] = splitProps(props, [
+		'role',
+		'leading',
 		'variant',
 		'disabled',
 		'onClick',
@@ -42,7 +48,7 @@ export function MenuItemElement(props: MenuItemElementProps): JSX.Element {
 			ref={(element) => {
 				local.rootRef?.(element);
 			}}
-			role='menuitem'
+			role={local.role ?? 'menuitem'}
 			tabIndex={-1}
 			aria-disabled={local.disabled ? 'true' : undefined}
 			data-variant={local.variant === 'danger' ? 'danger' : undefined}
@@ -68,6 +74,7 @@ export function MenuItemElement(props: MenuItemElementProps): JSX.Element {
 				revealTruncatedTitle(item);
 			}}
 		>
+			{local.leading}
 			<span data-s-kit-menu-label class={styles['label']}>{local.children}</span>
 			{local.trailing}
 		</div>
