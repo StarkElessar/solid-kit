@@ -11,6 +11,11 @@ export interface GridColumn<T> {
 	width?: number | undefined;
 	/** Нижняя граница ширины при ресайзе, px (60, если не задана). */
 	minWidth?: number | undefined;
+	/**
+	 * Высота, которую требует колонка (календарь, большой селект), px. Высота строки не меньше этого значения: строка получает максимум
+	 * из `rowHeight` грида и `rowHeight` всех видимых колонок, а ячейка колонки получает собственную высоту.
+	 */
+	rowHeight?: number | undefined;
 	/** Верхняя граница ширины, px (без ограничения, если не задана): и в раскладке, и при ресайзе. */
 	maxWidth?: number | undefined;
 	align?: 'start' | 'end' | 'center' | undefined;

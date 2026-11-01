@@ -249,6 +249,22 @@ describe('Grid: виртуализация', () => {
 		expect((bottom ?? 0) + rows.length * 20).toBe(1000 * 20);
 	});
 
+	it('rowHeight колонки поднимает оценку высоты строки и попадает в переменную ячейки', () => {
+		mockGeometry({ windowHeight: 100, rowHeight: 50 });
+		renderGrid({
+			rows: manyRows(1000),
+			virtualized: true,
+			rowHeight: 20,
+			overscan: 2,
+			columns: COLUMNS.map((column) => (column.id === 'age' ? { ...column, rowHeight: 50 } : column))
+		});
+		const rows = bodyRows();
+		const [bottom] = spacerHeights();
+		expect((bottom ?? 0) + rows.length * 50).toBe(1000 * 50);
+		const cells = rows[0]?.querySelectorAll('td') ?? [];
+		expect([...cells].map((cell) => cell.style.getPropertyValue('--s-kit-grid-cell-h'))).toEqual(['', '', '50px', '']);
+	});
+
 	it('измеряются все строки окна: к моменту измерения у строки уже есть data-index', () => {
 		mockGeometry({ windowHeight: 100, rowHeight: 20 });
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);

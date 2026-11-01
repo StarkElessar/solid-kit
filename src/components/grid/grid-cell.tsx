@@ -14,6 +14,11 @@ export interface GridCellProps {
 	row: unknown;
 }
 
+/** Собственная высота ячейки колонки с `rowHeight`; без неё ячейка берёт высоту строки из токенов. */
+export function cellHeight(column: GridColumn<unknown>): string | undefined {
+	return column.rowHeight === undefined ? undefined : `${column.rowHeight}px`;
+}
+
 export function GridCell(props: GridCellProps): JSX.Element {
 	const grid = useGrid();
 	const sticky = (): boolean => props.column.locked === true;
@@ -26,7 +31,10 @@ export function GridCell(props: GridCellProps): JSX.Element {
 			data-sticky={sticky() ? '' : undefined}
 			data-sticky-last={props.index === grid.lastStickyIndex() ? '' : undefined}
 			data-align={props.column.align}
-			style={{ 'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined }}
+			style={{
+				'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined,
+				'--s-kit-grid-cell-h': cellHeight(props.column)
+			}}
 		>
 			{props.column.cell === undefined ? text() : props.column.cell(props.row)}
 		</td>

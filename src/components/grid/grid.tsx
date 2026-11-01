@@ -74,7 +74,9 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 
 	const estimate = createMemo(() => {
 		const element = scroller();
-		return props.rowHeight ?? (element === undefined ? FALLBACK_ROW_HEIGHT : readControlHeight(element));
+		const base = props.rowHeight ?? (element === undefined ? FALLBACK_ROW_HEIGHT : readControlHeight(element));
+		// строка не ниже самой требовательной видимой колонки: оценка окна совпадает с реальной высотой и строки не прыгают при измерении
+		return Math.max(base, ...layout().columns.map((item) => item.column.rowHeight ?? 0));
 	});
 
 	const [viewWidth, setViewWidth] = createSignal(0);

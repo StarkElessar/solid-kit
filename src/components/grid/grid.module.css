@@ -64,6 +64,7 @@
     white-space: nowrap;
 }
 
+/* высота ячейки: своя (--s-kit-grid-cell-h из rowHeight колонки), иначе высота строки */
 .cell {
     /* контрол в ячейке занимает всю её ширину */
     --s-kit-select-width: 100%;
@@ -71,7 +72,7 @@
     --s-kit-combobox-width: 100%;
     --s-kit-multiselect-width: 100%;
 
-    block-size: var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md)));
+    block-size: var(--s-kit-grid-cell-h, var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))));
 
     &[data-sticky] {
         position: sticky;
@@ -93,7 +94,10 @@
 
     /* высота контрола своя, но не больше ячейки: иначе высота контрола плюс нижняя рамка раздувают строку на 1 px */
     & > [data-s-kit] {
-        max-block-size: calc(var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md))) - 1px);
+        max-block-size:
+            calc(
+                var(--s-kit-grid-cell-h, var(--s-kit-grid-row-height, var(--s-kit-control-height, var(--s-kit-control-height-md)))) - 1px
+            );
     }
 }
 

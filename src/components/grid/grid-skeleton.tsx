@@ -2,6 +2,7 @@ import styles from './grid.module.css';
 
 import { createMemo, For, type JSX, Show } from 'solid-js';
 
+import { cellHeight } from './grid-cell';
 import { useGrid } from './grid-context';
 
 /** Заглушки строк на время загрузки: по ячейке на колонку, без данных и без sticky. */
@@ -16,8 +17,8 @@ export function GridSkeleton(): JSX.Element {
 						<td class={`${styles['cell']} ${styles['select-cell']}`}/>
 					</Show>
 					<For each={grid.columns()}>
-						{() => (
-							<td class={styles['cell']}>
+						{(column) => (
+							<td class={styles['cell']} style={{ '--s-kit-grid-cell-h': cellHeight(column) }}>
 								<span class={styles['skeleton-bar']}/>
 							</td>
 						)}
