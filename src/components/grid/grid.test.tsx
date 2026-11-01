@@ -1680,10 +1680,9 @@ describe('Grid: меню колонки', () => {
 });
 
 describe('Grid: автосуммы', () => {
-	const PAGE = { age: 76, id: 6, name: 'не показывается', secret: 'скрыто' };
-	const ALL = { age: 1200, id: 100 };
+	const TOTALS = { age: 1200, id: 100, name: 'всего', secret: 'скрыто' };
 
-	function footRows(): HTMLTableRowElement[] {
+	function foot(): HTMLTableRowElement[] {
 		return [...table().querySelectorAll<HTMLTableRowElement>('tfoot > tr')];
 	}
 
@@ -1691,73 +1690,43 @@ describe('Grid: автосуммы', () => {
 		return [...(row?.cells ?? [])].map((cell) => cell.textContent.trim());
 	}
 
-	it('без pageTotals и totals tfoot нет', () => {
+	it('без totals tfoot нет', () => {
 		renderGrid();
 		expect(table().querySelector('tfoot')).toBeNull();
 		expect(table().getAttribute('aria-rowcount')).toBe('4');
 	});
 
-	it('только pageTotals: одна строка «Итого на странице»', () => {
-		renderGrid({ pageTotals: PAGE });
-		expect(footRows()).toHaveLength(1);
-		expect(texts(footRows()[0])[0]).toBe('Итого на странице');
+	it('с totals один футер из одной строки', () => {
+		renderGrid({ totals: TOTALS });
+		expect(foot()).toHaveLength(1);
+		expect(table().querySelectorAll('tfoot')).toHaveLength(1);
 	});
 
-	it('только totals: одна строка «Итого по выборке», страничные значения не подставляются', () => {
-		renderGrid({ totals: ALL });
-		expect(footRows()).toHaveLength(1);
-		expect(texts(footRows()[0])).toEqual(['Итого по выборке', '100', '1200', '']);
+	it('значение стоит в ячейке своей колонки, подписей нет, у первой колонки тоже есть значение', () => {
+		renderGrid({ totals: TOTALS });
+		// порядок колонок: name, id, age, note (ключа нет, secret скрыта)
+		expect(texts(foot()[0])).toEqual(['всего', '100', '1200', '']);
+		expect(table().querySelector('tfoot th')).toBeNull();
+		expect(table().querySelector('tfoot')?.textContent).not.toContain('Итого');
 	});
 
-	it('обе строки идут в порядке «страница, выборка»', () => {
-		renderGrid({ pageTotals: PAGE, totals: ALL });
-		expect(footRows().map((row) => texts(row)[0])).toEqual(['Итого на странице', 'Итого по выборке']);
-	});
-
-	it('первая колонка несёт подпись и не показывает свой итог, скрытая колонка и отсутствующий ключ дают пусто', () => {
-		renderGrid({ pageTotals: PAGE });
-		// порядок колонок: name (подпись), id, age, note (ключа нет)
-		expect(texts(footRows()[0])).toEqual(['Итого на странице', '6', '76', '']);
-		const label = footRows()[0]?.cells[0];
-		expect(label?.tagName).toBe('TH');
-		expect(label?.getAttribute('scope')).toBe('row');
-		expect(label?.getAttribute('title')).toBe('Итого на странице');
-	});
-
-	it('aggregate колонки форматирует значение, значение undefined даёт пустую ячейку', () => {
+	it('aggregate колонки форматирует значение, undefined даёт пустую ячейку', () => {
 		const aggregate = (value: unknown): JSX.Element => <i>{String(value)} лет</i>;
 		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, aggregate } : column));
-		renderGrid({ columns, pageTotals: { age: 76, id: undefined } });
-		// id без значения входит в подпись
-		expect(texts(footRows()[0])).toEqual(['Итого на странице', '76 лет', '']);
-		expect(footRows()[0]?.querySelector('i')).not.toBeNull();
+		renderGrid({ columns, totals: { age: 76, id: undefined } });
+		expect(texts(foot()[0])).toEqual(['', '', '76 лет', '']);
+		expect(foot()[0]?.querySelector('i')).not.toBeNull();
 	});
 
-	it('totalsLabels переопределяет подписи', () => {
-		renderGrid({ pageTotals: {}, totals: {}, totalsLabels: { page: 'Страница', all: 'Всего' } });
-		expect(footRows().map((row) => texts(row)[0])).toEqual(['Страница', 'Всего']);
-	});
-
-	it('пустой объект даёт строку только с подписью', () => {
+	it('пустой объект даёт футер с пустыми ячейками', () => {
 		renderGrid({ totals: {} });
-		// подпись занимает закреплённую колонку id без значения и не заходит на открепляемые
-		expect(texts(footRows()[0])).toEqual(['Итого по выборке', '', '']);
-		expect(footRows()[0]?.cells[0]?.getAttribute('colspan')).toBe('2');
+		expect(foot()).toHaveLength(1);
+		expect(texts(foot()[0])).toEqual(['', '', '', '']);
 	});
 
-	it('подпись не растягивается на колонку со значением', () => {
-		renderGrid({ totals: ALL });
-		expect(footRows()[0]?.cells[0]?.getAttribute('colspan')).toBe('1');
-	});
-
-	it('разделитель закрепа получает подпись, под которой лежит последняя закреплённая колонка', () => {
-		renderGrid({ totals: {} });
-		expect(footRows()[0]?.cells[0]?.hasAttribute('data-sticky-last')).toBe(true);
-	});
-
-	it('выравнивание ячеек берётся из колонки, закреплённые колонки закреплены как в теле', () => {
-		renderGrid({ pageTotals: PAGE });
-		const cells = footRows()[0]?.cells;
+	it('выравнивание из колонки, закреплённые колонки закреплены как в теле', () => {
+		renderGrid({ totals: TOTALS });
+		const cells = foot()[0]?.cells;
 		expect(cells?.[2]?.getAttribute('data-align')).toBe('end');
 		expect(cells?.[0]?.hasAttribute('data-sticky')).toBe(true);
 		expect(cells?.[0]?.style.insetInlineStart).toBe('var(--s-kit-grid-left-0)');
@@ -1765,49 +1734,33 @@ describe('Grid: автосуммы', () => {
 		expect(cells?.[2]?.hasAttribute('data-sticky')).toBe(false);
 	});
 
-	it('при выборе строк первая ячейка итогов это пустая закреплённая ячейка колонки чекбоксов', () => {
-		renderGrid({ pageTotals: PAGE, selectable: true });
-		const first = footRows()[0]?.cells[0];
+	it('при выборе строк первая ячейка это пустая закреплённая ячейка колонки чекбоксов', () => {
+		renderGrid({ totals: TOTALS, selectable: true });
+		const first = foot()[0]?.cells[0];
 		expect(first?.textContent).toBe('');
 		expect(first?.hasAttribute('data-sticky')).toBe(true);
 		expect(first?.style.insetInlineStart).toBe('0px');
-		expect(footRows()[0]?.cells[1]?.textContent.trim()).toBe('Итого на странице');
+		expect(texts(foot()[0])[1]).toBe('всего');
 	});
 
-	it('двухстрочные итоги: верхняя помечена data-first, нижняя data-stacked нет', () => {
-		renderGrid({ pageTotals: PAGE, totals: ALL });
-		const [page, all] = footRows();
-		expect(page?.cells[2]?.hasAttribute('data-first')).toBe(true);
-		expect(page?.cells[2]?.hasAttribute('data-stacked')).toBe(true);
-		expect(all?.cells[2]?.hasAttribute('data-first')).toBe(false);
-		expect(all?.cells[2]?.hasAttribute('data-stacked')).toBe(false);
-	});
-
-	it('одна строка итогов не смещается', () => {
-		renderGrid({ totals: ALL });
-		const cell = footRows()[0]?.cells[2];
-		expect(cell?.hasAttribute('data-first')).toBe(true);
-		expect(cell?.hasAttribute('data-stacked')).toBe(false);
-	});
-
-	it('загрузка: значения заменены заглушками, подписи остаются', () => {
-		renderGrid({ pageTotals: PAGE, loading: true });
-		const row = footRows()[0];
-		expect(texts(row)).toEqual(['Итого на странице', '', '', '']);
-		expect(row?.querySelectorAll('[aria-hidden="true"]')).toHaveLength(3);
+	it('загрузка: значения заменены заглушками', () => {
+		renderGrid({ totals: TOTALS, loading: true });
+		const row = foot()[0];
+		expect(texts(row)).toEqual(['', '', '', '']);
+		expect(row?.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
 	});
 
 	it('aria-rowcount и aria-rowindex продолжают нумерацию после строк', () => {
-		renderGrid({ pageTotals: PAGE, totals: ALL });
-		expect(table().getAttribute('aria-rowcount')).toBe('6');
-		expect(footRows().map((row) => row.getAttribute('aria-rowindex'))).toEqual(['5', '6']);
+		renderGrid({ totals: TOTALS });
+		expect(table().getAttribute('aria-rowcount')).toBe('5');
+		expect(foot()[0]?.getAttribute('aria-rowindex')).toBe('5');
 	});
 
-	it('клик по итогам не выбирает строки и не открывает меню строки', () => {
+	it('клик по футеру не выбирает строки и не открывает меню строки', () => {
 		const onSelectedKeysChange = vi.fn();
 		const rowContextMenu = (): JSX.Element => <ContextMenu.Item>Пункт</ContextMenu.Item>;
-		renderGrid({ pageTotals: PAGE, selectable: true, onSelectedKeysChange, rowContextMenu });
-		const cell = footRows()[0]?.cells[3] as HTMLElement;
+		renderGrid({ totals: TOTALS, selectable: true, onSelectedKeysChange, rowContextMenu });
+		const cell = foot()[0]?.cells[3] as HTMLElement;
 		fireEvent.click(cell);
 		fireEvent.dblClick(cell);
 		fireEvent.contextMenu(cell);
@@ -1815,27 +1768,16 @@ describe('Grid: автосуммы', () => {
 		expect(screen.queryByRole('menu')).toBeNull();
 	});
 
-	it('смена pageTotals обновляет значения, появление и исчезновение totals добавляет и убирает строку', () => {
-		const [pageTotals, setPageTotals] = createSignal<Readonly<Record<string, unknown>>>({ age: 1 });
-		const [totals, setTotals] = createSignal<Readonly<Record<string, unknown>> | undefined>(undefined);
+	it('смена totals обновляет значения, появление и исчезновение добавляет и убирает футер', () => {
+		const [totals, setTotals] = createSignal<Readonly<Record<string, unknown>> | undefined>({ age: 1 });
 		render(() => (
-			<Grid
-				rows={ROWS}
-				getRowKey={(row) => row.id}
-				columns={COLUMNS}
-				virtualized={false}
-				pageTotals={pageTotals()}
-				totals={totals()}
-				aria-label='Люди'
-			/>
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} totals={totals()} aria-label='Люди'/>
 		));
-		expect(texts(footRows()[0])[1]).toBe('1');
-		setPageTotals({ age: 2 });
-		expect(texts(footRows()[0])[1]).toBe('2');
-		setTotals({ age: 9 });
-		expect(footRows()).toHaveLength(2);
+		expect(texts(foot()[0])[2]).toBe('1');
+		setTotals({ age: 2 });
+		expect(texts(foot()[0])[2]).toBe('2');
 		setTotals(undefined);
-		expect(footRows()).toHaveLength(1);
+		expect(foot()).toHaveLength(0);
 	});
 });
 
@@ -1932,7 +1874,7 @@ describe('Grid: группировка', () => {
 	});
 
 	it('aria-rowcount считает элементы, aria-rowindex идёт подряд', () => {
-		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']), pageTotals: {} });
+		renderGrid({ groups: [G1, G2], expandedGroupKeys: new Set(['g1']), totals: {} });
 		expect(table().getAttribute('aria-rowcount')).toBe('7');
 		expect(trs().map((row) => row.getAttribute('aria-rowindex'))).toEqual(['2', '3', '4', '5', '6']);
 		expect(table().querySelector('tfoot > tr')?.getAttribute('aria-rowindex')).toBe('7');

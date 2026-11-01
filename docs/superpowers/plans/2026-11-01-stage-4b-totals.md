@@ -1,5 +1,7 @@
 # Автосуммы: реализация
 
+> **Статус: заменён.** Первая версия плана (две строки итогов с подписью) отклонена владельцем 2026-11-01; итоговая версия описана в спеке `2026-11-01-stage-4b-totals-design.md` (один футер `totals` без подписей).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Строки «Итого на странице» и «Итого по выборке» в `<tfoot>` Grid по серверным `pageTotals` и `totals`, формат ячейки через `GridColumn.aggregate`.

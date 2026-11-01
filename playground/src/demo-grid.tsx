@@ -131,7 +131,7 @@ const COLLATOR = new Intl.Collator('ru');
 /** Группы с таким числом строк и больше при включённой ленивой подгрузке приходят без строк. */
 const LAZY_GROUP_ROWS = 20;
 
-/** Итоги «сервера» по набору строк: суммы денег и оценок и число заказчиков (последнее попадает в первую колонку и игнорируется). */
+/** Итоги «сервера» по набору строк: суммы денег и оценок. */
 function sumTotals(orders: readonly Order[]): Readonly<Record<string, unknown>> {
 	let amount = 0;
 	let score = 0;
@@ -139,7 +139,7 @@ function sumTotals(orders: readonly Order[]): Readonly<Record<string, unknown>> 
 		amount += order.amount;
 		score += order.score;
 	}
-	return { amount, score, id: orders.length };
+	return { amount, score };
 }
 
 function compareValues(first: unknown, second: unknown): number {
@@ -213,8 +213,7 @@ export function DemoGrid(): JSX.Element {
 	const [columnsLog, setColumnsLog] = createSignal('ещё не было');
 	const [menuLog, setMenuLog] = createSignal('ещё не было');
 	const [selectColumn, setSelectColumn] = createSignal(true);
-	const [pageTotalsOn, setPageTotalsOn] = createSignal(false);
-	const [allTotalsOn, setAllTotalsOn] = createSignal(false);
+	const [totalsOn, setTotalsOn] = createSignal(false);
 	const [groupable, setGroupable] = createSignal(false);
 	const [grouping, setGrouping] = createSignal<readonly string[]>([]);
 	const [lazy, setLazy] = createSignal(false);
@@ -265,8 +264,7 @@ export function DemoGrid(): JSX.Element {
 		const { page, size } = served();
 		return all.slice((page - 1) * size, page * size);
 	});
-	const pageTotals = createMemo(() => (pageTotalsOn() ? sumTotals(rows()) : undefined));
-	const totals = createMemo(() => (allTotalsOn() ? sumTotals(sorted()) : undefined));
+	const totals = createMemo(() => (totalsOn() ? sumTotals(sorted()) : undefined));
 
 	/** Поддельный сервер: запрос сразу виден в пейджере, строки приходят через задержку. */
 	function ask(next: PageRequest): void {
@@ -338,20 +336,11 @@ export function DemoGrid(): JSX.Element {
 				<label>
 					<input
 						type='checkbox'
-						data-grid-page-totals
-						checked={pageTotalsOn()}
-						onChange={(event) => setPageTotalsOn(event.currentTarget.checked)}
+						data-grid-totals
+						checked={totalsOn()}
+						onChange={(event) => setTotalsOn(event.currentTarget.checked)}
 					/>
-					Итоги страницы
-				</label>
-				<label>
-					<input
-						type='checkbox'
-						data-grid-all-totals
-						checked={allTotalsOn()}
-						onChange={(event) => setAllTotalsOn(event.currentTarget.checked)}
-					/>
-					Итоги по выборке
+					Автосуммы
 				</label>
 				<label>
 					<input
@@ -483,7 +472,6 @@ export function DemoGrid(): JSX.Element {
 					onEmptyReset={() => setEmpty(false)}
 					rowContextMenu={menuEnabled() ? (row) => <RowMenu row={row} log={setMenuLog}/> : undefined}
 					columnMenu={columnMenuEnabled()}
-					pageTotals={pageTotals()}
 					totals={totals()}
 					onColumnMenuClose={(ids) => {
 						setColumnsLog(ids.join(', '));

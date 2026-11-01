@@ -15,7 +15,6 @@ import type { GridSort } from './grid-sort';
 import type { GroupingDragState } from './grouping-drag-state';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
-import type { TotalsRow } from './totals-row';
 
 export interface GridContextValue<T> {
 	/** Листовые строки: все строки плоского режима или строки загруженных развёрнутых групп в порядке показа. */
@@ -110,8 +109,8 @@ export interface GridContextValue<T> {
 	/** `false` у последней видимой колонки. */
 	canHide: (columnId: string) => boolean;
 	columnMenuLabels: Accessor<GridColumnMenuLabels>;
-	/** Строки итогов в порядке «страница, выборка»; пусто, если ни `pageTotals`, ни `totals` не переданы. */
-	totalsRows: Accessor<readonly TotalsRow[]>;
+	/** Глобальные автосуммы; `undefined`, если `totals` не передан и футера нет. */
+	totals: Accessor<Readonly<Record<string, unknown>> | undefined>;
 	/** Ref шапки: Grid измеряет её высоту. */
 	headerRef: (element: HTMLTableSectionElement) => void;
 }

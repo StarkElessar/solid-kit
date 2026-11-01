@@ -16,7 +16,6 @@ import { addGrouping } from './add-grouping';
 import { allGroupKeys } from './all-group-keys';
 import { applyColumnState } from './apply-column-state';
 import { buildRowIndex } from './build-row-index';
-import { buildTotalsRows } from './build-totals-rows';
 import { canHideColumn } from './can-hide-column';
 import { collapseLevelKeys } from './collapse-level-keys';
 import { computeColumnLayout } from './column-layout';
@@ -25,7 +24,6 @@ import { createGridResize } from './create-grid-resize';
 import { createGroupingDrag } from './create-grouping-drag';
 import { DEFAULT_COLUMN_MENU_LABELS } from './default-column-menu-labels';
 import { DEFAULT_GROUPING_LABELS } from './default-grouping-labels';
-import { DEFAULT_TOTALS_LABELS } from './default-totals-labels';
 import { expandLevelKeys } from './expand-level-keys';
 import { flattenGroups } from './flatten-groups';
 import { foundText as defaultFoundText } from './found-text';
@@ -160,13 +158,10 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		return Math.max(base, ...layout().columns.map((item) => item.column.rowHeight ?? 0));
 	});
 
-	const totalsRows = createMemo(() => {
-		return buildTotalsRows(props.pageTotals, props.totals, { ...DEFAULT_TOTALS_LABELS, ...props.totalsLabels });
-	});
-	// строка итогов ровно высотой контрола (спек автосумм, раздел 3): строка, к которой прокручивают, не уходит под прилипшие итоги
+	// футер автосумм ровно высотой контрола: строка, к которой прокручивают, не уходит под прилипший футер
 	const totalsHeight = createMemo(() => {
 		const element = scroller();
-		return element === undefined ? 0 : totalsRows().length * readControlHeight(element);
+		return element === undefined || props.totals === undefined ? 0 : readControlHeight(element);
 	});
 
 	const [viewWidth, setViewWidth] = createSignal(0);
@@ -365,7 +360,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 			setLockedColumns(toggleId(lockedColumns(), columnId));
 		},
 		canHide: (columnId) => canHideColumn(props.columns, hiddenColumns(), columnId),
-		totalsRows,
+		totals: () => props.totals,
 		columnMenuLabels: () => ({ ...DEFAULT_COLUMN_MENU_LABELS, ...props.columnMenuLabels }),
 		selectAllLabel: () => props.selectAllLabel ?? 'Выбрать все строки',
 		selectRowLabel: () => props.selectRowLabel ?? 'Выбрать строку',

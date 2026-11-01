@@ -9,11 +9,6 @@ function texts(row: HTMLTableRowElement | undefined): string[] {
 	return [...(row?.cells ?? [])].map((cell) => cell.textContent.trim());
 }
 
-/** Подпись строки итогов: ячейка `th`, при колонке чекбоксов она не первая. */
-function labelOf(row: HTMLTableRowElement | undefined): string {
-	return row?.querySelector('th')?.textContent.trim() ?? '';
-}
-
 async function toggle(page: HTMLElement, selector: string, on: boolean): Promise<void> {
 	const box = required(page, selector) as HTMLInputElement;
 	if (box.checked !== on) {
@@ -23,9 +18,8 @@ async function toggle(page: HTMLElement, selector: string, on: boolean): Promise
 }
 
 /**
- * Автопроверки итогов: наличие и порядок строк, подписи, формат `aggregate`, подпись вместо итога первой колонки, заглушки при загрузке,
- * нумерация aria. Прилипание к низу, закреп при горизонтальной прокрутке, слои и темы проверяются вручную в Chrome. Переключатели
- * в конце возвращаются в исходное состояние.
+ * Автопроверки автосумм: один футер без подписей, формат `aggregate`, значение в ячейке своей колонки, нумерация aria, sticky. Прилипание
+ * при прокрутке, закреплённые колонки и темы проверяются вручную в Chrome. Переключатель в конце возвращается.
  */
 export async function runTotalsChecks(page: HTMLElement): Promise<CheckResult[]> {
 	const results: CheckResult[] = [];
@@ -35,47 +29,33 @@ export async function runTotalsChecks(page: HTMLElement): Promise<CheckResult[]>
 	const frame = required(page, '[data-grid-demo]');
 	const table = required(frame, 'table');
 
-	await toggle(page, '[data-grid-page-totals]', false);
-	await toggle(page, '[data-grid-all-totals]', false);
-	check('Итоги: без источников tfoot нет', frame.querySelector('tfoot') === null, String(footRows(frame).length));
+	await toggle(page, '[data-grid-totals]', false);
+	check('Автосуммы: без totals tfoot нет', frame.querySelector('tfoot') === null, String(footRows(frame).length));
 
-	await toggle(page, '[data-grid-page-totals]', true);
-	check(
-		'Итоги: только pageTotals — одна строка «Итого на странице»',
-		footRows(frame).length === 1 && labelOf(footRows(frame)[0]) === 'Итого на странице',
-		texts(footRows(frame)[0]).join(' | ')
-	);
-
-	await toggle(page, '[data-grid-all-totals]', true);
+	await toggle(page, '[data-grid-totals]', true);
 	const rows = footRows(frame);
 	check(
-		'Итоги: обе строки в порядке «страница, выборка», aria-rowcount учитывает их',
-		rows.length === 2 && labelOf(rows[0]) === 'Итого на странице' && labelOf(rows[1]) === 'Итого по выборке',
-		`${rows.map((row) => row.getAttribute('aria-rowindex')).join(', ')}; rowcount ${table.getAttribute('aria-rowcount')}`
+		'Автосуммы: один футер из одной строки, aria-rowcount и aria-rowindex продолжают нумерацию',
+		rows.length === 1 && Number(table.getAttribute('aria-rowcount')) === Number(rows[0]?.getAttribute('aria-rowindex')),
+		`rowindex ${rows[0]?.getAttribute('aria-rowindex')}; rowcount ${table.getAttribute('aria-rowcount')}`
 	);
 
-	// демо кладёт число заказчиков в итог первой колонки: оно не должно появиться в строке
-	const count = (required(page, '[data-grid-count]') as HTMLSelectElement).value;
-	// подпись занимает колонки без значений (colspan), поэтому ячейки итога ищутся по содержимому, а не по индексу колонки
-	const amount = texts(rows[0]).find((text) => text.endsWith('₽')) ?? '';
-	check('Итоги: aggregate колонки форматирует сумму («₽», разделители тысяч)', /^\d[\d\s\u00a0]*\s?₽$/.test(amount), amount);
-
-	const label = rows[0]?.querySelector('th');
-	const span = Number(label?.getAttribute('colspan') ?? '1');
+	const cells = texts(rows[0]);
+	const amount = cells.find((text) => text.endsWith('₽')) ?? '';
+	check('Автосуммы: aggregate колонки форматирует сумму («₽», разделители тысяч)', /^\d[\d\s]*₽$/.test(amount), amount);
 	check(
-		'Итоги: подпись (th scope=row) занимает идущие за ней колонки без значений, итог первой колонки не показывается',
-		label?.getAttribute('scope') === 'row' && span > 1 && !texts(rows[0]).includes(count),
-		`colspan ${span}; ${texts(rows[0]).join(' | ')}`
+		'Автосуммы: подписей в ячейках нет, значения стоят только в своих колонках',
+		!(rows[0]?.textContent ?? '').includes('Итого') && rows[0]?.querySelector('th') === null && cells.filter(Boolean).length === 2,
+		cells.join(' | ')
 	);
 
-	const sticky = rows[1]?.cells[rows[1].cells.length - 1];
+	const sticky = rows[0]?.cells[rows[0].cells.length - 1];
 	check(
-		'Итоги: ячейки прилипают к низу (position: sticky)',
+		'Автосуммы: ячейки прилипают к низу (position: sticky)',
 		sticky !== undefined && getComputedStyle(sticky).position === 'sticky',
 		sticky === undefined ? 'нет ячейки' : getComputedStyle(sticky).position
 	);
 
-	await toggle(page, '[data-grid-all-totals]', false);
-	await toggle(page, '[data-grid-page-totals]', false);
+	await toggle(page, '[data-grid-totals]', false);
 	return results;
 }

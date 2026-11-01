@@ -6,5 +6,4 @@ export type { GridGroupingLabels } from './grid-grouping-labels';
 export type { GridPagerProps } from './grid-pager-props';
 export type { GridProps } from './grid-props';
 export type { GridSort } from './grid-sort';
-export type { GridTotalsLabels } from './grid-totals-labels';
 export type { RowKey } from './row-key';
