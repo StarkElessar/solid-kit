@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
+import { runColumnMenuChecks } from './column-menu-checks';
 import { DemoGrid } from './demo-grid';
 import { runGridChecks } from './grid-checks';
 import { runPagerChecks } from './pager-checks';
@@ -30,7 +31,7 @@ export function GridPage(): JSX.Element {
 		if (page) {
 			const root = page;
 			void (async () => {
-				setResults([...(await runGridChecks(root)), ...(await runPagerChecks(root))]);
+				setResults([...(await runGridChecks(root)), ...(await runPagerChecks(root)), ...(await runColumnMenuChecks(root))]);
 			})();
 		}
 	};
@@ -55,6 +56,7 @@ export function GridPage(): JSX.Element {
 					ресайз мышью (шапка и тело двигаются вместе, строки не мигают), Esc во время перетаскивания возвращает ширину,
 					двойной клик по ручке сбрасывает её; колонка «Заметка с переносом» растёт по высоте, остальные обрезаются
 					многоточием с подсказкой; последняя колонка добирает остаток, когда таблица уже контейнера.
+					Меню колонки: кнопка из трёх точек в шапке, закрепление и видимость колонок; меню закрывается Esc и прокруткой грида.
 					Режим «Постраничная загрузка»: поддельный сервер с задержкой, пейджер внизу рамки; под гридом отдельный Pager.
 				</p>
 				<DemoGrid/>

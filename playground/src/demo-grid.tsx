@@ -184,6 +184,8 @@ export function DemoGrid(): JSX.Element {
 	const [loading, setLoading] = createSignal(false);
 	const [empty, setEmpty] = createSignal(false);
 	const [menuEnabled, setMenuEnabled] = createSignal(true);
+	const [columnMenuEnabled, setColumnMenuEnabled] = createSignal(true);
+	const [columnsLog, setColumnsLog] = createSignal('ещё не было');
 	const [menuLog, setMenuLog] = createSignal('ещё не было');
 	const [selectColumn, setSelectColumn] = createSignal(true);
 	const [perfLog, setPerfLog] = createSignal<readonly string[]>([]);
@@ -263,6 +265,15 @@ export function DemoGrid(): JSX.Element {
 						onChange={(event) => setMenuEnabled(event.currentTarget.checked)}
 					/>
 					Меню строки
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-column-menu-toggle
+						checked={columnMenuEnabled()}
+						onChange={(event) => setColumnMenuEnabled(event.currentTarget.checked)}
+					/>
+					Меню колонок
 				</label>
 				<label>
 					<input
@@ -352,6 +363,10 @@ export function DemoGrid(): JSX.Element {
 					emptyHint='Измените условия поиска или сбросьте фильтры.'
 					onEmptyReset={() => setEmpty(false)}
 					rowContextMenu={menuEnabled() ? (row) => <RowMenu row={row} log={setMenuLog}/> : undefined}
+					columnMenu={columnMenuEnabled()}
+					onColumnMenuClose={(ids) => {
+						setColumnsLog(ids.join(', '));
+					}}
 					aria-label='Заказы'
 					onColumnWidthsChange={(widths) => setWidthsLog(JSON.stringify(widths))}
 				/>
@@ -360,7 +375,8 @@ export function DemoGrid(): JSX.Element {
 				Выбрано строк: <output data-grid-selected-count>{selected().size}</output>. Последний <code>onRowDoubleClick</code>:{' '}
 				<output data-grid-dblclick>{doubleLog()}</output>. Последний <code>onColumnWidthsChange</code>:{' '}
 				<output data-grid-widths>{widthsLog()}</output>. Последний пункт меню строки:{' '}
-				<output data-grid-menu-log>{menuLog()}</output>
+				<output data-grid-menu-log>{menuLog()}</output> Видимые колонки при закрытии меню колонки:{' '}
+				<output data-grid-columns-log>{columnsLog()}</output>
 			</p>
 			<output data-grid-perf>{perfLog().length === 0 ? 'замер не запускался' : perfLog().join('; ')}</output>
 			<p>
