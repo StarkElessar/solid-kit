@@ -4,6 +4,7 @@ import { Pager } from '@stark/solid-kit/pager';
 import { Select } from '@stark/solid-kit/select';
 import { createMemo, createSignal, For, type JSX, onCleanup } from 'solid-js';
 
+import { buildGroups } from './demo-groups';
 import { runGridPerf } from './grid-perf';
 import { pick } from './pick';
 
@@ -54,8 +55,8 @@ function makeOrders(count: number): Order[] {
 export const ALL_ORDERS: readonly Order[] = makeOrders(100_000);
 
 const COLUMNS: readonly GridColumn<Order>[] = [
-	{ id: 'id', title: 'Номер', value: (row) => row.id, width: 90, locked: true, align: 'end', sortable: true },
-	{ id: 'name', title: 'Заказчик', value: (row) => row.name, width: 160, locked: true, sortable: true },
+	{ id: 'id', title: 'Номер', value: (row) => row.id, width: 90, locked: true, align: 'end', sortable: true, groupable: false },
+	{ id: 'name', title: 'Заказчик', value: (row) => row.name, width: 160, locked: true, sortable: true, groupable: false },
 	{
 		id: 'team',
 		title: 'Команда',
@@ -67,6 +68,7 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		title: 'Изменить статус',
 		value: (row) => row.status,
 		rowHeight: 56,
+		groupable: false,
 		width: 170,
 		minWidth: 140,
 		maxWidth: 200,
@@ -94,18 +96,20 @@ const COLUMNS: readonly GridColumn<Order>[] = [
 		align: 'end',
 		width: 120,
 		sortable: true,
+		groupable: false,
 		aggregate: (value) => `${Number(value).toLocaleString('ru-RU')} ₽`
 	},
 	{ id: 'city', title: 'Город', value: (row) => row.city },
-	{ id: 'email', title: 'Почта', value: (row) => row.email, width: 220 },
-	{ id: 'phone', title: 'Телефон', value: (row) => row.phone, width: 150 },
-	{ id: 'created', title: 'Создан', value: (row) => row.created, width: 200, sortable: true },
+	{ id: 'email', title: 'Почта', value: (row) => row.email, width: 220, groupable: false },
+	{ id: 'phone', title: 'Телефон', value: (row) => row.phone, width: 150, groupable: false },
+	{ id: 'created', title: 'Создан', value: (row) => row.created, width: 200, sortable: true, groupable: false },
 	{ id: 'score', title: 'Оценка', value: (row) => row.score, align: 'end', width: 100, sortable: true },
 	{
 		id: 'note',
 		title: 'Заметка с переносом',
 		value: (row) => row.note,
 		width: 260,
+		groupable: false,
 		cell: (row) => <span class='grid-wrap'>{row.note}</span>
 	},
 	{ id: 'active', title: 'Активен', value: (row) => row.active, width: 110, align: 'center' }
@@ -124,6 +128,8 @@ interface PageRequest {
 	readonly size: number;
 }
 const COLLATOR = new Intl.Collator('ru');
+/** Группы с таким числом строк и больше при включённой ленивой подгрузке приходят без строк. */
+const LAZY_GROUP_ROWS = 20;
 
 /** Итоги «сервера» по набору строк: суммы денег и оценок и число заказчиков (последнее попадает в первую колонку и игнорируется). */
 function sumTotals(orders: readonly Order[]): Readonly<Record<string, unknown>> {
@@ -209,6 +215,12 @@ export function DemoGrid(): JSX.Element {
 	const [selectColumn, setSelectColumn] = createSignal(true);
 	const [pageTotalsOn, setPageTotalsOn] = createSignal(false);
 	const [allTotalsOn, setAllTotalsOn] = createSignal(false);
+	const [groupable, setGroupable] = createSignal(false);
+	const [grouping, setGrouping] = createSignal<readonly string[]>([]);
+	const [lazy, setLazy] = createSignal(false);
+	const [expandedKeys, setExpandedKeys] = createSignal<ReadonlySet<string>>(new Set());
+	const [loadedKeys, setLoadedKeys] = createSignal<ReadonlySet<string>>(new Set());
+	const [groupingLog, setGroupingLog] = createSignal('ещё не было');
 	const [perfLog, setPerfLog] = createSignal<readonly string[]>([]);
 	const [perfRunning, setPerfRunning] = createSignal(false);
 	const columns = createMemo(() => (selectColumn() ? COLUMNS : COLUMNS.filter((column) => column.id !== 'edit-status')));
@@ -229,6 +241,30 @@ export function DemoGrid(): JSX.Element {
 		return sorted().slice((page - 1) * size, page * size);
 	});
 
+	// «сервер» группирует всю выборку; на страницы режутся группы верхнего уровня
+	const allGroups = createMemo(() => {
+		if (!groupable() || grouping().length === 0) {
+			return undefined;
+		}
+		return buildGroups(
+			sorted(),
+			grouping(),
+			{
+				valueOf: (field, row) => COLUMNS.find((column) => column.id === field)?.value(row),
+				aggregate: (items) => sumTotals(items),
+				compare: compareValues
+			},
+			{ isLoaded: (key) => loadedKeys().has(key), lazyFrom: lazy() ? LAZY_GROUP_ROWS : Infinity }
+		);
+	});
+	const groups = createMemo(() => {
+		const all = allGroups();
+		if (all === undefined || !paged()) {
+			return all;
+		}
+		const { page, size } = served();
+		return all.slice((page - 1) * size, page * size);
+	});
 	const pageTotals = createMemo(() => (pageTotalsOn() ? sumTotals(rows()) : undefined));
 	const totals = createMemo(() => (allTotalsOn() ? sumTotals(sorted()) : undefined));
 
@@ -320,6 +356,32 @@ export function DemoGrid(): JSX.Element {
 				<label>
 					<input
 						type='checkbox'
+						data-grid-grouping
+						checked={groupable()}
+						onChange={(event) => {
+							setGroupable(event.currentTarget.checked);
+							setGrouping(event.currentTarget.checked ? ['team'] : []);
+							setExpandedKeys(new Set<string>());
+							ask({ page: 1, size: wanted().size });
+						}}
+					/>
+					Группировка
+				</label>
+				<label>
+					<input
+						type='checkbox'
+						data-grid-lazy
+						checked={lazy()}
+						onChange={(event) => {
+							setLazy(event.currentTarget.checked);
+							setLoadedKeys(new Set<string>());
+						}}
+					/>
+					Ленивые группы
+				</label>
+				<label>
+					<input
+						type='checkbox'
 						data-grid-select-column
 						checked={selectColumn()}
 						onChange={(event) => setSelectColumn(event.currentTarget.checked)}
@@ -380,6 +442,21 @@ export function DemoGrid(): JSX.Element {
 			<div ref={frame} class='grid-frame' data-grid-demo>
 				<Grid<Order>
 					rows={rows()}
+					groups={groups()}
+					groupable={groupable()}
+					grouping={grouping()}
+					onGroupingChange={(fields) => {
+						setGrouping(fields);
+						setGroupingLog(fields.join(', ') || 'нет');
+						ask({ page: 1, size: wanted().size });
+					}}
+					expandedGroupKeys={expandedKeys()}
+					onExpandedGroupKeysChange={setExpandedKeys}
+					onGroupExpand={(key) => {
+						window.setTimeout(() => {
+							setLoadedKeys((keys) => new Set([...keys, key]));
+						}, Number(delay()));
+					}}
 					getRowKey={(row) => row.id}
 					columns={columns()}
 					virtualized={virtualized()}
@@ -390,7 +467,7 @@ export function DemoGrid(): JSX.Element {
 					onSortChange={setSort}
 					onRowDoubleClick={(row) => setDoubleLog(row.name)}
 					loading={loading() || (paged() && serverLoading())}
-					total={paged() ? Number(count()) : undefined}
+					total={paged() ? (allGroups()?.length ?? Number(count())) : undefined}
 					page={wanted().page}
 					pageSize={wanted().size}
 					onPageChange={(page) => {
@@ -420,7 +497,8 @@ export function DemoGrid(): JSX.Element {
 				<output data-grid-dblclick>{doubleLog()}</output>. Последний <code>onColumnWidthsChange</code>:{' '}
 				<output data-grid-widths>{widthsLog()}</output>. Последний пункт меню строки:{' '}
 				<output data-grid-menu-log>{menuLog()}</output> Видимые колонки при закрытии меню колонки:{' '}
-				<output data-grid-columns-log>{columnsLog()}</output>
+				<output data-grid-columns-log>{columnsLog()}</output>. Группировка:{' '}
+				<output data-grid-grouping-log>{groupingLog()}</output>
 			</p>
 			<output data-grid-perf>{perfLog().length === 0 ? 'замер не запускался' : perfLog().join('; ')}</output>
 			<p>

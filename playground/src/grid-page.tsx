@@ -3,6 +3,7 @@ import { createEffect, createSignal, For, type JSX } from 'solid-js';
 import { runColumnMenuChecks } from './column-menu-checks';
 import { DemoGrid } from './demo-grid';
 import { runGridChecks } from './grid-checks';
+import { runGroupingChecks } from './grouping-checks';
 import { runPagerChecks } from './pager-checks';
 import { pick } from './pick';
 import type { CheckResult } from './theme-checks';
@@ -36,7 +37,8 @@ export function GridPage(): JSX.Element {
 					...(await runGridChecks(root)),
 					...(await runPagerChecks(root)),
 					...(await runColumnMenuChecks(root)),
-					...(await runTotalsChecks(root))
+					...(await runTotalsChecks(root)),
+					...(await runGroupingChecks(root))
 				]);
 			})();
 		}
