@@ -1,5 +1,7 @@
 import type { JSX } from 'solid-js';
 
+import type { GridGroupDirection } from './grid-group-sort';
+
 export interface GridColumn<T> {
 	/** Стабильный ключ колонки. */
 	id: string;
@@ -24,10 +26,12 @@ export interface GridColumn<T> {
 	/** Скрыта. Начальное значение: текущее состояние это `hiddenColumns` грида. */
 	hidden?: boolean | undefined;
 	sortable?: boolean | undefined;
-	/** Формат итога колонки (страничного, глобального и группового); без него значение показывается как текст ячейки. */
+	/** Формат итога колонки (глобального и группового); без него значение показывается как текст ячейки. */
+	aggregate?: ((value: unknown) => JSX.Element) | undefined;
 	/** Можно ли группировать по колонке (по умолчанию да, если у грида `groupable`). */
 	groupable?: boolean | undefined;
 	/** Как показать значение группы в заголовке; без него значение форматируется как текст ячейки. */
 	groupValue?: ((value: unknown) => JSX.Element) | undefined;
-	aggregate?: ((value: unknown) => JSX.Element) | undefined;
+	/** Начальный порядок групп колонки (по умолчанию по возрастанию); меняется кликом по чипу. */
+	groupSortDirection?: GridGroupDirection | undefined;
 }

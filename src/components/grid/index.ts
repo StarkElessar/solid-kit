@@ -2,6 +2,7 @@ export { Grid } from './grid';
 export type { GridColumn } from './grid-column';
 export type { GridColumnMenuLabels } from './grid-column-menu-labels';
 export type { GridGroup } from './grid-group';
+export type { GridGroupDirection, GridGroupSort } from './grid-group-sort';
 export type { GridGroupingLabels } from './grid-grouping-labels';
 export type { GridPagerProps } from './grid-pager-props';
 export type { GridProps } from './grid-props';

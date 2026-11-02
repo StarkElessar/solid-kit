@@ -1806,9 +1806,9 @@ describe('Grid: группировка', () => {
 		expect(kindsOf()).toEqual(['row', 'row', 'row']);
 	});
 
-	it('с groups rows игнорируется, свёрнутые группы дают только заголовки с aria-expanded=false', () => {
+	it('с groups rows игнорируется, свёрнутая группа даёт заголовок (с aria-expanded=false) и подвал при агрегатах', () => {
 		renderGrid({ groups: [G1, G2] });
-		expect(kindsOf()).toEqual(['group', 'group']);
+		expect(kindsOf()).toEqual(['group', 'footer', 'group']);
 		const toggle = trs()[0]?.querySelector('button[aria-expanded]');
 		expect(toggle?.getAttribute('aria-expanded')).toBe('false');
 	});
@@ -1819,38 +1819,44 @@ describe('Grid: группировка', () => {
 		expect(trs()[1]?.textContent).toContain('Анна');
 	});
 
-	it('заголовок: «Колонка: значение» и счётчик; groupValue колонки форматирует значение', () => {
+	it('заголовок: значение ячейки и «Всего: N», без названия колонки; groupValue колонки форматирует значение', () => {
 		renderGrid({ groups: [G1] });
-		expect(trs()[0]?.textContent).toContain('Возраст: 31');
-		expect(trs()[0]?.textContent).toContain('2');
+		expect(trs()[0]?.textContent).toBe('31Всего: 2');
 		cleanup();
 		const groupValue = (value: unknown): string => `${String(value)} лет`;
 		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, groupValue } : column));
 		renderGrid({ groups: [G1], columns });
-		expect(trs()[0]?.textContent).toContain('Возраст: 31 лет');
+		expect(trs()[0]?.textContent).toBe('31 летВсего: 2');
 	});
 
-	it('свёрнутая группа показывает агрегаты в заголовке, развёрнутая в подвале', () => {
+	it('заголовок свёрнутой и развёрнутой группы: одна ячейка на всю ширину, без агрегатов и без подписи «Итого»', () => {
 		const { unmount } = renderGrid({ groups: [G1] });
 		const collapsed = trs()[0];
-		expect(collapsed?.textContent).toContain('62');
+		expect(collapsed?.textContent).not.toContain('62');
+		expect(collapsed?.querySelector('td:last-child')?.getAttribute('colspan')).toBe('4');
 		unmount();
 		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']) });
 		expect(trs()[0]?.textContent).not.toContain('62');
-		expect(trs()[3]?.textContent).toContain('62');
-		expect(trs()[3]?.textContent).toContain('Итого: Возраст: 31');
-	});
-
-	it('подпись группы занимает колонки без агрегатов (colspan) и не заходит на колонку с агрегатом', () => {
-		renderGrid({ groups: [G1] });
-		const label = trs()[0]?.querySelector('td');
-		// порядок колонок: name, id (закреплены), age (агрегат), note
-		expect(label?.getAttribute('colspan')).toBe('2');
-	});
-
-	it('развёрнутая группа без агрегатов: подпись занимает все колонки', () => {
-		renderGrid({ groups: [G2], expandedGroupKeys: new Set(['g2']) });
 		expect(trs()[0]?.querySelector('td')?.getAttribute('colspan')).toBe('4');
+		expect(table().textContent).not.toContain('Итого');
+	});
+
+	it('подвал группы: по ячейке на колонку, значения только в своих колонках без подписи; у свёрнутой группы он тоже есть', () => {
+		const texts = (row: HTMLTableRowElement | undefined): string[] => [...(row?.cells ?? [])].map((cell) => cell.textContent);
+		const { unmount } = renderGrid({ groups: [G1] });
+		// порядок колонок: name, id, age, note
+		expect(texts(trs()[1])).toEqual(['', '', '62', '']);
+		unmount();
+		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']) });
+		expect(texts(trs()[3])).toEqual(['', '', '62', '']);
+	});
+
+	it('заголовок группы прилипает к левому краю видимой области и стоит правее колонки чекбоксов', () => {
+		renderGrid({ groups: [G1], selectable: true });
+		const header = trs()[0];
+		expect(header?.cells).toHaveLength(2);
+		expect(header?.cells[0]?.hasAttribute('data-sticky')).toBe(true);
+		expect(header?.querySelector('[data-group-header]')).toBeTruthy();
 	});
 
 	it('клик по заголовку и по шеврону переключает группу через onExpandedGroupKeysChange, прежний Set не мутируется', () => {
@@ -2000,6 +2006,58 @@ describe('Grid: панель группировки', () => {
 		renderGrid({ groupable: true, grouping: ['age', 'name'], onGroupingChange });
 		fireEvent.click(screen.getByRole('button', { name: 'Убрать группировку по «Возраст»' }));
 		expect(lastCall(onGroupingChange)).toEqual(['name']);
+	});
+
+	it('чип со стрелкой порядка групп: клик меняет порядок и сообщает onGroupSortChange, прежний объект не мутируется', () => {
+		const onGroupSortChange = vi.fn();
+		const initial = {};
+		renderGrid({ groupable: true, grouping: ['age', 'name'], groupSort: initial, onGroupSortChange });
+		const chip = screen.getByTitle('Порядок групп «Возраст»: по возрастанию');
+		expect(chip.querySelector('svg')?.getAttribute('data-direction')).toBe('asc');
+		fireEvent.click(chip);
+		expect(lastCall(onGroupSortChange)).toEqual({ age: 'desc' });
+		expect(initial).toEqual({});
+	});
+
+	it('смена порядка групп и состава группировки не запоминает развёрнутость: набор развёрнутых ключей сбрасывается', () => {
+		const onExpandedGroupKeysChange = vi.fn();
+		renderGrid({
+			groupable: true,
+			grouping: ['age', 'name'],
+			expandedGroupKeys: new Set(['p', 'p/p1']),
+			onExpandedGroupKeysChange
+		});
+		fireEvent.click(screen.getByTitle('Порядок групп «Возраст»: по возрастанию'));
+		expect([...(lastCall(onExpandedGroupKeysChange) as Set<string>)]).toEqual([]);
+		onExpandedGroupKeysChange.mockClear();
+		fireEvent.click(screen.getByRole('button', { name: 'Убрать группировку по «Имя»' }));
+		expect([...(lastCall(onExpandedGroupKeysChange) as Set<string>)]).toEqual([]);
+	});
+
+	it('если развёрнутых групп нет, смена порядка групп onExpandedGroupKeysChange не вызывает', () => {
+		const onExpandedGroupKeysChange = vi.fn();
+		renderGrid({ groupable: true, grouping: ['age'], expandedGroupKeys: new Set(), onExpandedGroupKeysChange });
+		fireEvent.click(screen.getByTitle('Порядок групп «Возраст»: по возрастанию'));
+		expect(onExpandedGroupKeysChange).not.toHaveBeenCalled();
+	});
+
+	it('без controlled-пропса порядок групп живёт в гриде и переключается туда и обратно', () => {
+		renderGrid({ groupable: true, defaultGrouping: ['age', 'name'] });
+		const direction = (): string | null => panel().querySelector('[data-chip="age"] svg')?.getAttribute('data-direction') ?? null;
+		fireEvent.click(screen.getByTitle('Порядок групп «Возраст»: по возрастанию'));
+		expect(direction()).toBe('desc');
+		expect(panel().querySelector('[data-chip="name"] svg')?.getAttribute('data-direction')).toBe('asc');
+		fireEvent.click(screen.getByTitle('Порядок групп «Возраст»: по убыванию'));
+		expect(direction()).toBe('asc');
+	});
+
+	it('начальный порядок берётся из groupSortDirection колонки, groupSort его перекрывает', () => {
+		const columns = COLUMNS.map((column) => (column.id === 'age' ? { ...column, groupSortDirection: 'desc' as const } : column));
+		const { unmount } = renderGrid({ groupable: true, grouping: ['age'], columns });
+		expect(panel().querySelector('[data-chip="age"] svg')?.getAttribute('data-direction')).toBe('desc');
+		unmount();
+		renderGrid({ groupable: true, grouping: ['age'], columns, groupSort: { age: 'asc' } });
+		expect(panel().querySelector('[data-chip="age"] svg')?.getAttribute('data-direction')).toBe('asc');
 	});
 
 	it('без controlled-пропса группировка живёт в гриде', () => {
@@ -2207,6 +2265,23 @@ describe('Grid: перетаскивание в панель группиров�
 		document.dispatchEvent(drag('pointerup', 100, 15));
 		fireEvent.click(button);
 		expect(onSortChange).not.toHaveBeenCalled();
+	});
+
+	it('после перетаскивания чипа click по нему не меняет порядок групп, обычный click меняет', async () => {
+		const onGroupSortChange = vi.fn();
+		renderGrid({ groupable: true, defaultGrouping: ['age', 'name'], onGroupSortChange });
+		layoutPanel();
+		const main = document.querySelector('[data-chip="age"] > button') as HTMLElement;
+		main.dispatchEvent(drag('pointerdown', 40, 15));
+		document.dispatchEvent(drag('pointermove', 90, 15));
+		document.dispatchEvent(drag('pointerup', 90, 15));
+		fireEvent.click(main);
+		expect(onGroupSortChange).not.toHaveBeenCalled();
+		await new Promise((resolve) => {
+			setTimeout(resolve, 0);
+		});
+		fireEvent.click(main);
+		expect(onGroupSortChange).toHaveBeenCalledTimes(1);
 	});
 
 	it('касание, колонка с groupable: false и грид без groupable жест не начинают', () => {

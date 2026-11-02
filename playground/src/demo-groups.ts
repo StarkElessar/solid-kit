@@ -11,6 +11,8 @@ export interface GroupSource<T> {
 export interface GroupOptions {
 	/** Загружены ли строки группы с этим ключом (иначе `not-loaded`, если группа не меньше порога). */
 	isLoaded: (key: string) => boolean;
+	/** Порядок групп поля: `1` по возрастанию, `-1` по убыванию. */
+	direction: (field: string) => 1 | -1;
 	/** Группы с таким числом строк и больше отдаются без строк, пока их не догрузили. */
 	lazyFrom: number;
 }
@@ -39,7 +41,7 @@ export function buildGroups<T>(
 		}
 	}
 	return [...buckets.entries()]
-		.sort(([first], [second]) => source.compare(first, second))
+		.sort(([first], [second]) => options.direction(field) * source.compare(first, second))
 		.map(([value, items]): GridGroup<T> => {
 			const key = `${parentKey}${parentKey === '' ? '' : '/'}${field}=${String(value)}`;
 			const base = { key, field, value, count: items.length, aggregates: source.aggregate(items) };

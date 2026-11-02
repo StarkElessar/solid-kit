@@ -1,26 +1,20 @@
 import styles from './grid.module.css';
 
-import { createMemo, For, type JSX, onCleanup, onMount, Show, untrack } from 'solid-js';
+import { createMemo, type JSX, onCleanup, onMount, Show, untrack } from 'solid-js';
 
-import { leftVar } from './column-css-vars';
 import { useGrid } from './grid-context';
 import type { GridGroup } from './grid-group';
 import type { GridItem } from './grid-item';
 import { groupTitle } from './group-title';
+import { groupValueText } from './group-value-text';
 import { rescueFocus } from './rescue-focus';
-import { totalsCellContent } from './totals-cell-content';
-import { totalsLabelSpan } from './totals-label-span';
 
 export interface GridGroupRowProps {
 	/** Индекс элемента тела. */
 	index: number;
-	/** Подвал группы (строка `gsum`) вместо заголовка. */
-	footer: boolean;
 }
 
-type GroupItem = Extract<GridItem<unknown>, { kind: 'group' | 'footer' }>;
-
-const NO_AGGREGATES: Readonly<Record<string, unknown>> = {};
+type GroupItem = Extract<GridItem<unknown>, { kind: 'group' }>;
 
 function Chevron(props: { expanded: boolean }): JSX.Element {
 	return (
@@ -31,15 +25,15 @@ function Chevron(props: { expanded: boolean }): JSX.Element {
 }
 
 /**
- * Заголовок или подвал группы. Подпись занимает первую колонку и колонки без агрегатов; у развёрнутой группы агрегатов в заголовке
- * нет (они в подвале), поэтому подпись занимает все колонки (спек группировки, раздел 5).
+ * Заголовок группы: «стрелка, значение ячейки, Всего: N». Агрегатов в нём нет (они в подвале). Одна ячейка на все колонки, а её
+ * содержимое прилипает к левому краю видимой области: при горизонтальной прокрутке заголовок не уезжает.
  */
 export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 	const grid = useGrid();
 	let element: HTMLTableRowElement | undefined;
 	const read = (): GroupItem | undefined => {
 		const item = grid.itemAt(props.index);
-		return item?.kind === 'group' || item?.kind === 'footer' ? item : undefined;
+		return item?.kind === 'group' ? item : undefined;
 	};
 	// при сокращении списка Solid может пересчитать строку раньше, чем окно её уберёт: до удаления она держит последний элемент
 	let last = untrack(read);
@@ -48,22 +42,12 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 		return last;
 	});
 	const group = (): GridGroup<unknown> | undefined => item()?.group;
-	const expanded = (): boolean => {
-		const current = item();
-		return current?.kind === 'group' && current.expanded;
-	};
+	const expanded = (): boolean => item()?.expanded === true;
 	const column = () => grid.menuColumns().find((candidate) => candidate.id === group()?.field);
 	const title = (): string => {
 		const current = group();
 		return current === undefined ? '' : groupTitle(column(), current, grid.groupingLabels().emptyValue);
 	};
-	// агрегаты в заголовке только у свёрнутой группы; в подвале всегда
-	const showAggregates = (): boolean => props.footer || !expanded();
-	const aggregates = (): Readonly<Record<string, unknown>> => (showAggregates() ? (group()?.aggregates ?? NO_AGGREGATES) : NO_AGGREGATES);
-	const span = createMemo(() => (showAggregates() ? totalsLabelSpan(grid.columns(), aggregates()) : grid.columns().length));
-	const stickyLast = (): boolean => grid.lastStickyIndex() >= 0 && grid.lastStickyIndex() < span();
-	const first = (): boolean => grid.columns()[0]?.locked === true;
-	const level = (): number => item()?.level ?? 0;
 
 	onMount(() => {
 		if (element) {
@@ -77,13 +61,7 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 	});
 
 	return (
-		<tr
-			ref={element}
-			class={styles['group-row']}
-			data-index={props.index}
-			data-kind={props.footer ? 'footer' : 'group'}
-			aria-rowindex={props.index + 2}
-		>
+		<tr ref={element} class={styles['group-row']} data-index={props.index} data-kind='group' aria-rowindex={props.index + 2}>
 			<Show when={grid.selectable()}>
 				<td
 					class={`${styles['cell']} ${styles['group-cell']} ${styles['select-cell']}`}
@@ -94,19 +72,10 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 			</Show>
 			<td
 				class={`${styles['cell']} ${styles['group-cell']} ${styles['group-label']}`}
-				colSpan={Math.max(span(), 1)}
+				colSpan={Math.max(grid.columns().length, 1)}
 				title={title()}
-				data-sticky={first() ? '' : undefined}
-				data-sticky-last={stickyLast() ? '' : undefined}
-				style={{
-					'inset-inline-start': first() ? `var(${leftVar(0)})` : undefined,
-					'--s-kit-grid-indent': `${level() * 16}px`
-				}}
 			>
-				<Show
-					when={!props.footer}
-					fallback={<span class={styles['group-text']}>{grid.groupingLabels().groupTotal(title())}</span>}
-				>
+				<div class={styles['group-header']} data-group-header style={{ '--s-kit-grid-indent': `${(item()?.level ?? 0) * 16}px` }}>
 					<button
 						type='button'
 						class={styles['group-toggle']}
@@ -122,26 +91,17 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 						<Chevron expanded={expanded()}/>
 					</button>
 					<span class={styles['group-text']}>
-						<Show when={column()?.groupValue} fallback={title()} keyed>
-							{(render) => <>{column()?.title}: {render(group()?.value)}</>}
+						<Show
+							when={column()?.groupValue}
+							fallback={groupValueText(group() as GridGroup<unknown>, grid.groupingLabels().emptyValue)}
+							keyed
+						>
+							{(render) => render(group()?.value)}
 						</Show>
 					</span>
-					<span class={styles['group-count']}>{`· ${group()?.count ?? 0}`}</span>
-				</Show>
+					<span class={styles['group-count']}>{grid.groupingLabels().groupCount(group()?.count ?? 0)}</span>
+				</div>
 			</td>
-			<For each={grid.columns().slice(span())}>
-				{(columnItem, offset) => (
-					<td
-						class={`${styles['cell']} ${styles['group-cell']}`}
-						data-sticky={columnItem.locked === true ? '' : undefined}
-						data-sticky-last={span() + offset() === grid.lastStickyIndex() ? '' : undefined}
-						data-align={columnItem.align}
-						style={{ 'inset-inline-start': columnItem.locked === true ? `var(${leftVar(span() + offset())})` : undefined }}
-					>
-						{totalsCellContent(columnItem, aggregates())}
-					</td>
-				)}
-			</For>
 		</tr>
 	);
 }

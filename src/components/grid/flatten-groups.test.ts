@@ -29,10 +29,23 @@ function kinds(groups: readonly GridGroup<Row>[], expanded: string[]): string[] 
 }
 
 describe('flattenGroups', () => {
-	it('свёрнутая группа даёт только заголовок и не даёт строк', () => {
+	it('свёрнутая группа без агрегатов даёт только заголовок и не даёт строк', () => {
 		const result = flattenGroups([rowsGroup('a', [1, 2])], new Set());
 		expect(result.items).toHaveLength(1);
 		expect(result.rows).toEqual([]);
+	});
+
+	it('свёрнутая группа с агрегатами даёт заголовок и подвал, без строк и вложенных групп', () => {
+		expect(kinds([rowsGroup('a', [1, 2], true)], [])).toEqual(['closed:a@0', 'footer@0']);
+		const parent: GridGroup<Row> = {
+			key: 'p',
+			field: 'f',
+			value: 'p',
+			count: 1,
+			aggregates: { sum: 1 },
+			children: { kind: 'groups', items: [rowsGroup('p/a', [1], true)] }
+		};
+		expect(kinds([parent], [])).toEqual(['closed:p@0', 'footer@0']);
 	});
 
 	it('развёрнутая: заголовок, строки уровнем глубже, подвал только с агрегатами', () => {

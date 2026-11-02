@@ -13,7 +13,10 @@ export interface GridGroupingChipProps {
 	title: string;
 }
 
-/** Чип группировки: название колонки (Alt+←/→ переставляют, Delete и Backspace убирают) и кнопка «×». */
+/**
+ * Чип группировки: стрелка порядка групп и название колонки (клик меняет порядок; Alt+←/→ переставляют, Delete и Backspace убирают)
+ * и кнопка «×».
+ */
 export function GridGroupingChip(props: GridGroupingChipProps): JSX.Element {
 	const grid = useGrid();
 	let element: HTMLSpanElement | undefined;
@@ -47,6 +50,10 @@ export function GridGroupingChip(props: GridGroupingChipProps): JSX.Element {
 			<button
 				type='button'
 				class={styles['chip-main']}
+				title={grid.groupingLabels().groupSort(props.title, grid.groupDirection(props.columnId))}
+				onClick={() => {
+					grid.toggleGroupSort(props.columnId);
+				}}
 				onPointerDown={(event) => {
 					grid.beginGroupingDrag(props.columnId, event);
 				}}
@@ -67,7 +74,24 @@ export function GridGroupingChip(props: GridGroupingChipProps): JSX.Element {
 						refocus(props.columnId);
 					}
 				}}
-			>{props.title}</button>
+			>
+				<svg
+					aria-hidden='true'
+					viewBox='0 0 16 16'
+					class={styles['chip-sort']}
+					data-direction={grid.groupDirection(props.columnId)}
+				>
+					<path
+						d='M8 12.5v-9m-3.5 3.5L8 3.5l3.5 3.5'
+						fill='none'
+						stroke='currentColor'
+						stroke-width='1.5'
+						stroke-linecap='round'
+						stroke-linejoin='round'
+					/>
+				</svg>
+				{props.title}
+			</button>
 			<button
 				type='button'
 				class={styles['chip-remove']}

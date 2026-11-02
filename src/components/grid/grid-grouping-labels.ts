@@ -14,8 +14,10 @@ export interface GridGroupingLabels {
 	expand: (title: string) => string;
 	/** Подпись шеврона развёрнутой группы. */
 	collapse: (title: string) => string;
-	/** Подпись подвала группы. */
-	groupTotal: (title: string) => string;
+	/** Подпись чипа: клик меняет порядок групп колонки. */
+	groupSort: (title: string, direction: 'asc' | 'desc') => string;
+	/** Число строк группы в заголовке: «Всего: 3». */
+	groupCount: (count: number) => string;
 	/** Значение группы без текста. */
 	emptyValue: string;
 	/** Заглушка ещё не загруженных строк группы. */

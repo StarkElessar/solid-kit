@@ -53,11 +53,48 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 		`чипы: ${chips.join()}; заголовков ${kinds(frame, 'group').length}`
 	);
 
-	const collapsedText = kinds(frame, 'group')[0]?.textContent ?? '';
+	const sortChip = required(panel, '[data-chip="team"] > button');
+	const firstTitle = (): string => kinds(frame, 'group')[0]?.textContent ?? '';
+	const beforeSort = firstTitle();
+	sortChip.click();
+	await sleep(SETTLE_MS);
+	const arrowDesc = panel.querySelector('[data-chip="team"] svg')?.getAttribute('data-direction') === 'desc';
+	const afterSort = firstTitle();
+	sortChip.click();
+	await sleep(SETTLE_MS);
 	check(
-		'Группировка: свёрнутая группа показывает агрегат «Сумма» (₽) и счётчик в заголовке',
-		collapsedText.includes('₽') && collapsedText.includes('· 25'),
-		collapsedText.slice(0, 80)
+		'Группировка: клик по чипу меняет порядок групп (стрелка вниз, первая группа другая) и возвращает обратно',
+		arrowDesc && afterSort !== beforeSort && firstTitle() === beforeSort,
+		`${beforeSort.slice(0, 20)} → ${afterSort.slice(0, 20)} → ${firstTitle().slice(0, 20)}`
+	);
+
+	const header = kinds(frame, 'group')[0];
+	const headerText = header?.textContent ?? '';
+	const footer = header?.nextElementSibling;
+	check(
+		'Группировка: заголовок «значение, Всего: N» без агрегатов, за свёрнутой группой сразу подвал с «Сумма» (₽) без подписи',
+		headerText.includes('Всего: 25') && !headerText.includes('₽') && footer?.getAttribute('data-kind') === 'footer'
+			&& footer.textContent.includes('₽') && !footer.textContent.includes('Итого'),
+		`${headerText.slice(0, 40)}; подвал: ${footer?.textContent.slice(0, 40)}`
+	);
+
+	const scroller = required(frame, 'table').parentElement as HTMLElement;
+	const labelLeft = (): number => {
+		return (header?.querySelector<HTMLElement>('[data-group-header]')?.getBoundingClientRect().left ?? 0)
+			- scroller.getBoundingClientRect().left;
+	};
+	scroller.scrollLeft = 0;
+	await frames();
+	const leftBefore = labelLeft();
+	scroller.scrollLeft = 400;
+	await frames();
+	const leftAfter = labelLeft();
+	const scrolled = scroller.scrollLeft > 0;
+	scroller.scrollLeft = 0;
+	check(
+		'Группировка: при горизонтальной прокрутке заголовок группы остаётся на месте',
+		scrolled && Math.abs(leftAfter - leftBefore) < 1,
+		`до ${leftBefore.toFixed(1)} px, после ${leftAfter.toFixed(1)} px`
 	);
 
 	button(frame, 'Развернуть уровень').click();
@@ -77,7 +114,11 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 
 	button(frame, 'Свернуть все').click();
 	await frames();
-	check('Группировка: «Свернуть все» оставляет только заголовки', kinds(frame, 'row').length === 0, String(kinds(frame, 'group').length));
+	check(
+		'Группировка: «Свернуть все» оставляет только заголовки и подвалы групп',
+		kinds(frame, 'row').length === 0 && kinds(frame, 'footer').length === kinds(frame, 'group').length,
+		`заголовков ${kinds(frame, 'group').length}, подвалов ${kinds(frame, 'footer').length}`
+	);
 
 	required(frame, '[data-grid-column-menu="status"]').click();
 	await frames();
@@ -96,7 +137,7 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 	await frames();
 	// внутри первой команды раскрыта первая вложенная группа: её заголовок смещён на уровень
 	const indentOf = (row: HTMLElement): string => {
-		return row.querySelector<HTMLElement>('td[title]')?.style.getPropertyValue('--s-kit-grid-indent') ?? '';
+		return row.querySelector<HTMLElement>('[data-group-header]')?.style.getPropertyValue('--s-kit-grid-indent') ?? '';
 	};
 	const indents = kinds(frame, 'group').map(indentOf);
 	check(

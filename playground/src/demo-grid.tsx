@@ -1,5 +1,5 @@
 import { ContextMenu } from '@stark/solid-kit/context-menu';
-import { Grid, type GridColumn, type GridSort, type RowKey } from '@stark/solid-kit/grid';
+import { Grid, type GridColumn, type GridGroupSort, type GridSort, type RowKey } from '@stark/solid-kit/grid';
 import { Pager } from '@stark/solid-kit/pager';
 import { Select } from '@stark/solid-kit/select';
 import { createMemo, createSignal, For, type JSX, onCleanup } from 'solid-js';
@@ -216,6 +216,7 @@ export function DemoGrid(): JSX.Element {
 	const [totalsOn, setTotalsOn] = createSignal(false);
 	const [groupable, setGroupable] = createSignal(false);
 	const [grouping, setGrouping] = createSignal<readonly string[]>([]);
+	const [groupSort, setGroupSort] = createSignal<GridGroupSort>({});
 	const [lazy, setLazy] = createSignal(false);
 	const [expandedKeys, setExpandedKeys] = createSignal<ReadonlySet<string>>(new Set());
 	const [loadedKeys, setLoadedKeys] = createSignal<ReadonlySet<string>>(new Set());
@@ -253,7 +254,11 @@ export function DemoGrid(): JSX.Element {
 				aggregate: (items) => sumTotals(items),
 				compare: compareValues
 			},
-			{ isLoaded: (key) => loadedKeys().has(key), lazyFrom: lazy() ? LAZY_GROUP_ROWS : Infinity }
+			{
+				isLoaded: (key) => loadedKeys().has(key),
+				lazyFrom: lazy() ? LAZY_GROUP_ROWS : Infinity,
+				direction: (field) => (groupSort()[field] === 'desc' ? -1 : 1)
+			}
 		);
 	});
 	const groups = createMemo(() => {
@@ -437,6 +442,13 @@ export function DemoGrid(): JSX.Element {
 					onGroupingChange={(fields) => {
 						setGrouping(fields);
 						setGroupingLog(fields.join(', ') || 'нет');
+						ask({ page: 1, size: wanted().size });
+					}}
+					groupSort={groupSort()}
+					onGroupSortChange={(next) => {
+						const order = Object.entries(next).map(([field, direction]) => `${field} ${direction}`);
+						setGroupSort(next);
+						setGroupingLog(`порядок групп: ${order.join(', ')}`);
 						ask({ page: 1, size: wanted().size });
 					}}
 					expandedGroupKeys={expandedKeys()}

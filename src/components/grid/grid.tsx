@@ -30,6 +30,7 @@ import { foundText as defaultFoundText } from './found-text';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
+import type { GridGroupDirection, GridGroupSort } from './grid-group-sort';
 import { GridGroupingBar } from './grid-grouping-bar';
 import type { GridItem } from './grid-item';
 import { GridLiveRegion } from './grid-live-region';
@@ -56,6 +57,7 @@ const MIN_SKELETON_ROWS = 5;
 const MAX_SKELETON_ROWS = 20;
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
 const NO_GROUPING: readonly string[] = [];
+const NO_GROUP_SORT: GridGroupSort = {};
 const NO_ROWS: readonly never[] = [];
 const NO_GROUP_KEYS: ReadonlySet<string> = new Set();
 
@@ -103,12 +105,21 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		defaultValue: () => props.defaultExpandedGroupKeys ?? NO_GROUP_KEYS,
 		onChange: (next) => props.onExpandedGroupKeysChange?.(next)
 	});
-	const [grouping, setGrouping] = createControllableSignal<readonly string[]>({
+	const [grouping, setGroupingState] = createControllableSignal<readonly string[]>({
 		name: 'Grid',
 		value: () => props.grouping,
 		defaultValue: () => props.defaultGrouping ?? NO_GROUPING,
 		onChange: (next) => props.onGroupingChange?.(next)
 	});
+	const [groupSort, setGroupSort] = createControllableSignal<GridGroupSort>({
+		name: 'Grid',
+		value: () => props.groupSort,
+		defaultValue: () => props.defaultGroupSort ?? NO_GROUP_SORT,
+		onChange: (next) => props.onGroupSortChange?.(next)
+	});
+	const groupDirection = (columnId: string): GridGroupDirection => {
+		return groupSort()[columnId] ?? props.columns.find((column) => column.id === columnId)?.groupSortDirection ?? 'asc';
+	};
 	// чипы и жесты работают по колонкам, которые есть в `columns`: чужие id остаются на совести страницы
 	const visibleGrouping = createMemo(() => grouping().filter((id) => props.columns.some((column) => column.id === id)), [], {
 		equals: sameItems
@@ -122,6 +133,14 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		if (next !== expandedGroups()) {
 			setExpandedGroups(next);
 		}
+	};
+	// порядок и состав групп меняются как данные: грид не запоминает, какие группы были развёрнуты, все приходят свёрнутыми
+	const collapseAllGroups = (): void => {
+		changeExpanded(expandedGroups().size === 0 ? expandedGroups() : NO_GROUP_KEYS);
+	};
+	const setGrouping = (next: readonly string[]): void => {
+		setGroupingState(next);
+		collapseAllGroups();
 	};
 	// сгруппированный режим определяет наличие `groups`; плоский список элементов строится только в нём
 	const flat = createMemo(() => (props.groups === undefined ? undefined : flattenGroups(props.groups, expandedGroups())));
@@ -281,15 +300,18 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		toggleGrouping: (columnId) => {
 			setGrouping(grouping().includes(columnId) ? removeGrouping(grouping(), columnId) : addGrouping(grouping(), columnId));
 		},
+		groupDirection,
+		toggleGroupSort: (columnId) => {
+			setGroupSort({ ...groupSort(), [columnId]: groupDirection(columnId) === 'asc' ? 'desc' : 'asc' });
+			collapseAllGroups();
+		},
 		drag: groupingDrag.state,
 		beginGroupingDrag: groupingDrag.begin,
 		hasGroups: () => (props.groups?.length ?? 0) > 0,
 		collapseLevel: () => {
 			changeExpanded(collapseLevelKeys(props.groups ?? [], expandedGroups()));
 		},
-		collapseAll: () => {
-			changeExpanded(expandedGroups().size === 0 ? expandedGroups() : NO_GROUP_KEYS);
-		},
+		collapseAll: collapseAllGroups,
 		expandLevel: () => {
 			changeExpanded(expandLevelKeys(props.groups ?? [], expandedGroups()));
 		},

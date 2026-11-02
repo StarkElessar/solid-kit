@@ -3,6 +3,7 @@ import type { JSX } from 'solid-js';
 import type { GridColumn } from './grid-column';
 import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridGroup } from './grid-group';
+import type { GridGroupSort } from './grid-group-sort';
 import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridPagerProps } from './grid-pager-props';
 import type { GridSort } from './grid-sort';
@@ -21,6 +22,11 @@ export interface GridProps<T> extends GridPagerProps {
 	defaultGrouping?: readonly string[] | undefined;
 	/** Новый массив на каждое изменение; прежний не мутируется. */
 	onGroupingChange?: ((fields: readonly string[]) => void) | undefined;
+	/** Порядок групп по колонкам группировки (клик по чипу). Грид группы не сортирует: страница запрашивает их у сервера в этом порядке. */
+	groupSort?: GridGroupSort | undefined;
+	defaultGroupSort?: GridGroupSort | undefined;
+	/** Новый объект на каждое изменение; прежний не мутируется. */
+	onGroupSortChange?: ((sort: GridGroupSort) => void) | undefined;
 	/** Ключи развёрнутых групп; по умолчанию пусто (все свёрнуты). Ключи, которых нет в данных, остаются в наборе. */
 	expandedGroupKeys?: ReadonlySet<string> | undefined;
 	defaultExpandedGroupKeys?: ReadonlySet<string> | undefined;

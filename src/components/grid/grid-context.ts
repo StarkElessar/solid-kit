@@ -9,6 +9,7 @@ import type { ColumnLayout } from './column-layout';
 import type { ColumnMenuTarget } from './column-menu-target';
 import type { GridColumn } from './grid-column';
 import type { GridColumnMenuLabels } from './grid-column-menu-labels';
+import type { GridGroupDirection } from './grid-group-sort';
 import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridItem } from './grid-item';
 import type { GridSort } from './grid-sort';
@@ -38,6 +39,10 @@ export interface GridContextValue<T> {
 	setGrouping: (next: readonly string[]) => void;
 	/** Колонка в группировке или вне её (пункт меню). */
 	toggleGrouping: (columnId: string) => void;
+	/** Порядок групп колонки группировки. */
+	groupDirection: (columnId: string) => GridGroupDirection;
+	/** Меняет порядок групп колонки на обратный. */
+	toggleGroupSort: (columnId: string) => void;
 	/** Есть ли сгруппированные данные (`groups` не пуст): кнопки уровней работают только с ними. */
 	hasGroups: Accessor<boolean>;
 	/** Идущее перетаскивание заголовка или чипа; `undefined` вне жеста. */

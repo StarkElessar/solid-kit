@@ -1,6 +1,7 @@
 import { createMemo, type JSX, Match, Switch } from 'solid-js';
 
 import { useGrid } from './grid-context';
+import { GridGroupFooterRow } from './grid-group-footer-row';
 import { GridGroupRow } from './grid-group-row';
 import { GridLoadingGroupRow } from './grid-loading-group-row';
 import { GridRow } from './grid-row';
@@ -17,8 +18,8 @@ export function GridItemRow(props: GridItemRowProps): JSX.Element {
 	return (
 		<Switch>
 			<Match when={kind() === 'row'}><GridRow index={props.index}/></Match>
-			<Match when={kind() === 'group'}><GridGroupRow index={props.index} footer={false}/></Match>
-			<Match when={kind() === 'footer'}><GridGroupRow index={props.index} footer/></Match>
+			<Match when={kind() === 'group'}><GridGroupRow index={props.index}/></Match>
+			<Match when={kind() === 'footer'}><GridGroupFooterRow index={props.index}/></Match>
 			<Match when={kind() === 'loading'}><GridLoadingGroupRow index={props.index}/></Match>
 		</Switch>
 	);
