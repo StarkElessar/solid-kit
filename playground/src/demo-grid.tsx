@@ -435,6 +435,7 @@ export function DemoGrid(): JSX.Element {
 			</div>
 			<div ref={frame} class='grid-frame' data-grid-demo>
 				<Grid<Order>
+					fill
 					rows={rows()}
 					groups={groups()}
 					groupable={groupable()}

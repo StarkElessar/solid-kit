@@ -25,8 +25,9 @@ function Chevron(props: { expanded: boolean }): JSX.Element {
 }
 
 /**
- * Заголовок группы: «стрелка, значение ячейки, Всего: N». Агрегатов в нём нет (они в подвале). Одна ячейка на все колонки, а её
- * содержимое прилипает к левому краю видимой области: при горизонтальной прокрутке заголовок не уезжает.
+ * Заголовок группы: «стрелка, значение ячейки, Всего: N». Агрегатов в нём нет (они в подвале). Подпись лежит в закреплённой ячейке
+ * (тот же `position: sticky` у `td`, что у закреплённых колонок), её текст свободно выходит за ширину первой колонки поверх соседних
+ * пустых ячеек: при горизонтальной прокрутке заголовок не сдвигается ни на пиксель.
  */
 export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 	const grid = useGrid();
@@ -72,8 +73,9 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 			</Show>
 			<td
 				class={`${styles['cell']} ${styles['group-cell']} ${styles['group-label']}`}
-				colSpan={Math.max(grid.columns().length, 1)}
 				title={title()}
+				data-sticky
+				style={{ 'inset-inline-start': 'var(--s-kit-grid-select-w, 0px)' }}
 			>
 				<div class={styles['group-header']} data-group-header style={{ '--s-kit-grid-indent': `${(item()?.level ?? 0) * 16}px` }}>
 					<button
@@ -102,6 +104,9 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 					<span class={styles['group-count']}>{grid.groupingLabels().groupCount(group()?.count ?? 0)}</span>
 				</div>
 			</td>
+			<Show when={grid.columns().length > 1}>
+				<td class={`${styles['cell']} ${styles['group-cell']}`} colSpan={grid.columns().length - 1}/>
+			</Show>
 		</tr>
 	);
 }

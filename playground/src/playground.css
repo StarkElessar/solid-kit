@@ -329,6 +329,35 @@ h2 {
     gap: 12px;
 }
 
+.height-demos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: 16px;
+    align-items: start;
+
+    & figure {
+        min-inline-size: 0;
+        margin: 0;
+    }
+
+    & figcaption {
+        margin-block-end: 6px;
+        font-size: 0.85rem;
+        color: var(--s-kit-color-muted);
+    }
+}
+
+.height-column {
+    display: flex;
+    flex-direction: column;
+    block-size: 22rem;
+    border: 1px dashed var(--s-kit-color-border-strong);
+}
+
+.height-column-short {
+    block-size: 16rem;
+}
+
 .grid-frame {
     inline-size: 100%;
     block-size: 28rem;

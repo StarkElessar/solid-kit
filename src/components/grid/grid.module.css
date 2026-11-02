@@ -1,9 +1,11 @@
 /*
  * Токены Grid (публичный API кастомизации, читаются с фолбэком на глобальные):
  *   --s-kit-grid-bg, --s-kit-grid-border, --s-kit-grid-radius, --s-kit-grid-header-bg, --s-kit-grid-footer-bg,
- *   --s-kit-grid-max-height, --s-kit-grid-row-hover
- * Высота корня: block-size 100% родителя, но не больше --s-kit-grid-max-height (32rem); страница с более высокой областью ставит
- * токен в none. Внутренние переменные меняет код, а не потребитель: --s-kit-grid-w-<i>, --s-kit-grid-left-<i>, --s-kit-grid-table-w
+ *   --s-kit-grid-max-height, --s-kit-grid-height, --s-kit-grid-row-hover
+ * Высота корня: по умолчанию по содержимому, но не выше --s-kit-grid-max-height (32rem); без данных грид схлопывается.
+ * Фиксированная высота: токен --s-kit-grid-height (он же снимает кап). Проп `fill`: вся доступная высота (flex-колонка родителя
+ * или 100% родителя).
+ * Внутренние переменные меняет код, а не потребитель: --s-kit-grid-w-<i>, --s-kit-grid-left-<i>, --s-kit-grid-table-w
  * (на <table>), --s-kit-grid-row-height (на корне, из rowHeight) и слои --s-kit-grid-z-*.
  * Тело это <table> с table-layout: fixed и border-collapse: separate: границы ячеек едут вместе со sticky-ячейками (спек 4а, раздел 4).
  */
@@ -22,9 +24,9 @@
     flex-direction: column;
 
     box-sizing: border-box;
-    block-size: 100%;
+    block-size: var(--s-kit-grid-height, auto);
     min-block-size: 0;
-    max-block-size: var(--s-kit-grid-max-height, 32rem);
+    max-block-size: var(--s-kit-grid-height, var(--s-kit-grid-max-height, 32rem));
     border: 1px solid var(--s-kit-grid-border, var(--s-kit-color-border-strong));
     border-radius: var(--s-kit-grid-radius, var(--s-kit-radius));
 
@@ -41,6 +43,13 @@
     &[data-dragging] {
         cursor: grabbing;
         user-select: none;
+    }
+
+    /* fill: вся доступная высота; кап снят, во flex-колонке родителя грид растёт, иначе берёт 100% родителя */
+    &[data-fill] {
+        flex: 1 1 auto;
+        block-size: 100%;
+        max-block-size: none;
     }
 
     &[data-groupable] {
@@ -74,6 +83,20 @@
     /* с футером таблица не ниже скроллера: свободную высоту забирает строка totals-fill, футер остаётся у нижнего края */
     &[data-totals] {
         block-size: 100%;
+    }
+
+    /* fill без данных: таблица на всю высоту, блок «пусто» по центру свободной высоты */
+    &[data-stretch] {
+        block-size: 100%;
+
+        & .empty-row,
+        & .empty-cell {
+            block-size: 100%;
+        }
+
+        & .empty-cell {
+            vertical-align: middle;
+        }
     }
 }
 
@@ -281,23 +304,19 @@
     }
 }
 
-/* ячейка заголовка пуста по краям: отступ и прилипание у вложенного блока, иначе overflow ячейки отрезал бы прилипание */
+/* подпись в закреплённой ячейке: текст выходит за ширину первой колонки и перекрывает соседние пустые ячейки (z-index закреплённой выше) */
 .group-label {
     overflow: visible;
     padding: 0;
+    text-overflow: clip;
 }
 
-/* блок прилипает к левому краю видимой области правее колонки чекбоксов и занимает остаток её ширины */
 .group-header {
-    position: sticky;
-    inset-inline-start: var(--s-kit-grid-select-w, 0);
-
-    overflow: hidden;
     display: flex;
     align-items: center;
 
     box-sizing: border-box;
-    inline-size: calc(var(--s-kit-grid-view-w, 100%) - var(--s-kit-grid-select-w, 0px));
+    inline-size: max-content;
     block-size: 100%;
     padding-inline: calc(10px + var(--s-kit-grid-indent, 0px)) 10px;
 
@@ -346,9 +365,7 @@
 }
 
 .group-text {
-    overflow: hidden;
     min-inline-size: 0;
-    text-overflow: ellipsis;
 }
 
 .group-count {
@@ -771,7 +788,6 @@
 
     box-sizing: border-box;
     inline-size: var(--s-kit-grid-view-w, 100%);
-    min-block-size: 160px;
     padding: 24px 16px;
 
     text-align: center;

@@ -84,6 +84,8 @@ export interface GridContextValue<T> {
 	/** Строк нет и загрузки нет. */
 	isEmpty: Accessor<boolean>;
 	emptyText: Accessor<string>;
+	/** Грид занимает всю доступную высоту (проп `fill`). */
+	fill: Accessor<boolean>;
 	emptyHint: Accessor<JSX.Element>;
 	emptyResetLabel: Accessor<string>;
 	onEmptyReset: Accessor<(() => void) | undefined>;

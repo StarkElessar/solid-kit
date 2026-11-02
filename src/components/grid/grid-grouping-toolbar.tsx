@@ -18,20 +18,23 @@ function Icon(props: { path: string }): JSX.Element {
 	);
 }
 
-/** Четыре кнопки управления свёрнутостью: свернуть уровень, свернуть все, развернуть уровень, развернуть все (зонтичный, раздел 10.1). */
+/**
+ * Четыре кнопки управления свёрнутостью в таком порядке: свернуть уровень (↑), свернуть все (⇑), развернуть уровень (↓), развернуть все
+ * (⇓). Сворачивание это стрелки вверх, разворачивание вниз (зонтичный, раздел 10.1).
+ */
 export function GridGroupingToolbar(): JSX.Element {
 	const grid = useGrid();
 	const disabled = (): boolean => !grid.hasGroups() || grid.loading();
 	return (
 		<div class={styles['toolbar']}>
 			<GridToolbarButton label={grid.groupingLabels().collapseLevel} disabled={disabled()} onClick={grid.collapseLevel}>
-				<Icon path={ARROW_DOWN}/>
+				<Icon path={ARROW_UP}/>
 			</GridToolbarButton>
 			<GridToolbarButton label={grid.groupingLabels().collapseAll} disabled={disabled()} onClick={grid.collapseAll}>
 				<Icon path={DOUBLE_UP}/>
 			</GridToolbarButton>
 			<GridToolbarButton label={grid.groupingLabels().expandLevel} disabled={disabled()} onClick={grid.expandLevel}>
-				<Icon path={ARROW_UP}/>
+				<Icon path={ARROW_DOWN}/>
 			</GridToolbarButton>
 			<GridToolbarButton label={grid.groupingLabels().expandAll} disabled={disabled()} onClick={grid.expandAll}>
 				<Icon path={DOUBLE_DOWN}/>

@@ -2,8 +2,10 @@ import { createEffect, createSignal, For, type JSX } from 'solid-js';
 
 import { runColumnMenuChecks } from './column-menu-checks';
 import { DemoGrid } from './demo-grid';
+import { DemoGridHeights } from './demo-grid-heights';
 import { runGridChecks } from './grid-checks';
 import { runGroupingChecks } from './grouping-checks';
+import { runHeightChecks } from './height-checks';
 import { runPagerChecks } from './pager-checks';
 import { pick } from './pick';
 import type { CheckResult } from './theme-checks';
@@ -38,7 +40,8 @@ export function GridPage(): JSX.Element {
 					...(await runPagerChecks(root)),
 					...(await runColumnMenuChecks(root)),
 					...(await runTotalsChecks(root)),
-					...(await runGroupingChecks(root))
+					...(await runGroupingChecks(root)),
+					...runHeightChecks(root)
 				]);
 			})();
 		}
@@ -71,7 +74,16 @@ export function GridPage(): JSX.Element {
 			</section>
 
 			<section>
-				<h2>2. Проверки</h2>
+				<h2>2. Высота</h2>
+				<p>
+					Фиксированная высота (токен), `fill` (вся доступная высота родителя, пустое состояние растягивается, футер автосумм
+					у нижнего края) и режим по умолчанию (высота по содержимому, без данных грид схлопывается).
+				</p>
+				<DemoGridHeights/>
+			</section>
+
+			<section>
+				<h2>3. Проверки</h2>
 				<button type='button' onClick={runChecks}>
 					Запустить проверки
 				</button>

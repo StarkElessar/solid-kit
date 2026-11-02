@@ -34,6 +34,13 @@ export interface GridProps<T> extends GridPagerProps {
 	/** Раскрыта группа, строки которой ещё не загружены (`children.kind === 'not-loaded'`): страница догружает их. */
 	onGroupExpand?: ((key: string) => void) | undefined;
 	groupingLabels?: Partial<GridGroupingLabels> | undefined;
+	/**
+	 * Занять всю доступную высоту: грид растёт во flex-колонке родителя или берёт 100% родителя с определённой высотой; кап
+	 * `--s-kit-grid-max-height` не действует, пустое состояние растягивается, футер автосумм у нижнего края. Без `fill` высота по
+	 * содержимому (не выше `--s-kit-grid-max-height`), без данных грид схлопывается; фиксированную высоту задаёт токен
+	 * `--s-kit-grid-height`.
+	 */
+	fill?: boolean | undefined;
 	/** Уникальный и стабильный между загрузками ключ строки. */
 	getRowKey: (row: T) => RowKey;
 	columns: readonly GridColumn<T>[];

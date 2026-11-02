@@ -348,6 +348,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		loadingLabel: () => props.loadingLabel ?? 'Загрузка',
 		isEmpty,
 		emptyText,
+		fill: () => props.fill === true,
 		emptyHint: () => props.emptyHint,
 		emptyResetLabel: () => props.emptyResetLabel ?? 'Сбросить фильтры',
 		onEmptyReset: () => props.onEmptyReset,
@@ -441,6 +442,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
 					data-groupable={groupable() ? '' : undefined}
+					data-fill={props.fill === true ? '' : undefined}
 					data-dragging={groupingDrag.state() === undefined ? undefined : ''}
 					style={{
 						...props.style,

@@ -10,7 +10,7 @@ import { useGrid } from './grid-context';
 export function GridEmpty(): JSX.Element {
 	const grid = useGrid();
 	return (
-		<tr>
+		<tr class={styles['empty-row']}>
 			<td class={styles['empty-cell']} colSpan={grid.columnCount()}>
 				<div class={styles['empty']}>
 					<p class={styles['empty-text']}>{grid.emptyText()}</p>

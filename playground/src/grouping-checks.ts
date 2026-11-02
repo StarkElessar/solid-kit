@@ -86,15 +86,30 @@ export async function runGroupingChecks(page: HTMLElement): Promise<CheckResult[
 	scroller.scrollLeft = 0;
 	await frames();
 	const leftBefore = labelLeft();
-	scroller.scrollLeft = 400;
-	await frames();
-	const leftAfter = labelLeft();
-	const scrolled = scroller.scrollLeft > 0;
+	// плавная прокрутка вправо: положение подписи сэмплируется в каждом кадре, допустимое смещение 0 px
+	let worst = 0;
+	let maxScroll = 0;
+	scroller.scrollTo({ left: 900, behavior: 'smooth' });
+	const started = performance.now();
+	await new Promise<void>((resolve) => {
+		const tick = (): void => {
+			worst = Math.max(worst, Math.abs(labelLeft() - leftBefore));
+			maxScroll = Math.max(maxScroll, scroller.scrollLeft);
+			if (performance.now() - started < 1200) {
+				requestAnimationFrame(tick);
+			}
+			else {
+				resolve();
+			}
+		};
+		tick();
+	});
 	scroller.scrollLeft = 0;
+	await frames();
 	check(
-		'Группировка: при горизонтальной прокрутке заголовок группы остаётся на месте',
-		scrolled && Math.abs(leftAfter - leftBefore) < 1,
-		`до ${leftBefore.toFixed(1)} px, после ${leftAfter.toFixed(1)} px`
+		'Группировка: при горизонтальной прокрутке заголовок группы не сдвигается (0 px в каждом кадре)',
+		maxScroll > 400 && worst < 0.01,
+		`прокрутка до ${maxScroll.toFixed(0)} px, наибольшее смещение ${worst.toFixed(3)} px`
 	);
 
 	button(frame, 'Развернуть уровень').click();

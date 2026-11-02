@@ -1841,15 +1841,16 @@ describe('Grid: группировка', () => {
 		expect(trs()[0]?.textContent).toBe('31 летВсего: 2');
 	});
 
-	it('заголовок свёрнутой и развёрнутой группы: одна ячейка на всю ширину, без агрегатов и без подписи «Итого»', () => {
+	it('заголовок свёрнутой и развёрнутой группы: подпись и пустая ячейка до края, без агрегатов и без подписи «Итого»', () => {
 		const { unmount } = renderGrid({ groups: [G1] });
 		const collapsed = trs()[0];
 		expect(collapsed?.textContent).not.toContain('62');
-		expect(collapsed?.querySelector('td:last-child')?.getAttribute('colspan')).toBe('4');
+		expect(collapsed?.cells).toHaveLength(2);
+		expect(collapsed?.cells[1]?.getAttribute('colspan')).toBe('3');
 		unmount();
 		renderGrid({ groups: [G1], expandedGroupKeys: new Set(['g1']) });
 		expect(trs()[0]?.textContent).not.toContain('62');
-		expect(trs()[0]?.querySelector('td')?.getAttribute('colspan')).toBe('4');
+		expect(trs()[0]?.cells[1]?.getAttribute('colspan')).toBe('3');
 		expect(table().textContent).not.toContain('Итого');
 	});
 
@@ -1863,12 +1864,15 @@ describe('Grid: группировка', () => {
 		expect(texts(trs()[3])).toEqual(['', '', '62', '']);
 	});
 
-	it('заголовок группы прилипает к левому краю видимой области и стоит правее колонки чекбоксов', () => {
+	it('подпись заголовка группы лежит в закреплённой ячейке (как закреплённые колонки) правее колонки чекбоксов', () => {
 		renderGrid({ groups: [G1], selectable: true });
 		const header = trs()[0];
-		expect(header?.cells).toHaveLength(2);
+		expect(header?.cells).toHaveLength(3);
 		expect(header?.cells[0]?.hasAttribute('data-sticky')).toBe(true);
-		expect(header?.querySelector('[data-group-header]')).toBeTruthy();
+		const label = header?.cells[1];
+		expect(label?.hasAttribute('data-sticky')).toBe(true);
+		expect(label?.style.insetInlineStart).toBe('var(--s-kit-grid-select-w, 0px)');
+		expect(label?.querySelector('[data-group-header]')).toBeTruthy();
 	});
 
 	it('клик по заголовку и по шеврону переключает группу через onExpandedGroupKeysChange, прежний Set не мутируется', () => {
@@ -1997,6 +2001,25 @@ describe('Grid: панель группировки', () => {
 		expect(screen.queryByRole('group', { name: 'Группировка' })).toBeNull();
 		fireEvent.click(screen.getByRole('button', { name: 'Меню колонки «Возраст»' }));
 		expect(screen.queryByRole('menuitem', { name: 'Сгруппировать' })).toBeNull();
+	});
+
+	it('кнопки уровней идут в порядке: свернуть уровень, свернуть все, развернуть уровень, развернуть все', () => {
+		renderGrid({ groupable: true });
+		const names = [...panel().parentElement?.querySelectorAll('button[aria-label]') ?? []]
+			.map((button) => button.getAttribute('aria-label'))
+			.filter((name) => ['Свернуть уровень', 'Свернуть все', 'Развернуть уровень', 'Развернуть все'].includes(name ?? ''));
+		expect(names).toEqual(['Свернуть уровень', 'Свернуть все', 'Развернуть уровень', 'Развернуть все']);
+	});
+
+	it('иконки кнопок: свернуть уровень ↑, свернуть все ⇑, развернуть уровень ↓, развернуть все ⇓', () => {
+		renderGrid({ groupable: true });
+		const path = (name: string): string | null => {
+			return screen.getByRole('button', { name }).querySelector('path')?.getAttribute('d') ?? null;
+		};
+		expect(path('Свернуть уровень')).toBe('M4 10l4-4 4 4');
+		expect(path('Свернуть все')).toBe('M4 7.5l4-4 4 4M4 12.5l4-4 4 4');
+		expect(path('Развернуть уровень')).toBe('M4 6l4 4 4-4');
+		expect(path('Развернуть все')).toBe('M4 3.5l4 4 4-4M4 8.5l4 4 4-4');
 	});
 
 	it('с groupable есть панель с подсказкой и четырьмя кнопками', () => {
@@ -2317,5 +2340,27 @@ describe('Grid: перетаскивание в панель группиров�
 		document.dispatchEvent(drag('pointermove', 100, 15));
 		expect(document.querySelector('[class*="ghost"]')).toBeNull();
 		document.dispatchEvent(drag('pointerup', 100, 15));
+	});
+});
+
+describe('Grid: высота', () => {
+	function root(): HTMLElement {
+		return document.querySelector('[data-s-kit-focus-inset]') as HTMLElement;
+	}
+
+	it('без fill у корня нет data-fill, у таблицы нет data-stretch', () => {
+		renderGrid({ rows: [] });
+		expect(root().hasAttribute('data-fill')).toBe(false);
+		expect(table().hasAttribute('data-stretch')).toBe(false);
+	});
+
+	it('fill ставит data-fill на корень; пустой грид с fill получает data-stretch, с данными нет', () => {
+		const { unmount } = renderGrid({ fill: true, rows: [] });
+		expect(root().hasAttribute('data-fill')).toBe(true);
+		expect(table().hasAttribute('data-stretch')).toBe(true);
+		unmount();
+		renderGrid({ fill: true });
+		expect(root().hasAttribute('data-fill')).toBe(true);
+		expect(table().hasAttribute('data-stretch')).toBe(false);
 	});
 });
