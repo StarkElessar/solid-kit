@@ -21,6 +21,7 @@ export function GridTable(props: GridTableProps): JSX.Element {
 			aria-label={props['aria-label']}
 			aria-rowcount={grid.itemCount() + 1 + (grid.totals() === undefined ? 0 : 1)}
 			aria-colcount={grid.columnCount()}
+			data-totals={grid.totals() === undefined ? undefined : ''}
 			style={layoutCssVars(grid.layout())}
 		>
 			<GridColgroup/>

@@ -56,6 +56,29 @@ export async function runTotalsChecks(page: HTMLElement): Promise<CheckResult[]>
 		sticky === undefined ? 'нет ячейки' : getComputedStyle(sticky).position
 	);
 
+	// мало строк в высоком гриде: футер стоит у нижнего края скроллера, а не под последней строкой
+	const count = required(page, '[data-grid-count]') as HTMLSelectElement;
+	const scroller = table.parentElement as HTMLElement;
+	count.value = '10';
+	count.dispatchEvent(new Event('change', { bubbles: true }));
+	frame.style.blockSize = '1400px';
+	frame.style.setProperty('--s-kit-grid-max-height', 'none');
+	await frames();
+	await frames();
+	const gap = scroller.getBoundingClientRect().bottom - (frame.querySelector('tfoot')?.getBoundingClientRect().bottom ?? 0);
+	const bodyRows = frame.querySelectorAll('tbody > tr[data-index]');
+	const rowHeights = [...bodyRows].map((row) => row.getBoundingClientRect().height);
+	check(
+		'Автосуммы: при малом числе строк футер прижат к нижнему краю грида, строки не растянуты',
+		bodyRows.length === 10 && Math.abs(gap) < 20 && Math.max(...rowHeights) < 100,
+		`зазор ${gap.toFixed(1)} px, строк ${bodyRows.length}, высота строки до ${Math.max(...rowHeights).toFixed(0)} px`
+	);
+	frame.style.blockSize = '';
+	frame.style.removeProperty('--s-kit-grid-max-height');
+	count.value = '100000';
+	count.dispatchEvent(new Event('change', { bubbles: true }));
+	await frames();
+
 	await toggle(page, '[data-grid-totals]', false);
 	return results;
 }

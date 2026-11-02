@@ -1690,6 +1690,18 @@ describe('Grid: автосуммы', () => {
 		return [...(row?.cells ?? [])].map((cell) => cell.textContent.trim());
 	}
 
+	it('с totals перед футером стоит скрытая строка-«резинка» и у таблицы data-totals, без totals их нет', () => {
+		const { unmount } = renderGrid({ totals: TOTALS });
+		const fill = table().querySelector('tbody[aria-hidden="true"]');
+		expect(fill?.querySelectorAll('td')).toHaveLength(1);
+		expect(fill?.nextElementSibling?.tagName).toBe('TFOOT');
+		expect(table().hasAttribute('data-totals')).toBe(true);
+		unmount();
+		renderGrid();
+		expect(table().querySelector('tbody[aria-hidden="true"]')).toBeNull();
+		expect(table().hasAttribute('data-totals')).toBe(false);
+	});
+
 	it('без totals tfoot нет', () => {
 		renderGrid();
 		expect(table().querySelector('tfoot')).toBeNull();
