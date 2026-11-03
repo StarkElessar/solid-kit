@@ -10,8 +10,6 @@ export interface GridTreeSource<T> {
 	/** Есть узлы: кнопки уровней доступны. */
 	hasNodes: Accessor<boolean>;
 	toggleNode: (key: RowKey) => void;
-	/** Строка «Загрузка…» смонтирована: страница догружает детей узла. */
-	loadNode: (key: RowKey) => void;
 	/** Доступна ли кнопка «развернуть все»: в ленивом режиме нет, раскрытие всего дерева было бы лавиной запросов. */
 	canExpandAll: Accessor<boolean>;
 	collapseLevel: () => void;

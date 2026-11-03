@@ -181,7 +181,7 @@ interface LazyDoc {
 
 const LAZY_COLUMNS: readonly GridColumn<LazyDoc>[] = [{ id: 'title', title: 'Название', value: (row) => row.title, width: 240 }];
 
-// страница ленивого режима: держит строки и ключи догрузки, `loadChildren` кладёт ключ в loadingKeys синхронно
+// страница ленивого режима: держит строки и ключи догрузки, `loadChildren` кладёт ВСЕ ключи батча в loadingKeys синхронно
 function renderLazy(overrides: Partial<Parameters<typeof TreeList<LazyDoc>>[0]> = {}) {
 	const [rows, setRows] = createSignal<readonly LazyDoc[]>([
 		{ id: 1, parent: null, title: 'Раздел А', kids: true },
@@ -189,8 +189,8 @@ function renderLazy(overrides: Partial<Parameters<typeof TreeList<LazyDoc>>[0]> 
 		{ id: 3, parent: null, title: 'Пустой', kids: false }
 	]);
 	const [loading, setLoading] = createSignal<ReadonlySet<RowKey>>(new Set());
-	const loadChildren = vi.fn((row: LazyDoc) => {
-		setLoading((current) => new Set(current).add(row.id));
+	const loadChildren = vi.fn((batchRows: readonly LazyDoc[]) => {
+		setLoading((current) => new Set([...current, ...batchRows.map((row) => row.id)]));
 	});
 	render(() => (
 		<TreeList
@@ -206,61 +206,133 @@ function renderLazy(overrides: Partial<Parameters<typeof TreeList<LazyDoc>>[0]> 
 			{...(overrides as object)}
 		/>
 	));
-	// ответ сервера: дети добавлены, ключ снят с догрузки
-	const finish = (id: number, children: readonly LazyDoc[]): void => {
+	// ответ сервера: дети добавлены, ключи родителей сняты с догрузки
+	const finish = (ids: readonly number[], children: readonly LazyDoc[]): void => {
 		batch(() => {
 			setRows((current) => [...current, ...children]);
 			setLoading((current) => {
 				const next = new Set(current);
-				next.delete(id);
+				ids.forEach((id) => next.delete(id));
 				return next;
 			});
 		});
 	};
-	return { loadChildren, finish };
+	const batchIds = (call: number): (number | undefined)[] => (loadChildren.mock.calls[call]?.[0] ?? []).map((row) => row.id);
+	return { loadChildren, finish, setRows, batchIds };
 }
 
+const expand = (name: string): void => {
+	fireEvent.click(screen.getByRole('button', { name: `Развернуть ${name}` }));
+};
+const collapse = (name: string): void => {
+	fireEvent.click(screen.getByRole('button', { name: `Свернуть ${name}` }));
+};
+
 describe('TreeList: ленивая подгрузка', () => {
-	it('раскрытие узла без детей показывает «Загрузка…» и один раз просит дети', () => {
-		const { loadChildren } = renderLazy();
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
+	it('раскрытие узла без детей показывает «Загрузка…» и один раз просит дети массивом из одной строки', () => {
+		const { loadChildren, batchIds } = renderLazy();
+		expand('Раздел А');
 		expect(titles()).toEqual(['Раздел А', 'Загрузка…', 'Раздел Б', 'Пустой']);
 		expect(loadChildren).toHaveBeenCalledTimes(1);
-		expect(loadChildren.mock.calls[0]?.[0]).toMatchObject({ id: 1 });
+		expect(batchIds(0)).toEqual([1]);
 	});
 
 	it('после ответа строка загрузки исчезает, дети показаны глубже на уровень', () => {
 		const { finish } = renderLazy();
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
-		finish(1, [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
+		expand('Раздел А');
+		finish([1], [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
 		expect(titles()).toEqual(['Раздел А', 'Документ', 'Раздел Б', 'Пустой']);
 		expect(bodyRows()[1]?.getAttribute('aria-level')).toBe('2');
 	});
 
 	it('повторное раскрытие узла с загруженными детьми не просит их снова', () => {
 		const { loadChildren, finish } = renderLazy();
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
-		finish(1, [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
-		fireEvent.click(screen.getByRole('button', { name: 'Свернуть Раздел А' }));
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
+		expand('Раздел А');
+		finish([1], [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
+		collapse('Раздел А');
+		expand('Раздел А');
 		expect(loadChildren).toHaveBeenCalledTimes(1);
 		expect(titles()).toEqual(['Раздел А', 'Документ', 'Раздел Б', 'Пустой']);
 	});
 
-	it('узел, дети которого не пришли, после сворачивания запрашивается заново', () => {
+	it('пустой ответ: автоповтора нет, после сворачивания узел запрашивается заново', () => {
 		const { loadChildren, finish } = renderLazy();
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
-		finish(1, []);
+		expand('Раздел А');
+		finish([1], []);
 		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
-		fireEvent.click(screen.getByRole('button', { name: 'Свернуть Раздел А' }));
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		collapse('Раздел А');
+		expand('Раздел А');
 		expect(loadChildren).toHaveBeenCalledTimes(2);
 	});
 
-	it('«Развернуть уровень» догружает все узлы уровня', () => {
-		const { loadChildren } = renderLazy();
+	it('«Развернуть уровень» догружает весь уровень одним вызовом в порядке экрана', () => {
+		const { loadChildren, batchIds } = renderLazy();
 		fireEvent.click(screen.getByRole('button', { name: 'Развернуть уровень' }));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		expect(batchIds(0)).toEqual([1, 2]);
+	});
+
+	it('частичный ответ: пришли дети одного родителя, второй остаётся в загрузке', () => {
+		const { loadChildren, finish } = renderLazy();
+		fireEvent.click(screen.getByRole('button', { name: 'Развернуть уровень' }));
+		finish([1], [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
+		expect(titles()).toEqual(['Раздел А', 'Документ', 'Раздел Б', 'Загрузка…', 'Пустой']);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+	});
+
+	it('свернуть и развернуть во время запроса не дублирует вызов', () => {
+		const { loadChildren } = renderLazy();
+		expand('Раздел А');
+		collapse('Раздел А');
+		expand('Раздел А');
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		expect(titles()).toEqual(['Раздел А', 'Загрузка…', 'Раздел Б', 'Пустой']);
+	});
+
+	it('раскрытие второго узла при идущем запросе первого просит только второй', () => {
+		const { loadChildren, batchIds } = renderLazy();
+		expand('Раздел А');
+		expand('Раздел Б');
 		expect(loadChildren).toHaveBeenCalledTimes(2);
+		expect(batchIds(1)).toEqual([2]);
+	});
+
+	it('смена rows без детей у раскрытого узла запрашивает его заново', () => {
+		const { loadChildren, finish, setRows } = renderLazy();
+		expand('Раздел А');
+		finish([1], [{ id: 10, parent: 1, title: 'Документ', kids: false }]);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		// «Обновить»: страница заменила данные, детей раскрытого узла в них нет
+		setRows([
+			{ id: 1, parent: null, title: 'Раздел А', kids: true },
+			{ id: 2, parent: null, title: 'Раздел Б', kids: true }
+		]);
+		expect(loadChildren).toHaveBeenCalledTimes(2);
+		expect(titles()).toEqual(['Раздел А', 'Загрузка…', 'Раздел Б']);
+	});
+
+	it('узел внутри свёрнутого предка не запрашивается', () => {
+		const { loadChildren, finish } = renderLazy({ defaultExpandedKeys: new Set<RowKey>([1, 10]) });
+		finish([1], [{ id: 10, parent: 1, title: 'Вложенный', kids: true }]);
+		expect(loadChildren).toHaveBeenCalledTimes(2);
+		collapse('Раздел А');
+		finish([10], []);
+		expect(loadChildren).toHaveBeenCalledTimes(2);
+		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
+	});
+
+	it('контролируемый expandedKeys, который страница не приняла, вызова не даёт', () => {
+		const { loadChildren } = renderLazy({ expandedKeys: new Set<RowKey>(), onExpandedKeysChange: vi.fn() });
+		expand('Раздел А');
+		expect(loadChildren).not.toHaveBeenCalled();
+		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
+	});
+
+	it('hasChildren=false убирает шеврон: узел-лист не запрашивается', () => {
+		const { loadChildren } = renderLazy({ defaultExpandedKeys: new Set<RowKey>([3]) });
+		expect(screen.queryByRole('button', { name: /Пустой/ })).toBeNull();
+		expect(loadChildren).not.toHaveBeenCalled();
 	});
 
 	it('«Развернуть все» в ленивом режиме отключена, в обычном доступна', () => {
@@ -278,8 +350,61 @@ describe('TreeList: ленивая подгрузка', () => {
 	it('строка «Загрузка…» не выбирается', () => {
 		const onSelectedKeysChange = vi.fn();
 		renderLazy({ selectable: true, onSelectedKeysChange });
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть Раздел А' }));
+		expand('Раздел А');
 		fireEvent.click(screen.getByText('Загрузка…'));
 		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+	});
+
+	it('ребёнок с getParentKey не равным ключу родителя становится корнем, а не догружается', () => {
+		const { finish } = renderLazy();
+		expand('Раздел А');
+		// страница ошиблась с ключом родителя: строка осиротела и показана как корень
+		finish([1], [{ id: 10, parent: 999, title: 'Сирота', kids: false }]);
+		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой', 'Сирота']);
+	});
+});
+
+describe('TreeList: ленивая подгрузка с виртуализацией', () => {
+	const mockGeometry = (): void => {
+		vi.spyOn(Element.prototype, 'clientHeight', 'get').mockReturnValue(100);
+		vi.spyOn(Element.prototype, 'clientWidth', 'get').mockReturnValue(400);
+		vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+			return this.tagName === 'TR' ? 20 : 0;
+		});
+	};
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('500 узлов: «Развернуть уровень» даёт один вызов с 500 строками, прокрутка новых не добавляет', () => {
+		mockGeometry();
+		const roots: LazyDoc[] = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, parent: null, title: `R${i + 1}`, kids: true }));
+		const [loading, setLoading] = createSignal<ReadonlySet<RowKey>>(new Set());
+		const loadChildren = vi.fn((batchRows: readonly LazyDoc[]) => {
+			setLoading((current) => new Set([...current, ...batchRows.map((row) => row.id)]));
+		});
+		render(() => (
+			<TreeList
+				rows={roots}
+				getRowKey={(row: LazyDoc) => row.id}
+				getParentKey={(row: LazyDoc) => row.parent}
+				hasChildren={(row: LazyDoc) => row.kids}
+				loadChildren={loadChildren}
+				loadingKeys={loading()}
+				columns={LAZY_COLUMNS}
+				rowHeight={20}
+				overscan={2}
+				aria-label='Документы'
+			/>
+		));
+		fireEvent.click(screen.getByRole('button', { name: 'Развернуть уровень' }));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		expect(loadChildren.mock.calls[0]?.[0]).toHaveLength(500);
+		const scroller = screen.getByRole('treegrid').parentElement as HTMLElement;
+		scroller.scrollTop = 4000;
+		scroller.dispatchEvent(new Event('scroll'));
+		scroller.scrollTop = 0;
+		scroller.dispatchEvent(new Event('scroll'));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
 	});
 });

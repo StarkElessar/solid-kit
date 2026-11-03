@@ -13,6 +13,7 @@ import { collapseTreeLevelKeys } from './collapse-tree-level-keys';
 import { expandTreeLevelKeys } from './expand-tree-level-keys';
 import { flattenTree } from './flatten-tree';
 import { loadingNodeKeys } from './loading-node-keys';
+import { planNodeLoad } from './plan-node-load';
 import type { TreeListProps } from './tree-list-props';
 
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
@@ -42,19 +43,39 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 		onChange: (next) => local.onExpandedKeysChange?.(next)
 	});
 	const index = createMemo(() => buildTreeIndex(local.rows ?? NO_ROWS, props.getRowKey, local.getParentKey ?? NO_PARENT));
-	// узлы, детей которых уже просили: запрос один на раскрытие, пока узел не свернули
+	// узлы, детей которых уже просили в этом раскрытии; ключ уходит при сворачивании узла и когда у узла появились дети
 	const [requested, setRequested] = createSignal<ReadonlySet<RowKey>>(NO_KEYS);
 	const loading = createMemo(() => {
 		return loadingNodeKeys(index(), expanded(), requested(), local.loadingKeys ?? NO_KEYS, local.hasChildren);
 	});
 	const flat = createMemo(() => flattenTree(index(), expanded(), local.hasChildren, loading()));
-	// свёрнутый узел забывается: недогруженные дети запрашиваются при следующем раскрытии заново
 	createEffect(() => {
 		const open = expanded();
+		const tree = index();
 		const current = untrack(requested);
-		if ([...current].some((key) => !open.has(key))) {
-			setRequested(new Set([...current].filter((key) => open.has(key))));
+		const keep = [...current].filter((key) => open.has(key) && !tree.children.has(key));
+		if (keep.length !== current.size) {
+			setRequested(new Set(keep));
 		}
+	});
+	// догрузка планируется по данным (видимые раскрытые узлы без детей), а не по тому, какие строки смонтированы: окно рендера и
+	// прокрутка на неё не влияют, клик и «развернуть уровень» дают один вызов на весь набор
+	createEffect(() => {
+		const plan = planNodeLoad(flat().items, requested(), local.loadingKeys ?? NO_KEYS);
+		if (plan.fresh.length === 0 && plan.joined.length === 0) {
+			return;
+		}
+		const byKey = untrack(index).byKey;
+		const rows = plan.fresh.flatMap((key) => {
+			const entry = byKey.get(key);
+			return entry === undefined ? [] : [entry.row];
+		});
+		batch(() => {
+			if (rows.length > 0) {
+				untrack(() => local.loadChildren?.(rows));
+			}
+			setRequested((current) => new Set([...current, ...plan.fresh, ...plan.joined]));
+		});
 	});
 	// изменение набора сообщается, только если оно есть: кнопки уровней на краю ничего не делают
 	const change = (next: ReadonlySet<RowKey>): void => {
@@ -67,16 +88,6 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 		hasNodes: () => flat().items.length > 0,
 		toggleNode: (key) => {
 			change(toggleKey(expanded(), key));
-		},
-		loadNode: (key) => {
-			const entry = untrack(index).byKey.get(key);
-			if (entry === undefined) {
-				return;
-			}
-			batch(() => {
-				local.loadChildren?.(entry.row);
-				setRequested((current) => new Set(current).add(key));
-			});
 		},
 		// ленивый режим: раскрыть всё значило бы запросить детей каждого узла и их детей; такой запрос решает страница, не дерево
 		canExpandAll: () => local.loadChildren === undefined,

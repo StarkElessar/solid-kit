@@ -8,7 +8,7 @@ import { TREE_COLUMNS } from './tree-list-columns';
 const ALL = makeTreeDocs(600);
 const DELAY_MS = 400;
 
-/** Ленивая подгрузка: при старте только корни, дети узла приходят через 400 мс после раскрытия. */
+/** Ленивая подгрузка: при старте только корни, дети приходят через 400 мс после раскрытия, одним ответом на весь батч. */
 export function DemoTreeListLazy(): JSX.Element {
 	const [rows, setRows] = createSignal<readonly TreeDoc[]>(ALL.filter((doc) => doc.parentId === null));
 	const [loading, setLoading] = createSignal<ReadonlySet<RowKey>>(new Set());
@@ -25,17 +25,15 @@ export function DemoTreeListLazy(): JSX.Element {
 					getRowKey={(row) => row.id}
 					getParentKey={(row) => row.parentId}
 					hasChildren={(row) => row.hasKids}
-					loadChildren={(row) => {
+					loadChildren={(batchRows) => {
+						// один «запрос» на весь набор: дети всех родителей батча приходят одним ответом
+						const ids = new Set<RowKey>(batchRows.map((row) => row.id));
 						setCalls((count) => count + 1);
-						setLoading((current) => new Set(current).add(row.id));
+						setLoading((current) => new Set([...current, ...ids]));
 						window.setTimeout(() => {
 							batch(() => {
-								setRows((current) => [...current, ...ALL.filter((doc) => doc.parentId === row.id)]);
-								setLoading((current) => {
-									const next = new Set(current);
-									next.delete(row.id);
-									return next;
-								});
+								setRows((current) => [...current, ...ALL.filter((doc) => doc.parentId !== null && ids.has(doc.parentId))]);
+								setLoading((current) => new Set([...current].filter((key) => !ids.has(key))));
 							});
 						}, DELAY_MS);
 					}}

@@ -175,6 +175,11 @@ export async function runTreeListChecks(page: HTMLElement): Promise<CheckResult[
 	await click(expander(bodyRows(lazy)[0] as HTMLElement));
 	check('«Развернуть все» в ленивом режиме отключена', button(lazy, 'Развернуть все').disabled, 'кнопка отключена');
 	check('повторное раскрытие не просит дети снова', calls.textContent === '1', `запросов ${calls.textContent}`);
+	await click(button(lazy, 'Развернуть уровень'));
+	check('«Развернуть уровень» догружает остальные узлы одним запросом', calls.textContent === '2', `запросов ${calls.textContent}`);
+	await sleep(LAZY_DELAY_MS + 300);
+	await frames();
+	check('после ответа на батч заглушек нет', !lazy.textContent.includes('Загрузка…'), 'заглушек нет');
 
 	return results;
 }

@@ -299,10 +299,8 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 			setExpandedGroups(toggleId(expandedGroups(), key));
 		},
 		loadItem: (key) => {
-			if (props.tree !== undefined) {
-				props.tree.loadNode(key);
-			}
-			else if (typeof key === 'string') {
+			// у дерева догрузку планирует `TreeList` по данным, строка-заглушка только показывает состояние
+			if (props.tree === undefined && typeof key === 'string') {
 				props.onGroupExpand?.(key);
 			}
 		},
