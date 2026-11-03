@@ -9,11 +9,12 @@ import { focusInitial } from '../floating-panel/focus-initial';
 
 import { PickerClearIcon } from './picker-clear-icon';
 import type { PickerFieldProps } from './picker-field-props';
+import { tabLeavesPanel } from './tab-leaves-panel';
 
 const OWN_PROPS = [
 	'text', 'onTextChange', 'onCommit', 'onRevert', 'open', 'defaultOpen', 'onOpenChange', 'icon', 'openLabel', 'panelLabel',
 	'clearable', 'clearLabel', 'onClear', 'name', 'hiddenValue', 'disabled', 'readOnly', 'size', 'onKeyDown', 'onBlur', 'onClick',
-	'class', 'style', 'panelClass', 'children'
+	'class', 'style', 'panelClass', 'panelTab', 'children'
 ] as const;
 
 /**
@@ -216,7 +217,10 @@ export function PickerField(props: PickerFieldProps): JSX.Element {
 				}}
 				class={local.panelClass ? `${styles['panel']} ${local.panelClass}` : styles['panel']}
 				onKeyDown={(event) => {
-					if (event.key === 'Tab') {
+					if (event.key !== 'Tab') {
+						return;
+					}
+					if (local.panelTab !== 'move' || tabLeavesPanel(event.currentTarget, event.target, event.shiftKey)) {
 						event.preventDefault();
 						closeAndFocus();
 					}

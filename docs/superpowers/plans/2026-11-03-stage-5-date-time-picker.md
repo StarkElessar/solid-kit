@@ -18,10 +18,10 @@
 
 ## Часть 1: `PickerField.panelTab`
 
-- [ ] `src/internal/floating-panel/tabbable-elements.ts`: общий список tabbable-элементов панели (вынести из `focus-initial.ts`, его поведение и тесты не меняются).
-- [ ] `PickerFieldProps.panelTab?: 'close' | 'move'` (по умолчанию `'close'`); при `'move'` Tab внутри панели не отменяется, пока есть куда идти; на последнем элементе (Tab) и на первом (Shift+Tab) панель закрывается, фокус в поле, событие отменяется. Тесты: обе ветки, края, без tabbable-элементов.
-- [ ] TimePicker передаёт `panelTab='move'`; тест TimePicker на Tab между колонками; правка раздела спеки TimePicker (отклонение исправлено).
-- [ ] `pnpm check`, коммит `feat(picker-field): panelTab для Tab внутри панели`.
+- [x] `src/internal/floating-panel/tabbable-elements.ts`: общий список tabbable-элементов панели (вынести из `focus-initial.ts`, его поведение и тесты не меняются).
+- [x] `PickerFieldProps.panelTab?: 'close' | 'move'` (по умолчанию `'close'`); при `'move'` Tab внутри панели не отменяется, пока есть куда идти; на последнем элементе (Tab) и на первом (Shift+Tab) панель закрывается, фокус в поле, событие отменяется. Тесты: обе ветки, края, без tabbable-элементов.
+- [x] TimePicker передаёт `panelTab='move'`; тест TimePicker на Tab между колонками; правка раздела спеки TimePicker (отклонение исправлено).
+- [x] `pnpm check`, коммит `feat(picker-field): panelTab для Tab внутри панели`.
 
 ## Часть 2: хелперы дата-время (`src/utils/date-time/`)
 

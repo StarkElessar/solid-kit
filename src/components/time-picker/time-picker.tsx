@@ -130,6 +130,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
 			onRevert={syncText}
 			open={open()}
 			onOpenChange={setOpen}
+			panelTab='move'
 			icon={<TimePickerIcon/>}
 			openLabel={labels().openPicker}
 			panelLabel={labels().panel}

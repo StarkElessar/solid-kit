@@ -96,6 +96,20 @@ describe('TimePicker: открытие', () => {
 		expect(document.activeElement).toBe(option('Часы', '09'));
 	});
 
+	it('Tab ходит по колонкам и «Сейчас» и закрывает панель только на выходе', async () => {
+		renderPicker({ defaultValue: '09:15' });
+		field().focus();
+		fireEvent.keyDown(field(), { key: 'ArrowDown' });
+		await Promise.resolve();
+		expect(fireEvent.keyDown(option('Часы', '09'), { key: 'Tab' })).toBe(true);
+		expect(dialog()).toBeTruthy();
+		const now = screen.getByRole('button', { name: 'Сейчас' });
+		expect(fireEvent.keyDown(now, { key: 'Tab', shiftKey: true })).toBe(true);
+		expect(fireEvent.keyDown(now, { key: 'Tab' })).toBe(false);
+		expect(dialog()).toBeNull();
+		expect(document.activeElement).toBe(field());
+	});
+
 	it('readOnly и disabled панель не открывают', () => {
 		const first = renderPicker({ readOnly: true });
 		clickField();

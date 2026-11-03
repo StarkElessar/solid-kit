@@ -251,6 +251,81 @@ describe('PickerField: клавиатура и фокус', () => {
 		expect(document.activeElement).toBe(field());
 	});
 
+	describe('panelTab="move"', () => {
+		function MoveHarness() {
+			const [text, setText] = createSignal('');
+			return (
+				<PickerField
+					text={text()}
+					onTextChange={setText}
+					onCommit={() => undefined}
+					onRevert={() => undefined}
+					icon={<svg/>}
+					openLabel='Открыть'
+					panelLabel='Выбор'
+					panelTab='move'
+				>
+					{() => (
+						<div>
+							<button type='button' data-focus-target>Первая</button>
+							<button type='button' tabindex='-1'>Вне табуляции</button>
+							<button type='button'>Последняя</button>
+						</div>
+					)}
+				</PickerField>
+			);
+		}
+
+		async function openPanel(): Promise<void> {
+			field().focus();
+			fireEvent.keyDown(field(), { key: 'ArrowDown' });
+			await Promise.resolve();
+		}
+
+		it('Tab внутри панели не отменяется и панель не закрывается', async () => {
+			render(() => <MoveHarness/>);
+			await openPanel();
+			const notPrevented = fireEvent.keyDown(screen.getByRole('button', { name: 'Первая' }), { key: 'Tab' });
+			expect(notPrevented).toBe(true);
+			expect(panel()).not.toBeNull();
+		});
+
+		it('Shift+Tab внутри панели не отменяется на втором и последнем элементах', async () => {
+			render(() => <MoveHarness/>);
+			await openPanel();
+			const last = screen.getByRole('button', { name: 'Последняя' });
+			expect(fireEvent.keyDown(last, { key: 'Tab', shiftKey: true })).toBe(true);
+			expect(panel()).not.toBeNull();
+		});
+
+		it('Tab на последнем элементе закрывает панель и возвращает фокус в поле', async () => {
+			render(() => <MoveHarness/>);
+			await openPanel();
+			const notPrevented = fireEvent.keyDown(screen.getByRole('button', { name: 'Последняя' }), { key: 'Tab' });
+			expect(notPrevented).toBe(false);
+			expect(panel()).toBeNull();
+			expect(document.activeElement).toBe(field());
+		});
+
+		it('Shift+Tab на первом элементе закрывает панель и возвращает фокус в поле', async () => {
+			render(() => <MoveHarness/>);
+			await openPanel();
+			const notPrevented = fireEvent.keyDown(screen.getByRole('button', { name: 'Первая' }), { key: 'Tab', shiftKey: true });
+			expect(notPrevented).toBe(false);
+			expect(panel()).toBeNull();
+			expect(document.activeElement).toBe(field());
+		});
+
+		it('Tab с элемента вне табуляции считается по порядку документа', async () => {
+			render(() => <MoveHarness/>);
+			await openPanel();
+			const skipped = screen.getByRole('button', { name: 'Вне табуляции' });
+			expect(fireEvent.keyDown(skipped, { key: 'Tab' })).toBe(true);
+			expect(fireEvent.keyDown(skipped, { key: 'Tab', shiftKey: true })).toBe(true);
+			expect(panel()).not.toBeNull();
+		});
+	});
+
 	it('уход из поля принимает текст и закрывает панель', () => {
 		const onCommit = vi.fn();
 		render(() => (

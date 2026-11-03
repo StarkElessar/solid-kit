@@ -1,26 +1,9 @@
+import { tabbableElements } from './tabbable-elements';
+
 export type InitialFocus = 'first' | 'panel' | 'none';
 
 /** Куда переносится фокус при открытии: готовый режим или своя функция (меню фокусирует пункт, а не первый табулируемый элемент). */
 export type InitialFocusMode = InitialFocus | ((panel: HTMLElement) => void);
-
-const TABBABLE = [
-	'a[href]',
-	'button',
-	'input:not([type="hidden"])',
-	'select',
-	'textarea',
-	'summary',
-	'[tabindex]',
-	'[contenteditable=""]',
-	'[contenteditable="true"]'
-].join(', ');
-
-function isTabbable(element: HTMLElement): boolean {
-	if (element.tabIndex < 0 || element.matches(':disabled')) {
-		return false;
-	}
-	return element.closest('[hidden], [inert]') === null;
-}
 
 /**
  * Первый элемент панели, который реально принял фокус, а если такого нет, сама панель (ей ставится `tabindex="-1"`).
@@ -32,7 +15,7 @@ export function focusInitial(panel: HTMLElement, mode: InitialFocus): void {
 		return;
 	}
 	if (mode === 'first') {
-		for (const candidate of Array.from(panel.querySelectorAll<HTMLElement>(TABBABLE)).filter(isTabbable)) {
+		for (const candidate of tabbableElements(panel)) {
 			candidate.focus({ preventScroll: true });
 			if (document.activeElement === candidate) {
 				return;

@@ -50,5 +50,10 @@ export interface PickerFieldProps
 	style?: JSX.CSSProperties | undefined;
 	/** Класс панели. */
 	panelClass?: string | undefined;
+	/**
+	 * Tab внутри панели: `close` закрывает её и возвращает фокус в поле (по умолчанию); `move` ходит по элементам панели обычным порядком
+	 * и закрывает её, только когда Tab (Shift+Tab) выходит за край.
+	 */
+	panelTab?: 'close' | 'move' | undefined;
 	children: (panel: PickerFieldPanelState) => JSX.Element;
 }
