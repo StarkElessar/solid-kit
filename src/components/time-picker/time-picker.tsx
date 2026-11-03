@@ -4,12 +4,14 @@ import { createEffect, createMemo, createSignal, type JSX, on, splitProps } from
 
 import { PickerField } from '../../internal/picker-field/picker-field';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
+import { createMask } from '../../utils/mask/create-mask';
 import { compareTimes } from '../../utils/time/compare-times';
 import { formatIsoTime } from '../../utils/time/format-iso-time';
 import { formatTimeText } from '../../utils/time/format-time-text';
 import { isTimeAllowed } from '../../utils/time/is-time-allowed';
 import { parseTimeText } from '../../utils/time/parse-time-text';
 import { readTimeProp } from '../../utils/time/read-time-prop';
+import { timeMaskSpec } from '../../utils/time/time-mask-spec';
 import type { TimeParts } from '../../utils/time/time-parts';
 import { timePattern } from '../../utils/time/time-pattern';
 
@@ -33,12 +35,13 @@ interface TimeRange {
 export function TimePicker(props: TimePickerProps): JSX.Element {
 	const [local, rest] = splitProps(props, [
 		'value', 'defaultValue', 'onValueChange', 'open', 'defaultOpen', 'onOpenChange', 'min', 'max', 'isTimeDisabled', 'minuteStep',
-		'locale', 'hour12', 'showNow', 'placeholder', 'labels', 'size', 'class'
+		'locale', 'hour12', 'showNow', 'placeholder', 'labels', 'size', 'class', 'mask'
 	]);
 
 	const locale = (): string => local.locale ?? DEFAULT_LOCALE;
 	const pattern = createMemo(() => timePattern(locale(), local.hour12));
 	const labels = createMemo(() => ({ ...DEFAULT_TIME_PICKER_LABELS, ...local.labels }));
+	const mask = createMemo(() => createMask(local.mask === false ? null : timeMaskSpec(locale(), local.hour12)));
 	const range = createMemo<TimeRange>(() => {
 		const min = readTimeProp('TimePicker', 'min', local.min);
 		const max = readTimeProp('TimePicker', 'max', local.max);
@@ -128,6 +131,7 @@ export function TimePicker(props: TimePickerProps): JSX.Element {
 			onTextChange={handleTextChange}
 			onCommit={commit}
 			onRevert={syncText}
+			mask={mask()}
 			open={open()}
 			onOpenChange={setOpen}
 			panelTab='move'

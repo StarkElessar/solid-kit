@@ -256,7 +256,7 @@ describe('TimePicker: ввод текста', () => {
 		expect(field().value).toBe('');
 	});
 
-	it.each(['9:5', '25:00', '12:60', 'abc', '9:30:15'])('невалидный текст %j откатывается', (text) => {
+	it.each(['9:5', '25:00', '12:60', '9:30:15'])('невалидный текст %j откатывается', (text) => {
 		const onValueChange = vi.fn();
 		renderPicker({ defaultValue: '09:30', onValueChange });
 		type(text);
@@ -435,5 +435,48 @@ describe('TimePicker: очистка, форма, подписи, Field', () => 
 		first.unmount();
 		renderPicker({ locale: 'en-US' });
 		expect(shellClasses()).toBe(plain + 1);
+	});
+});
+
+describe('TimePicker: маска ввода', () => {
+	it.each([['1430', '14:30'], ['930', '09:30'], ['9', '09:'], ['14.30', '14:30'], ['1430x', '14:30']])('%j даёт %j', (raw, shown) => {
+		renderPicker();
+		type(raw);
+		expect(field().value).toBe(shown);
+	});
+
+	it('часы с завершающим разделителем принимаются как часы и ноль минут', () => {
+		const onValueChange = vi.fn();
+		renderPicker({ onValueChange });
+		type('9');
+		enter();
+		expect(onValueChange).toHaveBeenCalledWith('09:00');
+	});
+
+	it('12 часов: период отделяется пробелом, буквы вне периода отбрасываются', () => {
+		renderPicker({ locale: 'en-US' });
+		type('230pmq');
+		expect(field().value).toBe('2:30 pm');
+	});
+
+	it('12 часов: 11pm даёт 11 pm и принимается как 23:00', () => {
+		const onValueChange = vi.fn();
+		renderPicker({ locale: 'en-US', onValueChange });
+		type('11pm');
+		expect(field().value).toBe('11 pm');
+		enter();
+		expect(onValueChange).toHaveBeenCalledWith('23:00');
+	});
+
+	it('mask={false} оставляет поле свободным', () => {
+		renderPicker({ mask: false });
+		type('abc');
+		expect(field().value).toBe('abc');
+	});
+
+	it('12 часов с периодом перед временем: ввод свободный', () => {
+		renderPicker({ locale: 'ko', hour12: true });
+		type('오후 2:30');
+		expect(field().value).toBe('오후 2:30');
 	});
 });

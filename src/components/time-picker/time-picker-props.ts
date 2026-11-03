@@ -6,7 +6,7 @@ export interface TimePickerProps
 	extends Omit<
 		PickerFieldProps,
 		'text' | 'onTextChange' | 'onCommit' | 'onRevert' | 'icon' | 'openLabel' | 'panelLabel' | 'clearLabel' | 'onClear' | 'hiddenValue'
-		| 'children' | 'panelClass'
+		| 'children' | 'panelClass' | 'mask'
 	> {
 	/** Выбранное время `HH:mm` (24 часа); `null` значит «не выбрано». */
 	value?: string | null | undefined;
@@ -27,6 +27,8 @@ export interface TimePickerProps
 	hour12?: boolean | undefined;
 	/** Кнопка «Сейчас» в подвале панели (по умолчанию `true`). */
 	showNow?: boolean | undefined;
+	/** Маска ввода: только цифры и разделители, разделители ставятся сами; `false` оставляет поле свободным (по умолчанию `true`). */
+	mask?: boolean | undefined;
 	/** Подсказка в поле; по умолчанию «чч:мм» по образцу локали. */
 	placeholder?: string | undefined;
 	labels?: Partial<TimePickerLabels> | undefined;

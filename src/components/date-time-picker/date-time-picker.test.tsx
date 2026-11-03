@@ -290,7 +290,7 @@ describe('DateTimePicker: ввод текста', () => {
 	it('время без даты, невалидный текст откатываются к тексту значения', () => {
 		const onValueChange = vi.fn();
 		renderPicker({ defaultValue: '2026-11-03T14:30', onValueChange });
-		for (const bad of ['17:25', '31.02.2026 10:00', 'мусор', '15.12.2026 25:00']) {
+		for (const bad of ['17:25', '31.02.2026 10:00', '15.12.2026 25:00']) {
 			type(bad);
 			enter();
 			expect(field().value).toBe('03.11.2026 14:30');
@@ -521,5 +521,57 @@ describe('DateTimePicker: очистка, форма, подписи, Field', ()
 		first.unmount();
 		renderPicker({ locale: 'en-US' });
 		expect(shellClasses()).toBe(plain + 1);
+	});
+});
+
+describe('DateTimePicker: маска ввода', () => {
+	it('цифры превращаются в дату и время', () => {
+		renderPicker();
+		type('031120261430');
+		expect(field().value).toBe('03.11.2026 14:30');
+	});
+
+	it('после года ставится пробел, дальше идёт время', () => {
+		renderPicker();
+		type('03112026');
+		expect(field().value).toBe('03.11.2026 ');
+		type('03.11.2026 9');
+		expect(field().value).toBe('03.11.2026 09:');
+	});
+
+	it('буквы не попадают в поле', () => {
+		renderPicker();
+		type('мусор');
+		expect(field().value).toBe('');
+		type('03.11.2026 14:30z');
+		expect(field().value).toBe('03.11.2026 14:30');
+	});
+
+	it('набранное по маске принимается по Enter', () => {
+		const onValueChange = vi.fn();
+		renderPicker({ onValueChange });
+		type('031120261430');
+		enter();
+		expect(onValueChange).toHaveBeenCalledWith('2026-11-03T14:30');
+	});
+
+	it('дата без времени с хвостовым пробелом принимается', () => {
+		const onValueChange = vi.fn();
+		renderPicker({ onValueChange });
+		type('03112026');
+		enter();
+		expect(onValueChange).toHaveBeenCalledWith('2026-11-03T00:00');
+	});
+
+	it('en-US: 12 часов с периодом', () => {
+		renderPicker({ locale: 'en-US' });
+		type('110320262 30pm');
+		expect(field().value).toBe('11/03/2026 2:30 pm');
+	});
+
+	it('mask={false} оставляет поле свободным', () => {
+		renderPicker({ mask: false });
+		type('мусор');
+		expect(field().value).toBe('мусор');
 	});
 });

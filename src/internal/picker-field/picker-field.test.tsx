@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
-import { createSignal } from 'solid-js';
+import { createSignal, untrack } from 'solid-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PickerField } from './picker-field';
@@ -22,11 +22,9 @@ afterEach(cleanup);
 type Extra = Partial<PickerFieldProps>;
 
 function Harness(props: Extra) {
-	const [text, setText] = createSignal('');
+	const [text, setText] = createSignal(untrack(() => props.text ?? ''));
 	return (
 		<PickerField
-			text={text()}
-			onTextChange={setText}
 			onCommit={() => undefined}
 			onRevert={() => undefined}
 			icon={<svg data-testid='icon'/>}
@@ -34,6 +32,11 @@ function Harness(props: Extra) {
 			clearLabel='Очистить'
 			panelLabel='Выбор'
 			{...props}
+			text={text()}
+			onTextChange={(next) => {
+				setText(next);
+				props.onTextChange?.(next);
+			}}
 		>
 			{(panel) => (
 				<div data-testid='content'>
@@ -323,6 +326,43 @@ describe('PickerField: клавиатура и фокус', () => {
 			expect(fireEvent.keyDown(skipped, { key: 'Tab' })).toBe(true);
 			expect(fireEvent.keyDown(skipped, { key: 'Tab', shiftKey: true })).toBe(true);
 			expect(panel()).not.toBeNull();
+		});
+	});
+
+	describe('mask', () => {
+		const digitsOnly = (next: string): string => next.replaceAll(/\D/g, '');
+
+		it('переписывает набранный текст', () => {
+			const onTextChange = vi.fn();
+			render(() => <Harness mask={digitsOnly} onTextChange={onTextChange}/>);
+			fireEvent.input(field(), { target: { value: '1a2b' } });
+			expect(field().value).toBe('12');
+			expect(onTextChange).toHaveBeenLastCalledWith('12');
+		});
+
+		it('отвергнутый символ оставляет прежний текст и не вызывает onTextChange', () => {
+			const onTextChange = vi.fn();
+			render(() => <Harness text='12' mask={digitsOnly} onTextChange={onTextChange}/>);
+			fireEvent.input(field(), { target: { value: '12x' } });
+			expect(field().value).toBe('12');
+			expect(onTextChange).not.toHaveBeenCalled();
+		});
+
+		it('без маски ввод свободный', () => {
+			render(() => <Harness/>);
+			fireEvent.input(field(), { target: { value: '1a2b' } });
+			expect(field().value).toBe('1a2b');
+		});
+
+		it('курсор не в конце остаётся у той же цифры', async () => {
+			render(() => <Harness mask={digitsOnly}/>);
+			fireEvent.input(field(), { target: { value: '12' } });
+			field().value = '1x2';
+			field().setSelectionRange(2, 2);
+			fireEvent.input(field());
+			await Promise.resolve();
+			expect(field().value).toBe('12');
+			expect(field().selectionStart).toBe(1);
 		});
 	});
 

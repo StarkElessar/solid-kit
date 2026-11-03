@@ -10,6 +10,7 @@ import { isDateAllowed } from '../../utils/date/is-date-allowed';
 import { parseIsoDate } from '../../utils/date/parse-iso-date';
 import { todayIso } from '../../utils/date/today-iso';
 import { compareDateTimes } from '../../utils/date-time/compare-date-times';
+import { dateTimeMaskSpec } from '../../utils/date-time/date-time-mask-spec';
 import type { DateTimeParts } from '../../utils/date-time/date-time-parts';
 import type { DateTimeRules } from '../../utils/date-time/date-time-rules';
 import { fitTimeToDate } from '../../utils/date-time/fit-time-to-date';
@@ -19,6 +20,7 @@ import { isDateTimeAllowed } from '../../utils/date-time/is-date-time-allowed';
 import { parseDateTimeText } from '../../utils/date-time/parse-date-time-text';
 import { readDateTimeProp } from '../../utils/date-time/read-date-time-prop';
 import { timeBoundsForDate } from '../../utils/date-time/time-bounds-for-date';
+import { createMask } from '../../utils/mask/create-mask';
 import { floorToStep } from '../../utils/time/floor-to-step';
 import { nowTime } from '../../utils/time/now-time';
 import type { TimeParts } from '../../utils/time/time-parts';
@@ -41,12 +43,13 @@ const MIDNIGHT: TimeParts = { hour: 0, minute: 0 };
 export function DateTimePicker(props: DateTimePickerProps): JSX.Element {
 	const [local, rest] = splitProps(props, [
 		'value', 'defaultValue', 'onValueChange', 'open', 'defaultOpen', 'onOpenChange', 'min', 'max', 'isDateDisabled', 'isTimeDisabled',
-		'minuteStep', 'locale', 'hour12', 'firstDayOfWeek', 'showNow', 'placeholder', 'labels', 'calendarLabels', 'size', 'class'
+		'minuteStep', 'locale', 'hour12', 'firstDayOfWeek', 'showNow', 'placeholder', 'labels', 'calendarLabels', 'size', 'class', 'mask'
 	]);
 
 	const locale = (): string => local.locale ?? DEFAULT_LOCALE;
 	const pattern = createMemo(() => timePattern(locale(), local.hour12));
 	const labels = createMemo(() => ({ ...DEFAULT_DATE_TIME_PICKER_LABELS, ...local.labels }));
+	const mask = createMemo(() => createMask(local.mask === false ? null : dateTimeMaskSpec(locale(), local.hour12)));
 	const step = (): number => local.minuteStep ?? 1;
 	const rules = createMemo<DateTimeRules>(() => {
 		const min = readDateTimeProp('DateTimePicker', 'min', local.min);
@@ -214,6 +217,7 @@ export function DateTimePicker(props: DateTimePickerProps): JSX.Element {
 			onTextChange={handleTextChange}
 			onCommit={commit}
 			onRevert={syncText}
+			mask={mask()}
 			open={open()}
 			onOpenChange={setOpen}
 			panelTab='move'

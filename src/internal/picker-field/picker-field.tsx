@@ -4,6 +4,7 @@ import { createSignal, createUniqueId, type JSX, onCleanup, onMount, Show, split
 
 import { Input } from '../../components/input';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
+import { caretAfterDigits, digitsBefore } from '../../utils/mask/mask-caret';
 import { FloatingPanel } from '../floating-panel/floating-panel';
 import { focusInitial } from '../floating-panel/focus-initial';
 
@@ -14,7 +15,7 @@ import { tabLeavesPanel } from './tab-leaves-panel';
 const OWN_PROPS = [
 	'text', 'onTextChange', 'onCommit', 'onRevert', 'open', 'defaultOpen', 'onOpenChange', 'icon', 'openLabel', 'panelLabel',
 	'clearable', 'clearLabel', 'onClear', 'name', 'hiddenValue', 'disabled', 'readOnly', 'size', 'onKeyDown', 'onBlur', 'onClick',
-	'class', 'style', 'panelClass', 'panelTab', 'children'
+	'class', 'style', 'panelClass', 'panelTab', 'mask', 'children'
 ] as const;
 
 /**
@@ -100,6 +101,27 @@ export function PickerField(props: PickerFieldProps): JSX.Element {
 		setOpen(false);
 	};
 
+	// маска переписывает набранное; Input сам возвращает в поле принятый родителем текст, здесь только курсор не в конце
+	const handleValueChange = (raw: string): void => {
+		const mask = local.mask;
+		if (!mask) {
+			local.onTextChange(raw);
+			return;
+		}
+		const element = input();
+		const caret = element?.selectionStart ?? raw.length;
+		const masked = mask(raw, local.text);
+		if (masked !== local.text) {
+			local.onTextChange(masked);
+		}
+		if (element && masked !== raw && caret < raw.length) {
+			const position = caretAfterDigits(masked, digitsBefore(raw, caret));
+			queueMicrotask(() => {
+				element.setSelectionRange(position, position);
+			});
+		}
+	};
+
 	// клик по подписи браузер пересылает полю синтетическим кликом: это не клик по полю и панель не открывает
 	let labelClick = false;
 	onMount(() => {
@@ -149,7 +171,7 @@ export function PickerField(props: PickerFieldProps): JSX.Element {
 				disabled={local.disabled}
 				readOnly={local.readOnly}
 				value={local.text}
-				onValueChange={local.onTextChange}
+				onValueChange={handleValueChange}
 				onKeyDown={handleKeyDown}
 				onBlur={handleBlur}
 				onClick={handleClick}

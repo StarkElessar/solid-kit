@@ -4,6 +4,7 @@ import { createComputed, createEffect, createMemo, createSignal, type JSX, on, s
 
 import { PickerField } from '../../internal/picker-field/picker-field';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
+import { dateMaskSpec } from '../../utils/date/date-mask-spec';
 import type { DateParts } from '../../utils/date/date-parts';
 import { formatDateText } from '../../utils/date/format-date-text';
 import { formatIsoDate } from '../../utils/date/format-iso-date';
@@ -11,6 +12,7 @@ import { isDateAllowed } from '../../utils/date/is-date-allowed';
 import { parseDateText } from '../../utils/date/parse-date-text';
 import { readDateProp } from '../../utils/date/read-date-prop';
 import { todayIso } from '../../utils/date/today-iso';
+import { createMask } from '../../utils/mask/create-mask';
 import { Calendar } from '../calendar';
 
 import { DatePickerIcon } from './date-picker-icon';
@@ -27,11 +29,12 @@ const DEFAULT_LOCALE = 'ru';
 export function DatePicker(props: DatePickerProps): JSX.Element {
 	const [local, rest] = splitProps(props, [
 		'value', 'defaultValue', 'onValueChange', 'open', 'defaultOpen', 'onOpenChange', 'min', 'max', 'isDateDisabled', 'locale',
-		'firstDayOfWeek', 'selectOnToday', 'placeholder', 'labels', 'calendarLabels', 'size', 'class'
+		'firstDayOfWeek', 'selectOnToday', 'placeholder', 'labels', 'calendarLabels', 'size', 'class', 'mask'
 	]);
 
 	const locale = (): string => local.locale ?? DEFAULT_LOCALE;
 	const labels = createMemo(() => ({ ...DEFAULT_DATE_PICKER_LABELS, ...local.labels }));
+	const mask = createMemo(() => createMask(local.mask === false ? null : dateMaskSpec(locale())));
 	const min = createMemo(() => readDateProp('DatePicker', 'min', local.min));
 	const max = createMemo(() => readDateProp('DatePicker', 'max', local.max));
 
@@ -123,6 +126,7 @@ export function DatePicker(props: DatePickerProps): JSX.Element {
 			onTextChange={handleTextChange}
 			onCommit={commit}
 			onRevert={syncText}
+			mask={mask()}
 			open={open()}
 			onOpenChange={setOpen}
 			icon={<DatePickerIcon/>}

@@ -7,7 +7,7 @@ export interface DatePickerProps
 	extends Omit<
 		PickerFieldProps,
 		'text' | 'onTextChange' | 'onCommit' | 'onRevert' | 'icon' | 'openLabel' | 'panelLabel' | 'clearLabel' | 'onClear' | 'hiddenValue'
-		| 'children' | 'panelClass'
+		| 'children' | 'panelClass' | 'mask'
 	> {
 	/** Выбранная дата `YYYY-MM-DD`; `null` значит «не выбрана». */
 	value?: string | null | undefined;
@@ -24,6 +24,8 @@ export interface DatePickerProps
 	firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined;
 	/** «Сегодня» в календаре выбирает дату (по умолчанию `true`). */
 	selectOnToday?: boolean | undefined;
+	/** Маска ввода: только цифры и разделители, разделители ставятся сами; `false` оставляет поле свободным (по умолчанию `true`). */
+	mask?: boolean | undefined;
 	/** Подсказка в поле; по умолчанию «дд.мм.гггг» по образцу локали. */
 	placeholder?: string | undefined;
 	labels?: Partial<DatePickerLabels> | undefined;

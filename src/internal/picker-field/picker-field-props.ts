@@ -41,6 +41,12 @@ export interface PickerFieldProps
 	readOnly?: boolean | undefined;
 	size?: PickerFieldSize | undefined;
 
+	/**
+	 * Маска ввода: из набранного и прежнего текста получает допустимый текст. Поле остаётся обычным `<input>`; без маски ввод свободный.
+	 * Если маска вернула прежний текст, набранный символ отвергнут.
+	 */
+	mask?: ((next: string, previous: string) => string) | undefined;
+
 	onKeyDown?: JSX.EventHandler<HTMLInputElement, KeyboardEvent> | undefined;
 	onBlur?: JSX.EventHandler<HTMLInputElement, FocusEvent> | undefined;
 	onClick?: JSX.EventHandler<HTMLInputElement, MouseEvent> | undefined;

@@ -220,7 +220,7 @@ describe('DatePicker: ввод текста', () => {
 		expect(field().value).toBe('');
 	});
 
-	it.each(['31.02.2026', '03.11.26', 'abc', '03.11'])('невалидный текст %j откатывается', (text) => {
+	it.each(['31.02.2026', '03.11.26', '03.11'])('невалидный текст %j откатывается', (text) => {
 		const onValueChange = vi.fn();
 		renderPicker({ defaultValue: '2026-11-18', onValueChange });
 		type(text);
@@ -353,5 +353,55 @@ describe('DatePicker: очистка, форма, подписи, Field', () => 
 		clickField();
 		expect(field().closest('[data-s-kit-size]')?.getAttribute('data-s-kit-size')).toBe('lg');
 		expect(screen.getByRole('group', { name: 'Календарь' }).getAttribute('data-s-kit-size')).toBe('lg');
+	});
+});
+
+describe('DatePicker: маска ввода', () => {
+	it('цифры превращаются в дату с разделителями', () => {
+		renderPicker();
+		type('03112026');
+		expect(field().value).toBe('03.11.2026');
+	});
+
+	it('буквы и посторонние знаки не попадают в поле', () => {
+		renderPicker({ defaultValue: '2026-11-03' });
+		type('03.11.2026x');
+		expect(field().value).toBe('03.11.2026');
+		type('03.11.2026!');
+		expect(field().value).toBe('03.11.2026');
+	});
+
+	it('год ровно 4 цифры, лишние цифры отбрасываются', () => {
+		renderPicker();
+		type('031120261');
+		expect(field().value).toBe('03.11.2026');
+	});
+
+	it('вставка с другими разделителями нормализуется', () => {
+		renderPicker();
+		type('3/11/2026');
+		expect(field().value).toBe('03.11.2026');
+	});
+
+	it('en-US: месяц первым и слэш', () => {
+		renderPicker({ locale: 'en-US' });
+		type('11032026');
+		expect(field().value).toBe('11/03/2026');
+	});
+
+	it('набранная по маске дата принимается по Enter', () => {
+		const onValueChange = vi.fn();
+		renderPicker({ onValueChange });
+		type('03112026');
+		enter();
+		expect(onValueChange).toHaveBeenCalledWith('2026-11-03');
+	});
+
+	it('mask={false} оставляет поле свободным', () => {
+		renderPicker({ mask: false, defaultValue: '2026-11-03' });
+		type('abc');
+		expect(field().value).toBe('abc');
+		enter();
+		expect(field().value).toBe('03.11.2026');
 	});
 });

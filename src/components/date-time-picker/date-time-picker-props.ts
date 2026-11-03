@@ -7,7 +7,7 @@ export interface DateTimePickerProps
 	extends Omit<
 		PickerFieldProps,
 		'text' | 'onTextChange' | 'onCommit' | 'onRevert' | 'icon' | 'openLabel' | 'panelLabel' | 'clearLabel' | 'onClear' | 'hiddenValue'
-		| 'children' | 'panelClass' | 'panelTab'
+		| 'children' | 'panelClass' | 'panelTab' | 'mask'
 	> {
 	/** Выбранные дата и время `YYYY-MM-DDTHH:mm` (без часового пояса); `null` значит «не выбрано». */
 	value?: string | null | undefined;
@@ -31,6 +31,8 @@ export interface DateTimePickerProps
 	firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined;
 	/** Кнопка «Сейчас» в подвале панели (по умолчанию `true`). */
 	showNow?: boolean | undefined;
+	/** Маска ввода: только цифры и разделители, разделители ставятся сами; `false` оставляет поле свободным (по умолчанию `true`). */
+	mask?: boolean | undefined;
 	/** Подсказка в поле; по умолчанию «дд.мм.гггг чч:мм» по образцу локали. */
 	placeholder?: string | undefined;
 	labels?: Partial<DateTimePickerLabels> | undefined;
