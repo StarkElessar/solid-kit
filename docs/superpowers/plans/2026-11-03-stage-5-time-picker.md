@@ -26,10 +26,10 @@
 
 ## Часть 2: `TimeColumns`
 
-- [ ] `time-columns-state.ts` (чистая модель): допустимость строки часа и минуты по `min`/`max`/`isTimeDisabled`/`minuteStep`, 12-часовое сопоставление строк, цель фокуса при пустом значении и при значении вне шага, соседняя допустимая строка и крайние строки; тесты таблицами.
-- [ ] `time-column.tsx`, `time-option.tsx`, `time-columns.tsx`, `time-columns-props.ts`, `handle-time-columns-key-down.ts`, `time-columns.module.css`: правила выбора раздела 5 спеки, клавиатура, прокрутка колонок, подвал «Сейчас».
-- [ ] Тесты компонента: выбор часа и минут, значение при пустом, закрытие по последней колонке (через колбэк `onFinish`), период в 12 часах, «Сейчас», отключённые строки пропускаются стрелками, клавиши Home/End/PageUp/PageDown/Left/Right/Enter/Space, `aria-*`.
-- [ ] `pnpm check`, коммит `feat(time-picker): панель колонок TimeColumns`.
+- [x] `time-columns-state.ts` (чистая модель): допустимость строки часа и минуты по `min`/`max`/`isTimeDisabled`/`minuteStep`, 12-часовое сопоставление строк, цель фокуса при пустом значении и при значении вне шага, соседняя допустимая строка и крайние строки; тесты таблицами.
+- [x] `time-column.tsx`, `time-option.tsx`, `time-columns.tsx`, `time-columns-props.ts`, `handle-time-columns-key-down.ts`, `time-columns.module.css`: правила выбора раздела 5 спеки, клавиатура, прокрутка колонок, подвал «Сейчас».
+- [x] Тесты компонента: выбор часа и минут, значение при пустом, закрытие по последней колонке (через колбэк `onFinish`), период в 12 часах, «Сейчас», отключённые строки пропускаются стрелками, клавиши Home/End/PageUp/PageDown/Left/Right/Enter/Space, `aria-*`.
+- [x] `pnpm check`, коммит `feat(time-picker): панель колонок TimeColumns`.
 
 ## Часть 3: TimePicker
 
