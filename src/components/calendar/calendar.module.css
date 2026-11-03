@@ -1,0 +1,132 @@
+/*
+ * Токены Calendar (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-calendar-cell (сторона ячейки, по умолчанию высота контрола), --s-kit-calendar-gap (2px),
+ *   --s-kit-calendar-padding (8px), --s-kit-calendar-bg (прозрачный).
+ * Три блока: шапка, тело, подвал. Тело всегда занимает строку дней недели и 6 строк по 7 ячеек, поэтому высота не зависит от месяца.
+ */
+
+.root {
+    --calendar-cell: var(--s-kit-calendar-cell, var(--s-kit-control-height, var(--s-kit-control-height-md)));
+    --calendar-gap: var(--s-kit-calendar-gap, 2px);
+    --calendar-padding: var(--s-kit-calendar-padding, 8px);
+
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--calendar-padding);
+
+    box-sizing: border-box;
+    padding: var(--calendar-padding);
+
+    font-family: var(--s-kit-font);
+    font-size: var(--s-kit-control-font-size, var(--s-kit-control-font-size-md));
+    color: var(--s-kit-color-text);
+
+    background: var(--s-kit-calendar-bg, transparent);
+}
+
+.header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--calendar-gap);
+    align-items: center;
+}
+
+.title {
+    overflow: hidden;
+
+    padding-inline: var(--calendar-gap);
+
+    font-weight: 600;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon {
+    inline-size: 1em;
+    block-size: 1em;
+}
+
+.days {
+    display: grid;
+    gap: var(--calendar-gap);
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(7, var(--calendar-cell));
+    gap: var(--calendar-gap);
+}
+
+.weekday {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    block-size: var(--calendar-cell);
+
+    font-size: 0.85em;
+    color: var(--s-kit-color-muted);
+}
+
+.cell {
+    display: flex;
+    block-size: var(--calendar-cell);
+}
+
+.day {
+    cursor: pointer;
+
+    flex: 1;
+
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    border-radius: var(--s-kit-radius);
+
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    color: var(--s-kit-color-text);
+
+    background: transparent;
+
+    &[data-outside] {
+        color: var(--s-kit-color-muted);
+    }
+
+    &[data-today] {
+        box-shadow: inset 0 0 0 1px var(--s-kit-color-primary);
+    }
+
+    &:hover:not([aria-disabled="true"]) {
+        background: var(--s-kit-color-hover);
+    }
+
+    &[data-selected] {
+        color: var(--s-kit-color-primary-contrast);
+        background: var(--s-kit-color-primary);
+
+        &:hover:not([aria-disabled="true"]) {
+            background: var(--s-kit-color-primary-hover);
+        }
+    }
+
+    &[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
+
+    &:focus-visible {
+        outline: var(--s-kit-focus-width) solid var(--s-kit-color-focus-ring);
+        outline-offset: var(--s-kit-focus-ring-offset, var(--s-kit-focus-offset));
+    }
+
+    &[data-selected]:focus-visible {
+        outline-color: var(--s-kit-focus-ring-on-fill, var(--s-kit-color-focus-ring));
+    }
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+}
