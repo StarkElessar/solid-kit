@@ -310,6 +310,17 @@ describe('PickerField: «Очистить»', () => {
 		expect(document.activeElement).toBe(field());
 	});
 
+	it('clearable ставит data-clearable на оболочку независимо от текста, чтобы поле не меняло ширину', () => {
+		render(() => <Harness clearable text=''/>);
+		const shell = field().parentElement;
+		expect(shell?.hasAttribute('data-clearable')).toBe(true);
+	});
+
+	it('без clearable data-clearable нет', () => {
+		render(() => <Harness text='03.11.2026'/>);
+		expect(field().parentElement?.hasAttribute('data-clearable')).toBe(false);
+	});
+
 	it.each([
 		['без clearable', { text: '03.11.2026' }],
 		['с пустым текстом', { clearable: true, text: '' }],

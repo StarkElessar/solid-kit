@@ -112,7 +112,7 @@ export function PickerField(props: PickerFieldProps): JSX.Element {
 			ref={setAnchor}
 			data-s-kit
 			data-s-kit-size={local.size}
-			data-has-clear={hasClear() ? '' : undefined}
+			data-clearable={local.clearable === true ? '' : undefined}
 			class={local.class ? `${styles['field']} ${local.class}` : styles['field']}
 			style={local.style}
 		>

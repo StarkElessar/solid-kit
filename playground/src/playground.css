@@ -434,3 +434,31 @@ h2 {
         color: var(--s-kit-color-muted);
     }
 }
+
+.date-picker-demos {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.date-picker-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.date-picker-clipper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    inline-size: 14rem;
+    block-size: 5rem;
+    padding: 8px;
+    border: 1px dashed var(--s-kit-color-border);
+    border-radius: var(--s-kit-radius);
+
+    font-size: 12px;
+    color: var(--s-kit-color-muted);
+}

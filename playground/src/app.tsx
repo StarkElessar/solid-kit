@@ -3,12 +3,13 @@ import { Dynamic } from 'solid-js/web';
 
 import { CalendarPage } from './calendar-page';
 import { ControlsRowPage } from './controls-row-page';
+import { DatePickerPage } from './date-picker-page';
 import { GridPage } from './grid-page';
 import { ListsPage } from './lists-page';
 import { PanelsPage } from './panels-page';
 import { ThemesPage } from './themes-page';
 
-const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar'] as const;
+const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker'] as const;
 
 type PageId = (typeof PAGE_IDS)[number];
 
@@ -18,7 +19,8 @@ const PAGES: Record<PageId, { readonly title: string; readonly component: () => 
 	panels: { title: 'Панели', component: PanelsPage },
 	lists: { title: 'Списки', component: ListsPage },
 	grid: { title: 'Грид', component: GridPage },
-	calendar: { title: 'Календарь', component: CalendarPage }
+	calendar: { title: 'Календарь', component: CalendarPage },
+	'date-picker': { title: 'Выбор даты', component: DatePickerPage }
 };
 
 function readHash(): PageId {

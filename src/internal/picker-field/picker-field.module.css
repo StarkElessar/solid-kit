@@ -20,8 +20,13 @@
         padding-inline-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
     }
 
-    &[data-has-clear] .input {
-        padding-inline-end: calc(2 * var(--s-kit-control-height, var(--s-kit-control-height-md)));
+    /* кнопка очистки резервирует ещё один квадрат, поэтому поле шире на него и не сужает место под текст */
+    &[data-clearable] {
+        inline-size: calc(var(--s-kit-picker-field-width, 10rem) + var(--s-kit-control-height, var(--s-kit-control-height-md)));
+
+        & .input {
+            padding-inline-end: calc(2 * var(--s-kit-control-height, var(--s-kit-control-height-md)));
+        }
     }
 }
 
