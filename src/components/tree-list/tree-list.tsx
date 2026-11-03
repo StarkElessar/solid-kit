@@ -1,4 +1,4 @@
-import { createMemo, type JSX, splitProps } from 'solid-js';
+import { batch, createEffect, createMemo, createSignal, type JSX, splitProps, untrack } from 'solid-js';
 
 import { createControllableSignal } from '../../utils/create-controllable-signal';
 import { DEFAULT_LEVEL_LABELS } from '../grid/default-level-labels';
@@ -12,6 +12,7 @@ import { buildTreeIndex } from './build-tree-index';
 import { collapseTreeLevelKeys } from './collapse-tree-level-keys';
 import { expandTreeLevelKeys } from './expand-tree-level-keys';
 import { flattenTree } from './flatten-tree';
+import { loadingNodeKeys } from './loading-node-keys';
 import type { TreeListProps } from './tree-list-props';
 
 const NO_KEYS: ReadonlySet<RowKey> = new Set();
@@ -41,7 +42,20 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 		onChange: (next) => local.onExpandedKeysChange?.(next)
 	});
 	const index = createMemo(() => buildTreeIndex(local.rows ?? NO_ROWS, props.getRowKey, local.getParentKey ?? NO_PARENT));
-	const flat = createMemo(() => flattenTree(index(), expanded(), local.hasChildren, local.loadingKeys ?? NO_KEYS));
+	// узлы, детей которых уже просили: запрос один на раскрытие, пока узел не свернули
+	const [requested, setRequested] = createSignal<ReadonlySet<RowKey>>(NO_KEYS);
+	const loading = createMemo(() => {
+		return loadingNodeKeys(index(), expanded(), requested(), local.loadingKeys ?? NO_KEYS, local.hasChildren);
+	});
+	const flat = createMemo(() => flattenTree(index(), expanded(), local.hasChildren, loading()));
+	// свёрнутый узел забывается: недогруженные дети запрашиваются при следующем раскрытии заново
+	createEffect(() => {
+		const open = expanded();
+		const current = untrack(requested);
+		if ([...current].some((key) => !open.has(key))) {
+			setRequested(new Set([...current].filter((key) => open.has(key))));
+		}
+	});
 	// изменение набора сообщается, только если оно есть: кнопки уровней на краю ничего не делают
 	const change = (next: ReadonlySet<RowKey>): void => {
 		if (next !== expanded()) {
@@ -54,7 +68,16 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 		toggleNode: (key) => {
 			change(toggleKey(expanded(), key));
 		},
-		loadNode: () => undefined,
+		loadNode: (key) => {
+			const entry = untrack(index).byKey.get(key);
+			if (entry === undefined) {
+				return;
+			}
+			batch(() => {
+				local.loadChildren?.(entry.row);
+				setRequested((current) => new Set(current).add(key));
+			});
+		},
 		collapseLevel: () => {
 			change(collapseTreeLevelKeys(flat().items, expanded()));
 		},
@@ -65,7 +88,7 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 			change(expandTreeLevelKeys(flat().items, expanded()));
 		},
 		expandAll: () => {
-			change(allTreeKeys(index()));
+			change(allTreeKeys(index(), expanded()));
 		},
 		levelLabels: () => ({ ...DEFAULT_LEVEL_LABELS, ...local.levelLabels })
 	};

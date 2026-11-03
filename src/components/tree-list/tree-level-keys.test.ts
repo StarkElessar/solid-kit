@@ -46,8 +46,14 @@ describe('expandTreeLevelKeys', () => {
 });
 
 describe('allTreeKeys', () => {
-	it('даёт узлы с загруженными детьми', () => {
-		expect(sorted(allTreeKeys(index))).toEqual([1, 2]);
+	it('добавляет узлы с загруженными детьми к раскрытым', () => {
+		expect(sorted(allTreeKeys(index, open()))).toEqual([1, 2]);
+		expect(sorted(allTreeKeys(index, open(1, 9)))).toEqual([1, 2, 9]);
+	});
+
+	it('всё уже раскрыто: тот же набор', () => {
+		const expanded = open(1, 2);
+		expect(allTreeKeys(index, expanded)).toBe(expanded);
 	});
 });
 
