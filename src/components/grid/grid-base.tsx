@@ -28,6 +28,7 @@ import { expandLevelKeys } from './expand-level-keys';
 import { flattenGroups } from './flatten-groups';
 import { foundText as defaultFoundText } from './found-text';
 import { GridBar } from './grid-bar';
+import type { GridBaseProps } from './grid-base-props';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
@@ -36,7 +37,6 @@ import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridItem } from './grid-item';
 import { GridLiveRegion } from './grid-live-region';
 import { GridProgress } from './grid-progress';
-import type { GridProps } from './grid-props';
 import { GridRowMenu } from './grid-row-menu';
 import type { GridSort } from './grid-sort';
 import { GridTable } from './grid-table';
@@ -67,7 +67,7 @@ const NO_GROUP_KEYS: ReadonlySet<string> = new Set();
  * Данные, ширины, сортировку и выбор хранит страница. Раскладка колонок живёт в CSS-переменных таблицы (спек этапа 4а, раздел 4).
  * `Grid` и `TreeList` это оболочки над ним; общие части лежат в этой папке в одном экземпляре (спек TreeList, раздел 2).
  */
-export function GridBase<T>(props: GridProps<T>): JSX.Element {
+export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 	const [widths, setWidths] = createControllableSignal<Readonly<Record<string, number>>>({
 		name: 'Grid',
 		value: () => props.columnWidths,
@@ -127,6 +127,7 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 		equals: sameItems
 	});
 	const groupable = (): boolean => props.groupable === true;
+	const hasBar = (): boolean => groupable() || props.tree !== undefined;
 	const groupingLabels = (): GridGroupingLabels => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels });
 	const canGroup = (columnId: string): boolean => {
 		return groupable() && props.columns.some((column) => column.id === columnId && column.groupable !== false);
@@ -146,7 +147,12 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 		collapseAllGroups();
 	};
 	// сгруппированный режим определяет наличие `groups`; плоский список элементов строится только в нём
-	const flat = createMemo(() => (props.groups === undefined ? undefined : flattenGroups(props.groups, expandedGroups())));
+	const flat = createMemo(() => {
+		if (props.tree !== undefined) {
+			return props.tree.flat();
+		}
+		return props.groups === undefined ? undefined : flattenGroups(props.groups, expandedGroups());
+	});
 	const leafRows = createMemo((): readonly T[] => flat()?.rows ?? props.rows ?? NO_ROWS);
 	const itemCount = (): number => flat()?.items.length ?? leafRows().length;
 	const itemAt = (index: number): GridItem<unknown> | undefined => {
@@ -293,12 +299,19 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 			setExpandedGroups(toggleId(expandedGroups(), key));
 		},
 		loadItem: (key) => {
-			if (typeof key === 'string') {
+			if (props.tree !== undefined) {
+				props.tree.loadNode(key);
+			}
+			else if (typeof key === 'string') {
 				props.onGroupExpand?.(key);
 			}
 		},
+		isTree: () => props.tree !== undefined,
+		toggleNode: (key) => {
+			props.tree?.toggleNode(key);
+		},
 		groupingLabels,
-		levelLabels: groupingLabels,
+		levelLabels: () => props.tree?.levelLabels() ?? groupingLabels(),
 		groupable,
 		grouping: visibleGrouping,
 		canGroup,
@@ -313,16 +326,35 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 		},
 		drag: groupingDrag.state,
 		beginGroupingDrag: groupingDrag.begin,
-		hasLevels: () => (props.groups?.length ?? 0) > 0,
-		hasBar: groupable,
+		hasLevels: () => (props.tree === undefined ? (props.groups?.length ?? 0) > 0 : props.tree.hasNodes()),
+		hasBar,
 		collapseLevel: () => {
+			if (props.tree !== undefined) {
+				props.tree.collapseLevel();
+				return;
+			}
 			changeExpanded(collapseLevelKeys(props.groups ?? [], expandedGroups()));
 		},
-		collapseAll: collapseAllGroups,
+		collapseAll: () => {
+			if (props.tree === undefined) {
+				collapseAllGroups();
+			}
+			else {
+				props.tree.collapseAll();
+			}
+		},
 		expandLevel: () => {
+			if (props.tree !== undefined) {
+				props.tree.expandLevel();
+				return;
+			}
 			changeExpanded(expandLevelKeys(props.groups ?? [], expandedGroups()));
 		},
 		expandAll: () => {
+			if (props.tree !== undefined) {
+				props.tree.expandAll();
+				return;
+			}
 			changeExpanded(allGroupKeys(props.groups ?? []));
 		},
 		rowIndex,
@@ -448,7 +480,7 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 					tabindex='-1'
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
-					data-bar={groupable() ? '' : undefined}
+					data-bar={hasBar() ? '' : undefined}
 					data-fill={props.fill === true ? '' : undefined}
 					data-dragging={groupingDrag.state() === undefined ? undefined : ''}
 					style={{

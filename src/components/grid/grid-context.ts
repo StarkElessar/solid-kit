@@ -49,6 +49,10 @@ export interface GridContextValue<T> {
 	hasLevels: Accessor<boolean>;
 	/** Верхняя полоса есть: панель группировки или кнопки уровней дерева. */
 	hasBar: Accessor<boolean>;
+	/** Строки образуют дерево (`TreeList`). */
+	isTree: Accessor<boolean>;
+	/** Раскрывает или сворачивает узел дерева. */
+	toggleNode: (key: RowKey) => void;
 	/** Подписи кнопок уровней, шеврона и заглушки догрузки. */
 	levelLabels: Accessor<GridLevelLabels>;
 	/** Идущее перетаскивание заголовка или чипа; `undefined` вне жеста. */

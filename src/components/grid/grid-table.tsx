@@ -18,6 +18,7 @@ export function GridTable(props: GridTableProps): JSX.Element {
 	return (
 		<table
 			class={styles['table']}
+			role={grid.isTree() ? 'treegrid' : undefined}
 			aria-label={props['aria-label']}
 			aria-rowcount={grid.itemCount() + 1 + (grid.totals() === undefined ? 0 : 1)}
 			aria-colcount={grid.columnCount()}
