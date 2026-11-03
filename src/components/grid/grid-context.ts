@@ -53,6 +53,8 @@ export interface GridContextValue<T> {
 	isTree: Accessor<boolean>;
 	/** Раскрывает или сворачивает узел дерева. */
 	toggleNode: (key: RowKey) => void;
+	/** Доступна ли кнопка «развернуть все» (у дерева с ленивой догрузкой нет). */
+	canExpandAll: Accessor<boolean>;
 	/** Подписи кнопок уровней, шеврона и заглушки догрузки. */
 	levelLabels: Accessor<GridLevelLabels>;
 	/** Идущее перетаскивание заголовка или чипа; `undefined` вне жеста. */

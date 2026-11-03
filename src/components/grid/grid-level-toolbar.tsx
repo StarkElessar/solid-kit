@@ -21,6 +21,8 @@ function Icon(props: { path: string }): JSX.Element {
 export interface GridLevelToolbarProps {
 	labels: GridLevelLabels;
 	disabled: boolean;
+	/** Отдельно отключает «развернуть все» (дерево с ленивой догрузкой). */
+	expandAllDisabled?: boolean | undefined;
 	onCollapseLevel: () => void;
 	onCollapseAll: () => void;
 	onExpandLevel: () => void;
@@ -43,7 +45,11 @@ export function GridLevelToolbar(props: GridLevelToolbarProps): JSX.Element {
 			<GridToolbarButton label={props.labels.expandLevel} disabled={props.disabled} onClick={props.onExpandLevel}>
 				<Icon path={ARROW_DOWN}/>
 			</GridToolbarButton>
-			<GridToolbarButton label={props.labels.expandAll} disabled={props.disabled} onClick={props.onExpandAll}>
+			<GridToolbarButton
+				label={props.labels.expandAll}
+				disabled={props.disabled || props.expandAllDisabled === true}
+				onClick={props.onExpandAll}
+			>
 				<Icon path={DOUBLE_DOWN}/>
 			</GridToolbarButton>
 		</div>

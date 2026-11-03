@@ -19,6 +19,7 @@ export function GridBar(): JSX.Element {
 				<GridLevelToolbar
 					labels={grid.levelLabels()}
 					disabled={!grid.hasLevels() || grid.loading()}
+					expandAllDisabled={!grid.canExpandAll()}
 					onCollapseLevel={grid.collapseLevel}
 					onCollapseAll={grid.collapseAll}
 					onExpandLevel={grid.expandLevel}

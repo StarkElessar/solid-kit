@@ -328,6 +328,7 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 		beginGroupingDrag: groupingDrag.begin,
 		hasLevels: () => (props.tree === undefined ? (props.groups?.length ?? 0) > 0 : props.tree.hasNodes()),
 		hasBar,
+		canExpandAll: () => props.tree?.canExpandAll() ?? true,
 		collapseLevel: () => {
 			if (props.tree !== undefined) {
 				props.tree.collapseLevel();

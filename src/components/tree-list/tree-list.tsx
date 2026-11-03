@@ -78,6 +78,8 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 				setRequested((current) => new Set(current).add(key));
 			});
 		},
+		// ленивый режим: раскрыть всё значило бы запросить детей каждого узла и их детей; такой запрос решает страница, не дерево
+		canExpandAll: () => local.loadChildren === undefined,
 		collapseLevel: () => {
 			change(collapseTreeLevelKeys(flat().items, expanded()));
 		},

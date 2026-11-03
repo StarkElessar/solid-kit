@@ -173,6 +173,7 @@ export async function runTreeListChecks(page: HTMLElement): Promise<CheckResult[
 	check('после ответа показаны дети', settled, `строк ${itemCount(lazy)}`);
 	await click(expander(bodyRows(lazy)[0] as HTMLElement));
 	await click(expander(bodyRows(lazy)[0] as HTMLElement));
+	check('«Развернуть все» в ленивом режиме отключена', button(lazy, 'Развернуть все').disabled, 'кнопка отключена');
 	check('повторное раскрытие не просит дети снова', calls.textContent === '1', `запросов ${calls.textContent}`);
 
 	return results;

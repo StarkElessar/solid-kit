@@ -257,13 +257,22 @@ describe('TreeList: ленивая подгрузка', () => {
 		expect(loadChildren).toHaveBeenCalledTimes(2);
 	});
 
-	it('«Развернуть уровень» догружает все узлы уровня, «Развернуть все» не раскрывает незагруженные', () => {
+	it('«Развернуть уровень» догружает все узлы уровня', () => {
 		const { loadChildren } = renderLazy();
-		fireEvent.click(screen.getByRole('button', { name: 'Развернуть все' }));
-		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
-		expect(loadChildren).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole('button', { name: 'Развернуть уровень' }));
 		expect(loadChildren).toHaveBeenCalledTimes(2);
+	});
+
+	it('«Развернуть все» в ленивом режиме отключена, в обычном доступна', () => {
+		const { loadChildren } = renderLazy();
+		const expandAll = screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть все' });
+		expect(expandAll.disabled).toBe(true);
+		fireEvent.click(expandAll);
+		expect(loadChildren).not.toHaveBeenCalled();
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть уровень' }).disabled).toBe(false);
+		cleanup();
+		renderTree();
+		expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Развернуть все' }).disabled).toBe(false);
 	});
 
 	it('строка «Загрузка…» не выбирается', () => {
