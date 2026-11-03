@@ -2,7 +2,7 @@ import styles from './grid.module.css';
 
 import type { JSX } from 'solid-js';
 
-import { useGrid } from './grid-context';
+import type { GridLevelLabels } from './grid-level-labels';
 import { GridToolbarButton } from './grid-toolbar-button';
 
 const ARROW_DOWN = 'M4 6l4 4 4-4';
@@ -18,25 +18,32 @@ function Icon(props: { path: string }): JSX.Element {
 	);
 }
 
+export interface GridLevelToolbarProps {
+	labels: GridLevelLabels;
+	disabled: boolean;
+	onCollapseLevel: () => void;
+	onCollapseAll: () => void;
+	onExpandLevel: () => void;
+	onExpandAll: () => void;
+}
+
 /**
  * Четыре кнопки управления свёрнутостью в таком порядке: свернуть уровень (↑), свернуть все (⇑), развернуть уровень (↓), развернуть все
- * (⇓). Сворачивание это стрелки вверх, разворачивание вниз (зонтичный, раздел 10.1).
+ * (⇓). Сворачивание это стрелки вверх, разворачивание вниз (зонтичный, раздел 10.1). Одна на группы грида и узлы TreeList.
  */
-export function GridGroupingToolbar(): JSX.Element {
-	const grid = useGrid();
-	const disabled = (): boolean => !grid.hasGroups() || grid.loading();
+export function GridLevelToolbar(props: GridLevelToolbarProps): JSX.Element {
 	return (
 		<div class={styles['toolbar']}>
-			<GridToolbarButton label={grid.groupingLabels().collapseLevel} disabled={disabled()} onClick={grid.collapseLevel}>
+			<GridToolbarButton label={props.labels.collapseLevel} disabled={props.disabled} onClick={props.onCollapseLevel}>
 				<Icon path={ARROW_UP}/>
 			</GridToolbarButton>
-			<GridToolbarButton label={grid.groupingLabels().collapseAll} disabled={disabled()} onClick={grid.collapseAll}>
+			<GridToolbarButton label={props.labels.collapseAll} disabled={props.disabled} onClick={props.onCollapseAll}>
 				<Icon path={DOUBLE_UP}/>
 			</GridToolbarButton>
-			<GridToolbarButton label={grid.groupingLabels().expandLevel} disabled={disabled()} onClick={grid.expandLevel}>
+			<GridToolbarButton label={props.labels.expandLevel} disabled={props.disabled} onClick={props.onExpandLevel}>
 				<Icon path={ARROW_DOWN}/>
 			</GridToolbarButton>
-			<GridToolbarButton label={grid.groupingLabels().expandAll} disabled={disabled()} onClick={grid.expandAll}>
+			<GridToolbarButton label={props.labels.expandAll} disabled={props.disabled} onClick={props.onExpandAll}>
 				<Icon path={DOUBLE_DOWN}/>
 			</GridToolbarButton>
 		</div>

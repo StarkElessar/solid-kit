@@ -12,6 +12,7 @@ import type { GridColumnMenuLabels } from './grid-column-menu-labels';
 import type { GridGroupDirection } from './grid-group-sort';
 import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridItem } from './grid-item';
+import type { GridLevelLabels } from './grid-level-labels';
 import type { GridSort } from './grid-sort';
 import type { GroupingDragState } from './grouping-drag-state';
 import type { RowMenuTarget } from './row-menu-target';
@@ -43,8 +44,12 @@ export interface GridContextValue<T> {
 	groupDirection: (columnId: string) => GridGroupDirection;
 	/** Меняет порядок групп колонки на обратный. */
 	toggleGroupSort: (columnId: string) => void;
-	/** Есть ли сгруппированные данные (`groups` не пуст): кнопки уровней работают только с ними. */
-	hasGroups: Accessor<boolean>;
+	/** Есть что сворачивать и разворачивать (сгруппированные данные или узлы дерева): кнопки уровней работают только с ними. */
+	hasLevels: Accessor<boolean>;
+	/** Верхняя полоса есть: панель группировки или кнопки уровней дерева. */
+	hasBar: Accessor<boolean>;
+	/** Подписи кнопок уровней, шеврона и заглушки догрузки. */
+	levelLabels: Accessor<GridLevelLabels>;
 	/** Идущее перетаскивание заголовка или чипа; `undefined` вне жеста. */
 	drag: Accessor<GroupingDragState | undefined>;
 	beginGroupingDrag: (columnId: string, event: PointerEvent) => void;

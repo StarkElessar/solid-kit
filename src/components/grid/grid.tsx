@@ -27,11 +27,12 @@ import { DEFAULT_GROUPING_LABELS } from './default-grouping-labels';
 import { expandLevelKeys } from './expand-level-keys';
 import { flattenGroups } from './flatten-groups';
 import { foundText as defaultFoundText } from './found-text';
+import { GridBar } from './grid-bar';
 import { GridColumnMenu } from './grid-column-menu';
 import { GridContext, type GridContextValue } from './grid-context';
 import { GridFooter } from './grid-footer';
 import type { GridGroupDirection, GridGroupSort } from './grid-group-sort';
-import { GridGroupingBar } from './grid-grouping-bar';
+import type { GridGroupingLabels } from './grid-grouping-labels';
 import type { GridItem } from './grid-item';
 import { GridLiveRegion } from './grid-live-region';
 import { GridProgress } from './grid-progress';
@@ -125,6 +126,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		equals: sameItems
 	});
 	const groupable = (): boolean => props.groupable === true;
+	const groupingLabels = (): GridGroupingLabels => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels });
 	const canGroup = (columnId: string): boolean => {
 		return groupable() && props.columns.some((column) => column.id === columnId && column.groupable !== false);
 	};
@@ -292,7 +294,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		loadGroup: (key) => {
 			props.onGroupExpand?.(key);
 		},
-		groupingLabels: () => ({ ...DEFAULT_GROUPING_LABELS, ...props.groupingLabels }),
+		groupingLabels,
+		levelLabels: groupingLabels,
 		groupable,
 		grouping: visibleGrouping,
 		canGroup,
@@ -307,7 +310,8 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 		},
 		drag: groupingDrag.state,
 		beginGroupingDrag: groupingDrag.begin,
-		hasGroups: () => (props.groups?.length ?? 0) > 0,
+		hasLevels: () => (props.groups?.length ?? 0) > 0,
+		hasBar: groupable,
 		collapseLevel: () => {
 			changeExpanded(collapseLevelKeys(props.groups ?? [], expandedGroups()));
 		},
@@ -441,7 +445,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 					tabindex='-1'
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
-					data-groupable={groupable() ? '' : undefined}
+					data-bar={groupable() ? '' : undefined}
 					data-fill={props.fill === true ? '' : undefined}
 					data-dragging={groupingDrag.state() === undefined ? undefined : ''}
 					style={{
@@ -451,7 +455,7 @@ export function Grid<T>(props: GridProps<T>): JSX.Element {
 						'--s-kit-grid-view-w': viewWidth() > 0 ? `${viewWidth()}px` : undefined
 					}}
 				>
-					<GridGroupingBar/>
+					<GridBar/>
 					<GridProgress/>
 					<div
 						ref={scrollerElement}

@@ -33,7 +33,7 @@ export function GridLoadingGroupRow(props: GridLoadingGroupRowProps): JSX.Elemen
 		<tr ref={element} class={styles['group-loading-row']} data-index={props.index} data-kind='loading' aria-rowindex={props.index + 2}>
 			<td class={styles['empty-cell']} colSpan={grid.columnCount()}>
 				<div class={styles['group-loading']} style={{ '--s-kit-grid-indent': `${indentOf(level())}px` }}>
-					{grid.groupingLabels().loadingRows}
+					{grid.levelLabels().loadingRows}
 				</div>
 			</td>
 		</tr>
