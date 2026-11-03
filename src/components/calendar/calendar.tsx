@@ -1,6 +1,6 @@
 import styles from './calendar.module.css';
 
-import { createMemo, createSignal, type JSX, onMount, Show } from 'solid-js';
+import { createMemo, createSignal, type JSX, Match, onMount, Show, Switch } from 'solid-js';
 
 import { createControllableSignal } from '../../utils/create-controllable-signal';
 import { clampDate } from '../../utils/date/clamp-date';
@@ -17,12 +17,17 @@ import { CalendarContext, type CalendarContextValue } from './calendar-context';
 import { CalendarDays } from './calendar-days';
 import { CalendarFooter } from './calendar-footer';
 import { CalendarHeader } from './calendar-header';
+import { CalendarMonths } from './calendar-months';
 import type { CalendarProps } from './calendar-props';
 import type { CalendarView } from './calendar-view';
+import { CalendarYears } from './calendar-years';
 import { DEFAULT_CALENDAR_LABELS } from './default-calendar-labels';
+import { handleCalendarKeyDown } from './handle-calendar-key-down';
 import { isPeriodReachable } from './is-period-reachable';
+import { periodOverlapsLimits } from './period-overlaps-limits';
 import { readDateProp } from './read-date-prop';
 import { shiftFocused } from './shift-focused';
+import { unitPeriod } from './unit-period';
 
 const DEFAULT_LOCALE = 'ru';
 
@@ -40,7 +45,7 @@ export function Calendar(props: CalendarProps): JSX.Element {
 	const today = createMemo(() => readDateProp('today', props.today) ?? parseIsoDate(todayIso()) ?? MIN_DATE);
 	const min = createMemo(() => readDateProp('min', props.min));
 	const max = createMemo(() => readDateProp('max', props.max));
-	const [view] = createSignal<CalendarView>('days');
+	const [view, setView] = createSignal<CalendarView>(props.defaultView ?? 'days');
 
 	const [valueIso, setValueIso] = createControllableSignal<string | null>({
 		name: 'Calendar',
@@ -87,6 +92,14 @@ export function Calendar(props: CalendarProps): JSX.Element {
 		}
 	};
 
+	const isInRange = (unitView: CalendarView, date: DateParts): boolean => {
+		const { from, to } = unitPeriod(unitView, date);
+		return periodOverlapsLimits(from, to, min(), max());
+	};
+	const isUnitDisabled = (unitView: CalendarView, date: DateParts): boolean => {
+		return unitView === 'days' ? isDateDisabled(date) : isDisabled() || !isInRange(unitView, date);
+	};
+
 	const context: CalendarContextValue = {
 		formats,
 		labels,
@@ -98,6 +111,25 @@ export function Calendar(props: CalendarProps): JSX.Element {
 		disabled: isDisabled,
 		showToday: () => props.showToday !== false,
 		isDateDisabled,
+		isInRange,
+		canDrill: () => view() !== 'years',
+		drill: () => {
+			setView(view() === 'days' ? 'months' : 'years');
+			focusCell();
+		},
+		back: () => {
+			setView(view() === 'years' ? 'months' : 'days');
+			focusCell();
+		},
+		pick: (date) => {
+			const unitView = view();
+			if (unitView === 'days' || isUnitDisabled(unitView, date)) {
+				return;
+			}
+			focusDate(date);
+			setView(unitView === 'months' ? 'days' : 'months');
+			focusCell();
+		},
 		canShift: (direction) => !isDisabled() && isPeriodReachable(view(), focused(), direction, min(), max()),
 		shift: (direction) => {
 			focusDate(shiftFocused(view(), focused(), direction));
@@ -111,9 +143,26 @@ export function Calendar(props: CalendarProps): JSX.Element {
 			focusCell();
 		},
 		goToToday: () => {
+			setView('days');
 			focusDate(today());
 			focusCell();
 		}
+	};
+
+	const handleKeyDown = (event: KeyboardEvent): void => {
+		if (isDisabled()) {
+			return;
+		}
+		handleCalendarKeyDown(event, {
+			view,
+			focused,
+			firstDay,
+			isDisabled: isUnitDisabled,
+			isInRange,
+			focusDate,
+			back: context.back,
+			focusCell
+		});
 	};
 
 	onMount(() => {
@@ -133,9 +182,14 @@ export function Calendar(props: CalendarProps): JSX.Element {
 				aria-label={labels().calendar}
 				class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 				style={props.style}
+				onKeyDown={handleKeyDown}
 			>
 				<CalendarHeader/>
-				<CalendarDays/>
+				<Switch>
+					<Match when={view() === 'days'}><CalendarDays/></Match>
+					<Match when={view() === 'months'}><CalendarMonths/></Match>
+					<Match when={view() === 'years'}><CalendarYears/></Match>
+				</Switch>
 				<Show when={context.showToday()}>
 					<CalendarFooter/>
 				</Show>

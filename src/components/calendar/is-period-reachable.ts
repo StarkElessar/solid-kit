@@ -1,9 +1,8 @@
-import { compareDates } from '../../utils/date/compare-dates';
-import { MAX_DATE, MIN_DATE } from '../../utils/date/date-limits';
 import type { DateParts } from '../../utils/date/date-parts';
 import { daysInMonth } from '../../utils/date/days-in-month';
 
 import type { CalendarView } from './calendar-view';
+import { periodOverlapsLimits } from './period-overlaps-limits';
 
 interface Period {
 	readonly from: DateParts;
@@ -34,7 +33,5 @@ export function isPeriodReachable(
 	max?: DateParts
 ): boolean {
 	const { from, to } = periodAfterShift(view, date, direction);
-	const lower = min && compareDates(min, MIN_DATE) > 0 ? min : MIN_DATE;
-	const upper = max && compareDates(max, MAX_DATE) < 0 ? max : MAX_DATE;
-	return compareDates(to, lower) >= 0 && compareDates(from, upper) <= 0;
+	return periodOverlapsLimits(from, to, min, max);
 }

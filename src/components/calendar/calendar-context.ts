@@ -18,6 +18,15 @@ export interface CalendarContextValue {
 	disabled: Accessor<boolean>;
 	showToday: Accessor<boolean>;
 	isDateDisabled: (date: DateParts) => boolean;
+	/** Есть ли в ячейке режима (день, месяц, год), в которую входит дата, хоть одна дата из `[min, max]`. */
+	isInRange: (view: CalendarView, date: DateParts) => boolean;
+	canDrill: Accessor<boolean>;
+	/** Уход вглубь: дни → месяцы → годы. */
+	drill: () => void;
+	/** Возврат на уровень ниже по глубине без выбора: годы → месяцы → дни. */
+	back: () => void;
+	/** Выбор месяца или года в соответствующем режиме: показ переходит на уровень ниже, `value` не меняется. */
+	pick: (date: DateParts) => void;
 	canShift: (direction: -1 | 1) => boolean;
 	shift: (direction: -1 | 1) => void;
 	select: (date: DateParts) => void;

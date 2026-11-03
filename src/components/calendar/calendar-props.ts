@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 
 import type { CalendarLabels } from './calendar-labels';
+import type { CalendarView } from './calendar-view';
 
 export type CalendarSize = 'sm' | 'md' | 'lg';
 
@@ -26,6 +27,8 @@ export interface CalendarProps {
 	locale?: string | undefined;
 	/** 0 воскресенье … 6 суббота; по умолчанию по локали. */
 	firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined;
+	/** Режим при монтировании; по умолчанию дни. Сам режим внутреннее состояние: DatePicker монтирует календарь заново при открытии. */
+	defaultView?: CalendarView | undefined;
 	/** Подвал с кнопкой «Сегодня»; по умолчанию `true`. */
 	showToday?: boolean | undefined;
 	/** «Сегодня» извне (тесты, серверное время); по умолчанию локальная дата устройства. */
