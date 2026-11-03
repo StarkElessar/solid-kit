@@ -203,6 +203,12 @@ export async function runTimePickerChecks(page: HTMLElement): Promise<CheckResul
 		check('TimePicker: ArrowRight переходит в колонку минут', activeText() === '30', `активна ${activeText()}`);
 		check('TimePicker: стрелки не меняют значение', input.value === '14:30', `текст ${input.value}`);
 		const active = document.activeElement;
+		const tabAllowed = active?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+		check(
+			'TimePicker: Tab внутри панели не отменяется и панель остаётся открытой',
+			tabAllowed === true && panelOf(input) !== null,
+			`панель ${exists(panelOf(input))}`
+		);
 		active?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 		await frames();
 		const closed = panelOf(input) === null && document.activeElement === input;

@@ -4,13 +4,16 @@ import { Dynamic } from 'solid-js/web';
 import { CalendarPage } from './calendar-page';
 import { ControlsRowPage } from './controls-row-page';
 import { DatePickerPage } from './date-picker-page';
+import { DateTimePickerPage } from './date-time-picker-page';
 import { GridPage } from './grid-page';
 import { ListsPage } from './lists-page';
 import { PanelsPage } from './panels-page';
 import { ThemesPage } from './themes-page';
 import { TimePickerPage } from './time-picker-page';
 
-const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker', 'time-picker'] as const;
+const PAGE_IDS = [
+	'themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker', 'time-picker', 'date-time-picker'
+] as const;
 
 type PageId = (typeof PAGE_IDS)[number];
 
@@ -22,7 +25,8 @@ const PAGES: Record<PageId, { readonly title: string; readonly component: () => 
 	grid: { title: 'Грид', component: GridPage },
 	calendar: { title: 'Календарь', component: CalendarPage },
 	'date-picker': { title: 'Выбор даты', component: DatePickerPage },
-	'time-picker': { title: 'Выбор времени', component: TimePickerPage }
+	'time-picker': { title: 'Выбор времени', component: TimePickerPage },
+	'date-time-picker': { title: 'Выбор даты и времени', component: DateTimePickerPage }
 };
 
 function readHash(): PageId {
