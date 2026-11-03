@@ -25,11 +25,11 @@ TreeList это иерархическая таблица: тот же грид,
 
 Как это обеспечивается:
 
-1. **Движок грида выделяется в `GridBase`** (внутренний компонент в `src/components/grid/`, в публичный индекс не экспортируется). Всё тело текущего `Grid` (состояния колонок, ресайз, окно рендера, выбор, сортировка, меню, футер, живая область) переезжает в него без изменения поведения. `Grid` становится тонкой оболочкой: считает плоский список из `groups` и `rows`, добавляет панель группировки. `TreeList` тоже оболочка: считает плоский список из дерева, добавляет тулбар уровней. Существующие тесты грида (`grid.test.tsx`, больше 1900 строк) без правок обязаны остаться зелёными: это страховка рефакторинга.
+1. **Движок грида выделяется в `GridBase`** (внутренний компонент в `src/components/grid/`, в публичный индекс не экспортируется). Всё тело текущего `Grid` (состояния колонок, ресайз, окно рендера, выбор, сортировка, меню, футер, живая область, группировка) переезжает в него без изменения поведения, `Grid` становится тонкой оболочкой, которая отдаёт ему свои пропсы. Дерево подключается к движку одним внутренним пропсом `tree` (`GridTreeSource`: плоский список видимых узлов, действия раскрытия, подписи). `TreeList` тоже оболочка: держит раскрытость и ленивую догрузку, строит плоский список из дерева и отдаёт его движку. Групповая логика остаётся в движке (выносить её в оболочку `Grid` не нужно: это лишний риск без пользы). Существующие тесты грида (`grid.test.tsx`, больше 1900 строк) без правок обязаны остаться зелёными: это страховка рефакторинга.
 2. **Каждая общая часть остаётся одним файлом, в `tree-list/` её нет.** Общие файлы: `GridTable`, `GridColgroup`, `GridHeader`, `GridHeaderCell`, `GridSortButton`, `GridColumnMenuButton`, `GridColumnMenu`, `GridResizeHandle`, `GridBody`, `GridRow`, `GridCell`, `GridSelectCell`, `GridSelectHeaderCell`, `GridSkeleton`, `GridEmpty`, `GridProgress`, `GridLiveRegion`, `GridRowMenu`, `GridTotals`, `GridFooter` (обёртка над `Pager`), `GridToolbarButton`, `createVirtualWindow`, `createGridResize`, `computeColumnLayout`, `applyColumnState`, `selection-state`, CSS-модуль `grid.module.css`.
 3. **Четыре кнопки уровней становятся общим `GridLevelToolbar`.** Сейчас `GridGroupingToolbar` берёт обработчики и подписи из контекста грида группировки. Он переименовывается в `GridLevelToolbar` и получает обработчики пропсами (`onCollapseLevel`, `onCollapseAll`, `onExpandLevel`, `onExpandAll`, `disabled`, `labels`). Значки, размеры (24 px, muted), порядок (свернуть уровень, свернуть все, развернуть уровень, развернуть все) остаются в этом одном файле. Грид и TreeList вставляют его в полосу `GridBar` (бывшая `GridGroupingBar`, см. ниже).
 4. **Верхняя полоса `GridBar` общая.** Слева слот (в гриде панель группировки, в TreeList пусто), справа `GridLevelToolbar`. Стили `.bar` и `.toolbar` в `grid.module.css` без изменений.
-5. **Шеврон узла и шеврон группы это один компонент `GridChevron`** (14 px, путь `M6 4l4 4-4 4`, поворот на 90° у раскрытого). Сейчас `Chevron` объявлен внутри `grid-group-row.tsx`; выносится в свой файл, группа и узел импортируют его. Кнопка-шеврон (`GridExpander`: `<button>` с `aria-expanded`, `aria-label`, клик без всплытия) тоже одна на оба компонента.
+5. **Шеврон узла и шеврон группы это один компонент `GridChevron`** (14 px, путь `M6 4l4 4-4 4`, поворот на 90° у раскрытого). Сейчас `Chevron` объявлен внутри `grid-group-row.tsx`; выносится в свой файл, группа и узел импортируют его. Кнопка-шеврон (`GridExpander`: `<button>` с `aria-expanded` и `aria-label`) тоже одна на оба компонента; клик по интерактивной цели строка тела и так игнорирует.
 6. **Отступ уровня общий.** Токен `--s-kit-grid-indent` (16 px на уровень) и логика расчёта `level * 16` в одной функции `indentOf(level)`; строка группы, строка данных под группой и узел дерева используют её.
 7. **Подписи уровней общие.** `collapseLevel`, `collapseAll`, `expandLevel`, `expandAll` и подписи шеврона `expand(title)`, `collapse(title)` выносятся из `GridGroupingLabels` в `GridLevelLabels` (дефолты те же); `GridGroupingLabels` расширяет их. TreeList принимает `levelLabels`.
 8. **Проверка единства**: в `tree-list/` не должно быть ни одного `.module.css` и ни одного файла, дублирующего имя из грида. Это проверяет тест-страж (раздел 10).
@@ -48,12 +48,10 @@ export interface TreeListProps<T> extends TreeListSharedProps<T> {
 	loadChildren?: (row: T) => void;
 	/** Есть ли у узла дети. Нужен в ленивом режиме, в обычном дети известны из `rows`. */
 	hasChildren?: (row: T) => boolean;
-	/** Колонка с шевроном и отступом: по умолчанию первая видимая. */
-	treeColumn?: string;
 	expandedKeys?: ReadonlySet<RowKey>;
 	defaultExpandedKeys?: ReadonlySet<RowKey>;
 	onExpandedKeysChange?: (keys: ReadonlySet<RowKey>) => void;
-	/** Идущая догрузка детей по ключу родителя (ленивый режим): под узлом строка «Загрузка…». */
+	/** Ключи узлов, дети которых сейчас догружаются (ленивый режим): под узлом строка «Загрузка…». Выставляется синхронно в `loadChildren`. */
 	loadingKeys?: ReadonlySet<RowKey>;
 	levelLabels?: Partial<GridLevelLabels>;
 }
@@ -66,7 +64,7 @@ export interface TreeListProps<T> extends TreeListSharedProps<T> {
 - **Плоский список (по умолчанию).** `rows` + `getRowKey` + `getParentKey`. Так живёт BackOffice: Kendo получает весь список целиком с `Id/ParentId`. Дерево строит и разворачивает клиент. Для документов, где у BackOffice `FakeId/FakeParentId`, страница передаёт эти поля в `getRowKey` и `getParentKey`.
 - **Ленивая подгрузка.** `rows` (корни) + `hasChildren` + `loadChildren`; страница кладёт загруженных детей в `rows` (те же плоские строки с `parentKey`) и на время запроса держит ключ родителя в `loadingKeys`. TreeList вызывает `loadChildren(row)` один раз при первом раскрытии узла, у которого в `rows` ещё нет детей. Повторное раскрытие использует уже загруженное.
 
-Выбор варианта определяется наличием `loadChildren`, отдельного флага нет. Оба варианта используют один и тот же `flattenTree`, ленивость лишь добавляет строку-заглушку и вызов колбэка.
+Дерево рисуется в первой видимой колонке (так же, как отступ строк под группой в гриде); отдельного пропса колонки дерева нет. Выбор варианта определяется наличием `loadChildren`, отдельного флага нет. Оба варианта используют один и тот же `flattenTree`, ленивость лишь добавляет строку-заглушку и вызов колбэка.
 
 Выбор строк и автосуммы: `selectable`, `selectedKeys` и прочее работают как в гриде, ключ `getRowKey` общий. Выбор узла не выбирает потомков (каскад не нужен: BackOffice его не использует; при необходимости добавляется позже отдельным пропсом).
 
@@ -97,7 +95,7 @@ export interface TreeListProps<T> extends TreeListSharedProps<T> {
 
 ### 4.3. Ленивая догрузка
 
-Раскрытие узла с `hasChildren(row) === true`, у которого в данных нет детей и которого нет в `loadingKeys`: вызывается `loadChildren(row)` один раз за раскрытие. Пока ключ в `loadingKeys`, под узлом строка `loading` («Загрузка…», спиннер как в макете). Вызов делается из эффекта строки-заглушки (как `loadGroup` в гриде), а не из обработчика клика, поэтому «раскрыть уровень» и «развернуть все» тоже догружают.
+Раскрытый видимый узел с `hasChildren(row) === true`, у которого в данных нет детей и для которого `loadChildren` ещё не вызывался, получает строку `loading` («Загрузка…», спиннер как в макете). При монтировании строки TreeList запоминает ключ как запрошенный и вызывает `loadChildren(row)` один раз; страница обязана синхронно положить ключ в `loadingKeys`, пока идёт запрос. Строка есть, пока ключ в `loadingKeys`. Запрошенный ключ забывается, когда узел сворачивается: повторное раскрытие узла, дети которого так и не пришли, запрашивает их заново. Вызов идёт из монтирования строки, а не из клика, поэтому «развернуть уровень» догружает так же, как шеврон. «Развернуть все» раскрывает только узлы, чьи дети уже загружены (иначе лавина запросов).
 
 ## 5. Поведение и доступность
 
@@ -140,18 +138,22 @@ export interface TreeListProps<T> extends TreeListSharedProps<T> {
 
 Изменения в `src/components/grid/` (рефакторинг, поведение грида не меняется):
 - `grid.tsx` → `grid-base.tsx` (весь движок) и новый тонкий `grid.tsx`;
-- `grid-grouping-bar.tsx` → `grid-bar.tsx` (слот слева, `GridLevelToolbar` справа);
+- `grid-grouping-bar.tsx` → `grid-bar.tsx` (панель группировки слева только при `groupable`, `GridLevelToolbar` справа; в гриде и в дереве один и тот же файл);
 - `grid-grouping-toolbar.tsx` → `grid-level-toolbar.tsx`;
 - `grid-chevron.tsx`, `grid-expander.tsx` (новые, вынесены из строки группы);
 - `indent-of-level.ts`;
 - `grid-level-labels.ts`, `default-level-labels.ts`;
-- `grid-item.ts`: у вида `row` необязательное `node`; тип `GridNode` в своём файле `grid-node.ts`;
-- `grid-row.tsx`, `grid-cell.tsx`: показ шеврона и отступа в колонке дерева при наличии `node`;
-- `grid-context.ts`: общие операции уровней (`collapseLevel` и остальные уже там), `toggleNode`, `loadNode`.
+- `flat-items.ts` (тип плоского списка элементов, общий для групп и дерева; заменяет `FlatGroups`);
+- `grid-item.ts`: у вида `row` необязательное `node`, у вида `loading` ключ `RowKey`; тип `GridNode` в своём файле `grid-node.ts`;
+- `grid-tree-source.ts`: тип источника дерева для движка;
+- `grid-node-content.tsx`: шеврон или пустое место плюс содержимое ячейки первой колонки;
+- `grid-row.tsx`, `grid-cell.tsx`, `grid-table.tsx`: `aria-*` узла, содержимое ячейки через `GridNodeContent`, `role='treegrid'`;
+- `grid-context.ts`: `hasBar`, `hasLevels` (было `hasGroups`), `levelLabels`, `isTree`, `toggleNode`, `loadItem` (было `loadGroup`); операции уровней уже там и в режиме дерева переключаются на источник;
+- `grid.module.css`: `.group-toggle` и `.group-chevron` переименованы в `.expander` и `.chevron`, `data-groupable` заменён на `data-bar`, у `.toolbar` `margin-inline-start: auto` (полоса без панели группировки держит кнопки справа).
 
 Новые файлы в `src/components/tree-list/`:
 - `tree-list.tsx`, `tree-list-props.ts`, `index.ts`;
-- `flatten-tree.ts` (+ тест), `tree-index.ts` (построение индекса «родитель → дети»), `collapse-tree-level-keys.ts`, `expand-tree-level-keys.ts`, `all-tree-keys.ts` (+ тесты);
+- `tree-entry.ts`, `tree-index.ts` (типы), `build-tree-index.ts` (индекс «родитель → дети», сирота становится корнем, цикл разрывается), `flatten-tree.ts`, `collapse-tree-level-keys.ts`, `expand-tree-level-keys.ts`, `all-tree-keys.ts`, `loading-node-keys.ts` (какие раскрытые узлы показывают «Загрузка…»), все с тестами;
 - `tree-list.test.tsx`.
 
 Правило «один класс/тип/функция на файл» соблюдается.
