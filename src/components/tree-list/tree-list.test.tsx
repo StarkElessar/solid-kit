@@ -354,6 +354,25 @@ describe('TreeList: ленивая подгрузка', () => {
 		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
 	});
 
+	it('принятое страницей контролируемое раскрытие догружает пакет: два узла одним вызовом', () => {
+		const [open, setOpen] = createSignal<ReadonlySet<RowKey>>(new Set());
+		const controlled = {
+			get expandedKeys() {
+				return open();
+			},
+			onExpandedKeysChange: (keys: ReadonlySet<RowKey>) => setOpen(keys)
+		};
+		const { loadChildren, finish, batchIds } = renderLazy(controlled);
+		fireEvent.click(screen.getByRole('button', { name: 'Развернуть уровень' }));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		expect(batchIds(0)).toEqual([1, 2]);
+		finish([1, 2], []);
+		collapse('Раздел А');
+		expand('Раздел А');
+		expect(loadChildren).toHaveBeenCalledTimes(2);
+		expect(batchIds(1)).toEqual([1]);
+	});
+
 	it('hasChildren=false убирает шеврон: узел-лист не запрашивается', () => {
 		const { loadChildren } = renderLazy({ defaultExpandedKeys: new Set<RowKey>([3]) });
 		expect(screen.queryByRole('button', { name: /Пустой/ })).toBeNull();
@@ -426,10 +445,20 @@ describe('TreeList: ленивая подгрузка с виртуализац�
 		expect(loadChildren).toHaveBeenCalledTimes(1);
 		expect(loadChildren.mock.calls[0]?.[0]).toHaveLength(500);
 		const scroller = screen.getByRole('treegrid').parentElement as HTMLElement;
+		const indexes = (): number[] => {
+			return [...document.querySelectorAll('tbody > tr[data-index]')].map((tr) => Number(tr.getAttribute('data-index')));
+		};
+		const top = indexes();
+		expect(top.length).toBeGreaterThan(0);
+		expect(top.length).toBeLessThan(40);
 		scroller.scrollTop = 4000;
 		scroller.dispatchEvent(new Event('scroll'));
+		// окно действительно сместилось: строки смонтированы заново, а новых запросов нет
+		expect(Math.min(...indexes())).toBeGreaterThan(Math.max(...top));
+		expect(loadChildren).toHaveBeenCalledTimes(1);
 		scroller.scrollTop = 0;
 		scroller.dispatchEvent(new Event('scroll'));
+		expect(indexes()).toEqual(top);
 		expect(loadChildren).toHaveBeenCalledTimes(1);
 	});
 });
