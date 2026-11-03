@@ -30,9 +30,9 @@
 
 ## Часть 3: DateTimePicker
 
-- [ ] `date-time-picker-props`, `date-time-picker-labels`, `default-date-time-picker-labels`, `date-time-placeholder` (+ тест), `date-time-panel.tsx`, `date-time-picker.module.css`, `date-time-picker.tsx`, `index.ts`: текст отдельно от значения (`dirty`), ввод, принятие и откат, модель выбора раздела 5, подгонка времени, `clearable`, `name`, ограничения, `locale`/`hour12`, `showNow`, `panelTab='move'`.
-- [ ] Тесты: критерии а–е, ж спеки (в jsdom без геометрии), dev-предупреждения.
-- [ ] `pnpm check`, коммит `feat(date-time-picker): DateTimePicker`.
+- [x] `date-time-picker-props`, `date-time-picker-labels`, `default-date-time-picker-labels`, `date-time-placeholder` (+ тест), `date-time-panel.tsx`, `date-time-picker.module.css`, `date-time-picker.tsx`, `index.ts`: текст отдельно от значения (`dirty`), ввод, принятие и откат, модель выбора раздела 5, подгонка времени, `clearable`, `name`, ограничения, `locale`/`hour12`, `showNow`, `panelTab='move'`.
+- [x] Тесты: критерии а–е, ж спеки (в jsdom без геометрии), dev-предупреждения.
+- [x] `pnpm check`, коммит `feat(date-time-picker): DateTimePicker`.
 
 ## Часть 4: playground и приёмка
 

@@ -1,0 +1,43 @@
+/*
+ * Токены DateTimePicker (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-date-time-picker-width (ширина поля: 13rem для 24 часов, 15.5rem для 12 часов; помещается «03.11.2026 14:30» и
+ *   «11/03/2026 12:30 PM»), --s-kit-date-time-picker-padding (8px, отступ подвала от краёв панели).
+ * Поле, значок и панель это PickerField (src/internal/picker-field), календарь это Calendar, колонки это TimeColumns.
+ */
+
+.root {
+    --s-kit-picker-field-width: var(--s-kit-date-time-picker-width, 13rem);
+
+    &.hour12 {
+        --s-kit-picker-field-width: var(--s-kit-date-time-picker-width, 15.5rem);
+    }
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+/* колонки времени отделены чертой от календаря; на узкой ширине они переносятся под него */
+.time {
+    border-inline-start: 1px solid var(--s-kit-color-border);
+
+    @media (width < 36rem) {
+        flex: 1 1 100%;
+        border-block-start: 1px solid var(--s-kit-color-border);
+        border-inline-start: 0;
+    }
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+    padding: var(--s-kit-date-time-picker-padding, 8px);
+    border-block-start: 1px solid var(--s-kit-color-border);
+}
