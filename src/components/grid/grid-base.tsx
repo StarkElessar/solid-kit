@@ -292,8 +292,10 @@ export function GridBase<T>(props: GridProps<T>): JSX.Element {
 		toggleGroup: (key) => {
 			setExpandedGroups(toggleId(expandedGroups(), key));
 		},
-		loadGroup: (key) => {
-			props.onGroupExpand?.(key);
+		loadItem: (key) => {
+			if (typeof key === 'string') {
+				props.onGroupExpand?.(key);
+			}
 		},
 		groupingLabels,
 		levelLabels: groupingLabels,

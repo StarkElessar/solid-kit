@@ -1,17 +1,12 @@
+import type { FlatItems } from './flat-items';
 import type { GridGroup } from './grid-group';
 import type { GridItem } from './grid-item';
-
-export interface FlatGroups<T> {
-	items: readonly GridItem<T>[];
-	/** Листовые строки загруженных развёрнутых групп в порядке показа. */
-	rows: readonly T[];
-}
 
 /**
  * Дерево групп в плоский список «заголовок → строки или вложенные группы → подвал». Свёрнутая группа даёт заголовок и подвал, без
  * содержимого; ещё не загруженная развёрнутая даёт заглушку; подвал есть, только если у группы есть агрегаты.
  */
-export function flattenGroups<T>(groups: readonly GridGroup<T>[], expanded: ReadonlySet<string>): FlatGroups<T> {
+export function flattenGroups<T>(groups: readonly GridGroup<T>[], expanded: ReadonlySet<string>): FlatItems<T> {
 	const items: GridItem<T>[] = [];
 	const rows: T[] = [];
 	const visit = (list: readonly GridGroup<T>[], level: number): void => {

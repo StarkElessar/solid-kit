@@ -25,7 +25,7 @@ export function GridLoadingGroupRow(props: GridLoadingGroupRowProps): JSX.Elemen
 			grid.window.measure(element);
 		}
 		if (key !== undefined) {
-			grid.loadGroup(key);
+			grid.loadItem(key);
 		}
 	});
 

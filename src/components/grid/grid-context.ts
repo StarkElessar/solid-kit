@@ -15,6 +15,7 @@ import type { GridItem } from './grid-item';
 import type { GridLevelLabels } from './grid-level-labels';
 import type { GridSort } from './grid-sort';
 import type { GroupingDragState } from './grouping-drag-state';
+import type { RowKey } from './row-key';
 import type { RowMenuTarget } from './row-menu-target';
 import type { SelectionState } from './selection-state';
 
@@ -28,8 +29,8 @@ export interface GridContextValue<T> {
 	rowIndexOfItem: (index: number) => number | undefined;
 	expandedGroupKeys: Accessor<ReadonlySet<string>>;
 	toggleGroup: (key: string) => void;
-	/** Строка-заглушка ещё не загруженной группы смонтирована: `onGroupExpand(key)`. */
-	loadGroup: (key: string) => void;
+	/** Строка-заглушка ещё не загруженных строк смонтирована: у группы это `onGroupExpand(key)`, у узла дерева запрос детей. */
+	loadItem: (key: RowKey) => void;
 	groupingLabels: Accessor<GridGroupingLabels>;
 	/** Панель группировки, пункт меню колонки и перетаскивание включены. */
 	groupable: Accessor<boolean>;
