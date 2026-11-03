@@ -79,6 +79,9 @@
 
     user-select: none;
 
+    /* прокрутка колесом над панелью не передаётся странице под ней */
+    overscroll-behavior: contain;
+
     padding: var(--s-kit-picker-panel-padding, 0);
     border-radius: calc(var(--s-kit-radius) * 1.5);
 

@@ -92,6 +92,8 @@ export async function runDatePickerChecks(page: HTMLElement): Promise<CheckResul
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
 		const offsets = `сверху ${dy}px, слева ${dx}px`;
 		check('DatePicker: панель стоит под полем у его левого края', under, offsets);
+		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
+		check('DatePicker: прокрутка над панелью не передаётся странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
 		await frames();
 		check('DatePicker: повторный клик по полю календарь не закрывает', panelOf(input) !== null, `панель ${exists(panelOf(input))}`);

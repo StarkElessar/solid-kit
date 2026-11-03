@@ -100,6 +100,8 @@ export async function runTimePickerChecks(page: HTMLElement): Promise<CheckResul
 		const dy = box ? (box.top - field.bottom).toFixed(1) : '?';
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
 		check('TimePicker: панель стоит под полем у его левого края', under, `сверху ${dy}px, слева ${dx}px`);
+		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
+		check('TimePicker: прокрутка над панелью не передаётся странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
 		await frames();
 		check('TimePicker: повторный клик по полю панель не закрывает', panelOf(input) !== null, exists(panelOf(input)));

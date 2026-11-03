@@ -111,6 +111,8 @@ export async function runDateTimePickerChecks(page: HTMLElement): Promise<CheckR
 		const dy = box ? (box.top - field.bottom).toFixed(1) : '?';
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
 		check('DateTimePicker: панель стоит под полем у его левого края', under, `сверху ${dy}px, слева ${dx}px`);
+		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
+		check('DateTimePicker: прокрутка над панелью не уходит странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
 		await frames();
 		check('DateTimePicker: повторный клик по полю панель не закрывает', panelOf(input) !== null, exists(panelOf(input)));

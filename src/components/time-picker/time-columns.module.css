@@ -29,11 +29,13 @@
 }
 
 .column {
-    scrollbar-width: thin;
+    /* колонка прокручивается колесом, касанием и клавишами; полоса прокрутки в узкой колонке лишняя */
+    scrollbar-width: none;
 
     position: relative;
 
     overflow-y: auto;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
     gap: var(--time-gap);
@@ -41,6 +43,10 @@
     box-sizing: border-box;
     inline-size: calc(var(--time-row) * 1.75);
     block-size: calc(var(--time-rows) * var(--time-row) + (var(--time-rows) - 1) * var(--time-gap));
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .option {
