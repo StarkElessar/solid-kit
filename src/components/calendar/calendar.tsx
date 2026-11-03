@@ -144,6 +144,10 @@ export function Calendar(props: CalendarProps): JSX.Element {
 		},
 		goToToday: () => {
 			setView('days');
+			if (props.selectOnToday !== false && !isDateDisabled(today())) {
+				context.select(today());
+				return;
+			}
 			focusDate(today());
 			focusCell();
 		}

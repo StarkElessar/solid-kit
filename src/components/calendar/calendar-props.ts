@@ -31,6 +31,8 @@ export interface CalendarProps {
 	defaultView?: CalendarView | undefined;
 	/** Подвал с кнопкой «Сегодня»; по умолчанию `true`. */
 	showToday?: boolean | undefined;
+	/** «Сегодня» выбирает дату (по умолчанию `true`); при `false` кнопка только переносит показ к сегодняшней дате. */
+	selectOnToday?: boolean | undefined;
 	/** «Сегодня» извне (тесты, серверное время); по умолчанию локальная дата устройства. */
 	today?: string | undefined;
 	/** При монтировании переносит фокус на сфокусированную дату (для DatePicker). */

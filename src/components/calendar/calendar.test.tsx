@@ -220,16 +220,36 @@ describe('Calendar: фокус и период', () => {
 });
 
 describe('Calendar: «Сегодня»', () => {
-	it('переносит показ и фокус к текущей дате, значение не меняет', async () => {
+	it('по умолчанию выбирает сегодняшнюю дату, переносит показ и фокус', async () => {
 		const onValueChange = vi.fn();
 		renderCalendar({ defaultFocusedDate: '2025-03-10', onValueChange });
 		expect(title()).toBe('март 2025');
-		fireEvent.click(screen.getByRole('button', { name: 'Сегодня' }));
+		fireEvent.click(button('Сегодня'));
+		await Promise.resolve();
+		expect(title()).toBe('ноябрь 2026');
+		expect(onValueChange).toHaveBeenCalledTimes(1);
+		expect(onValueChange).toHaveBeenCalledWith('2026-11-02');
+		expect(document.activeElement).toBe(day('понедельник, 2 ноября 2026 г.'));
+		expect(day('понедельник, 2 ноября 2026 г.').hasAttribute('data-selected')).toBe(true);
+	});
+
+	it('selectOnToday={false}: только переносит показ и фокус, значение не меняет', async () => {
+		const onValueChange = vi.fn();
+		renderCalendar({ defaultFocusedDate: '2025-03-10', onValueChange, selectOnToday: false });
+		fireEvent.click(button('Сегодня'));
 		await Promise.resolve();
 		expect(title()).toBe('ноябрь 2026');
 		expect(onValueChange).not.toHaveBeenCalled();
 		expect(document.activeElement).toBe(day('понедельник, 2 ноября 2026 г.'));
 		expect(document.querySelector('[aria-selected="true"]')).toBeNull();
+	});
+
+	it('из режимов месяцев и годов выбирает сегодня и возвращает дни', () => {
+		const onValueChange = vi.fn();
+		renderCalendar({ defaultView: 'years', onValueChange });
+		fireEvent.click(button('Сегодня'));
+		expect(onValueChange).toHaveBeenCalledWith('2026-11-02');
+		expect(title()).toBe('ноябрь 2026');
 	});
 
 	it('отключена, когда сегодня вне диапазона', () => {
