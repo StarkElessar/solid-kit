@@ -365,6 +365,24 @@
     }
 }
 
+.node {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+}
+
+.expander-gap {
+    flex: none;
+    inline-size: 20px;
+    margin-inline-end: 4px;
+}
+
+.node-text {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+}
+
 .group-text {
     min-inline-size: 0;
 }
