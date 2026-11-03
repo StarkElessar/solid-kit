@@ -8,21 +8,21 @@ describe('readDateProp', () => {
 	});
 
 	it('разбирает корректную дату', () => {
-		expect(readDateProp('value', '2026-11-02')).toEqual({ year: 2026, month: 11, day: 2 });
+		expect(readDateProp('Calendar', 'value', '2026-11-02')).toEqual({ year: 2026, month: 11, day: 2 });
 	});
 
 	it('пусто даёт undefined без предупреждения', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-		expect(readDateProp('value', undefined)).toBeUndefined();
-		expect(readDateProp('value', null)).toBeUndefined();
-		expect(readDateProp('value', '')).toBeUndefined();
+		expect(readDateProp('Calendar', 'value', undefined)).toBeUndefined();
+		expect(readDateProp('Calendar', 'value', null)).toBeUndefined();
+		expect(readDateProp('Calendar', 'value', '')).toBeUndefined();
 		expect(warn).not.toHaveBeenCalled();
 	});
 
 	it('недопустимая строка предупреждает и даёт undefined', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-		expect(readDateProp('min', '2026-02-30')).toBeUndefined();
+		expect(readDateProp('Calendar', 'min', '2026-02-30')).toBeUndefined();
 		expect(warn).toHaveBeenCalledTimes(1);
-		expect(String(warn.mock.calls[0]?.[0])).toContain('min');
+		expect(String(warn.mock.calls[0]?.[0])).toContain('Calendar: min');
 	});
 });

@@ -1,0 +1,9 @@
+/*
+ * Токены DatePicker (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-date-picker-width (ширина поля, 10rem; помещается «дд.мм.гггг»).
+ * Поле, значок и панель это PickerField (src/internal/picker-field), календарь это Calendar.
+ */
+
+.root {
+    --s-kit-picker-field-width: var(--s-kit-date-picker-width, 10rem);
+}

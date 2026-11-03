@@ -6,11 +6,13 @@ import { createControllableSignal } from '../../utils/create-controllable-signal
 import { clampDate } from '../../utils/date/clamp-date';
 import { compareDates } from '../../utils/date/compare-dates';
 import { createDateFormats } from '../../utils/date/create-date-formats';
-import { MAX_DATE, MIN_DATE } from '../../utils/date/date-limits';
+import { MIN_DATE } from '../../utils/date/date-limits';
 import type { DateParts } from '../../utils/date/date-parts';
 import { firstDayOfLocale } from '../../utils/date/first-day-of-locale';
 import { formatIsoDate } from '../../utils/date/format-iso-date';
+import { isDateAllowed } from '../../utils/date/is-date-allowed';
 import { parseIsoDate } from '../../utils/date/parse-iso-date';
+import { readDateProp } from '../../utils/date/read-date-prop';
 import { todayIso } from '../../utils/date/today-iso';
 
 import { CalendarContext, type CalendarContextValue } from './calendar-context';
@@ -25,7 +27,6 @@ import { DEFAULT_CALENDAR_LABELS } from './default-calendar-labels';
 import { handleCalendarKeyDown } from './handle-calendar-key-down';
 import { isPeriodReachable } from './is-period-reachable';
 import { periodOverlapsLimits } from './period-overlaps-limits';
-import { readDateProp } from './read-date-prop';
 import { shiftFocused } from './shift-focused';
 import { unitPeriod } from './unit-period';
 
@@ -42,9 +43,9 @@ export function Calendar(props: CalendarProps): JSX.Element {
 	const formats = createMemo(() => createDateFormats(locale()));
 	const labels = createMemo(() => ({ ...DEFAULT_CALENDAR_LABELS, ...props.labels }));
 	const firstDay = createMemo(() => props.firstDayOfWeek ?? firstDayOfLocale(locale()));
-	const today = createMemo(() => readDateProp('today', props.today) ?? parseIsoDate(todayIso()) ?? MIN_DATE);
-	const min = createMemo(() => readDateProp('min', props.min));
-	const max = createMemo(() => readDateProp('max', props.max));
+	const today = createMemo(() => readDateProp('Calendar', 'today', props.today) ?? parseIsoDate(todayIso()) ?? MIN_DATE);
+	const min = createMemo(() => readDateProp('Calendar', 'min', props.min));
+	const max = createMemo(() => readDateProp('Calendar', 'max', props.max));
 	const [view, setView] = createSignal<CalendarView>(props.defaultView ?? 'days');
 
 	const [valueIso, setValueIso] = createControllableSignal<string | null>({
@@ -53,31 +54,21 @@ export function Calendar(props: CalendarProps): JSX.Element {
 		defaultValue: () => props.defaultValue ?? null,
 		onChange: (next) => props.onValueChange?.(next)
 	});
-	const selected = createMemo(() => readDateProp('value', valueIso()) ?? null);
+	const selected = createMemo(() => readDateProp('Calendar', 'value', valueIso()) ?? null);
 
 	const [focusedIso, setFocusedIso] = createControllableSignal<string>({
 		name: 'Calendar',
 		value: () => props.focusedDate,
 		defaultValue: () => {
-			const initial = readDateProp('defaultFocusedDate', props.defaultFocusedDate) ?? selected() ?? today();
+			const initial = readDateProp('Calendar', 'defaultFocusedDate', props.defaultFocusedDate) ?? selected() ?? today();
 			return formatIsoDate(clampDate(initial, min(), max()));
 		},
 		onChange: (next) => props.onFocusedDateChange?.(next)
 	});
-	const focused = createMemo(() => clampDate(readDateProp('focusedDate', focusedIso()) ?? today(), min(), max()));
+	const focused = createMemo(() => clampDate(readDateProp('Calendar', 'focusedDate', focusedIso()) ?? today(), min(), max()));
 
 	const isDisabled = (): boolean => props.disabled === true;
-	const isDateDisabled = (date: DateParts): boolean => {
-		const lower = min();
-		const upper = max();
-		if (isDisabled() || compareDates(date, MIN_DATE) < 0 || compareDates(date, MAX_DATE) > 0) {
-			return true;
-		}
-		if ((lower && compareDates(date, lower) < 0) || (upper && compareDates(date, upper) > 0)) {
-			return true;
-		}
-		return props.isDateDisabled?.(formatIsoDate(date)) === true;
-	};
+	const isDateDisabled = (date: DateParts): boolean => isDisabled() || !isDateAllowed(date, min(), max(), props.isDateDisabled);
 
 	// DOM сфокусированной ячейки пересоздаётся при смене месяца: фокус возвращается после обновления
 	const focusCell = (): void => {
