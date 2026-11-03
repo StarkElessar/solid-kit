@@ -10,9 +10,10 @@ import { ListsPage } from './lists-page';
 import { PanelsPage } from './panels-page';
 import { ThemesPage } from './themes-page';
 import { TimePickerPage } from './time-picker-page';
+import { TreeListPage } from './tree-list-page';
 
 const PAGE_IDS = [
-	'themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker', 'time-picker', 'date-time-picker'
+	'themes', 'controls-row', 'panels', 'lists', 'grid', 'tree-list', 'calendar', 'date-picker', 'time-picker', 'date-time-picker'
 ] as const;
 
 type PageId = (typeof PAGE_IDS)[number];
@@ -23,6 +24,7 @@ const PAGES: Record<PageId, { readonly title: string; readonly component: () => 
 	panels: { title: 'Панели', component: PanelsPage },
 	lists: { title: 'Списки', component: ListsPage },
 	grid: { title: 'Грид', component: GridPage },
+	'tree-list': { title: 'Дерево', component: TreeListPage },
 	calendar: { title: 'Календарь', component: CalendarPage },
 	'date-picker': { title: 'Выбор даты', component: DatePickerPage },
 	'time-picker': { title: 'Выбор времени', component: TimePickerPage },
