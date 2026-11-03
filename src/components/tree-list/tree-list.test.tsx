@@ -290,6 +290,29 @@ describe('TreeList: ленивая подгрузка', () => {
 		expect(titles()).toEqual(['Раздел А', 'Загрузка…', 'Раздел Б', 'Пустой']);
 	});
 
+	it('присоединение к идущему запросу тоже запоминается: пустой ответ не даёт автоповтора', () => {
+		const { loadChildren, finish } = renderLazy();
+		expand('Раздел А');
+		collapse('Раздел А');
+		expand('Раздел А');
+		finish([1], []);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+	});
+
+	it('«Обновить» через пустой список: пропавший и вернувшийся раскрытый узел запрашивается заново', () => {
+		const { loadChildren, finish, setRows } = renderLazy();
+		expand('Раздел А');
+		finish([1], []);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
+		setRows([]);
+		setRows([
+			{ id: 1, parent: null, title: 'Раздел А', kids: true },
+			{ id: 2, parent: null, title: 'Раздел Б', kids: true },
+			{ id: 3, parent: null, title: 'Пустой', kids: false }
+		]);
+		expect(loadChildren).toHaveBeenCalledTimes(2);
+	});
+
 	it('раскрытие второго узла при идущем запросе первого просит только второй', () => {
 		const { loadChildren, batchIds } = renderLazy();
 		expand('Раздел А');
@@ -312,14 +335,16 @@ describe('TreeList: ленивая подгрузка', () => {
 		expect(titles()).toEqual(['Раздел А', 'Загрузка…', 'Раздел Б']);
 	});
 
-	it('узел внутри свёрнутого предка не запрашивается', () => {
+	it('раскрытый узел внутри свёрнутого предка не запрашивается', () => {
 		const { loadChildren, finish } = renderLazy({ defaultExpandedKeys: new Set<RowKey>([1, 10]) });
-		finish([1], [{ id: 10, parent: 1, title: 'Вложенный', kids: true }]);
-		expect(loadChildren).toHaveBeenCalledTimes(2);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
 		collapse('Раздел А');
-		finish([10], []);
-		expect(loadChildren).toHaveBeenCalledTimes(2);
+		// дети А пришли, пока А свёрнут: вложенный раскрытый узел 10 скрыт, запрашивать его нельзя
+		finish([1], [{ id: 10, parent: 1, title: 'Вложенный', kids: true }]);
+		expect(loadChildren).toHaveBeenCalledTimes(1);
 		expect(titles()).toEqual(['Раздел А', 'Раздел Б', 'Пустой']);
+		expand('Раздел А');
+		expect(loadChildren).toHaveBeenCalledTimes(2);
 	});
 
 	it('контролируемый expandedKeys, который страница не приняла, вызова не даёт', () => {

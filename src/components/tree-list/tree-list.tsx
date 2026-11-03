@@ -53,7 +53,12 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 		const open = expanded();
 		const tree = index();
 		const current = untrack(requested);
-		const keep = [...current].filter((key) => open.has(key) && !tree.children.has(key));
+		// ключ нужен, пока узел раскрыт, есть в данных, ещё считается раскрываемым и без детей: исчезнувший из `rows` узел и
+		// узел с `hasChildren === false` забываются и после возврата в данные запросятся снова
+		const keep = [...current].filter((key) => {
+			const entry = tree.byKey.get(key);
+			return open.has(key) && entry !== undefined && local.hasChildren?.(entry.row) === true && !tree.children.has(key);
+		});
 		if (keep.length !== current.size) {
 			setRequested(new Set(keep));
 		}
@@ -61,6 +66,9 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 	// догрузка планируется по данным (видимые раскрытые узлы без детей), а не по тому, какие строки смонтированы: окно рендера и
 	// прокрутка на неё не влияют, клик и «развернуть уровень» дают один вызов на весь набор
 	createEffect(() => {
+		if (local.loadChildren === undefined) {
+			return;
+		}
 		const plan = planNodeLoad(flat().items, requested(), local.loadingKeys ?? NO_KEYS);
 		if (plan.fresh.length === 0 && plan.joined.length === 0) {
 			return;
@@ -70,11 +78,12 @@ export function TreeList<T>(props: TreeListProps<T>): JSX.Element {
 			const entry = byKey.get(key);
 			return entry === undefined ? [] : [entry.row];
 		});
+		// ключи запоминаются до вызова: если `loadChildren` бросит, эти же узлы не уйдут в запрос при каждом следующем изменении
 		batch(() => {
+			setRequested((current) => new Set([...current, ...plan.fresh, ...plan.joined]));
 			if (rows.length > 0) {
 				untrack(() => local.loadChildren?.(rows));
 			}
-			setRequested((current) => new Set([...current, ...plan.fresh, ...plan.joined]));
 		});
 	});
 	// изменение набора сообщается, только если оно есть: кнопки уровней на краю ничего не делают
