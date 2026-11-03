@@ -323,10 +323,11 @@
     white-space: nowrap;
 }
 
-.group-toggle {
+.expander {
     cursor: pointer;
 
     display: inline-grid;
+    flex: none;
     place-items: center;
 
     box-sizing: border-box;
@@ -350,7 +351,7 @@
     }
 }
 
-.group-chevron {
+.chevron {
     inline-size: 14px;
     block-size: 14px;
     transition: transform 120ms ease;

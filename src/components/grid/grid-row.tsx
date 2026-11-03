@@ -5,6 +5,7 @@ import { createMemo, For, type JSX, onCleanup, onMount, Show, untrack } from 'so
 import { GridCell } from './grid-cell';
 import { useGrid } from './grid-context';
 import { GridSelectCell } from './grid-select-cell';
+import { indentOf } from './indent-of-level';
 import { rescueFocus } from './rescue-focus';
 
 export interface GridRowProps {
@@ -59,7 +60,7 @@ export function GridRow(props: GridRowProps): JSX.Element {
 			data-selected={grid.isRowSelected(rowIndex()) ? '' : undefined}
 			aria-selected={grid.isRowSelected(rowIndex()) ? true : undefined}
 			aria-rowindex={props.index + 2}
-			style={{ '--s-kit-grid-indent': level() > 0 ? `${level() * 16}px` : undefined }}
+			style={{ '--s-kit-grid-indent': level() > 0 ? `${indentOf(level())}px` : undefined }}
 		>
 			<Show when={grid.selectable()}>
 				<GridSelectCell index={rowIndex()}/>

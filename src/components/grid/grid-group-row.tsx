@@ -3,10 +3,12 @@ import styles from './grid.module.css';
 import { createMemo, type JSX, onCleanup, onMount, Show, untrack } from 'solid-js';
 
 import { useGrid } from './grid-context';
+import { GridExpander } from './grid-expander';
 import type { GridGroup } from './grid-group';
 import type { GridItem } from './grid-item';
 import { groupTitle } from './group-title';
 import { groupValueText } from './group-value-text';
+import { indentOf } from './indent-of-level';
 import { rescueFocus } from './rescue-focus';
 
 export interface GridGroupRowProps {
@@ -15,14 +17,6 @@ export interface GridGroupRowProps {
 }
 
 type GroupItem = Extract<GridItem<unknown>, { kind: 'group' }>;
-
-function Chevron(props: { expanded: boolean }): JSX.Element {
-	return (
-		<svg aria-hidden='true' viewBox='0 0 16 16' class={styles['group-chevron']} data-expanded={props.expanded ? '' : undefined}>
-			<path d='M6 4l4 4-4 4' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/>
-		</svg>
-	);
-}
 
 /**
  * Заголовок группы: «стрелка, значение ячейки, Всего: N». Агрегатов в нём нет (они в подвале). Подпись лежит в закреплённой ячейке
@@ -77,21 +71,21 @@ export function GridGroupRow(props: GridGroupRowProps): JSX.Element {
 				data-sticky
 				style={{ 'inset-inline-start': 'var(--s-kit-grid-select-w, 0px)' }}
 			>
-				<div class={styles['group-header']} data-group-header style={{ '--s-kit-grid-indent': `${(item()?.level ?? 0) * 16}px` }}>
-					<button
-						type='button'
-						class={styles['group-toggle']}
-						aria-expanded={expanded()}
-						aria-label={expanded() ? grid.groupingLabels().collapse(title()) : grid.groupingLabels().expand(title())}
-						onClick={() => {
+				<div
+					class={styles['group-header']}
+					data-group-header
+					style={{ '--s-kit-grid-indent': `${indentOf(item()?.level ?? 0)}px` }}
+				>
+					<GridExpander
+						expanded={expanded()}
+						label={expanded() ? grid.groupingLabels().collapse(title()) : grid.groupingLabels().expand(title())}
+						onToggle={() => {
 							const key = group()?.key;
 							if (key !== undefined) {
 								grid.toggleGroup(key);
 							}
 						}}
-					>
-						<Chevron expanded={expanded()}/>
-					</button>
+					/>
 					<span class={styles['group-text']}>
 						<Show
 							when={column()?.groupValue}

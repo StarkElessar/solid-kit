@@ -3,6 +3,7 @@ import styles from './grid.module.css';
 import { type JSX, onMount, untrack } from 'solid-js';
 
 import { useGrid } from './grid-context';
+import { indentOf } from './indent-of-level';
 
 export interface GridLoadingGroupRowProps {
 	/** Индекс элемента тела. */
@@ -31,7 +32,7 @@ export function GridLoadingGroupRow(props: GridLoadingGroupRowProps): JSX.Elemen
 	return (
 		<tr ref={element} class={styles['group-loading-row']} data-index={props.index} data-kind='loading' aria-rowindex={props.index + 2}>
 			<td class={styles['empty-cell']} colSpan={grid.columnCount()}>
-				<div class={styles['group-loading']} style={{ '--s-kit-grid-indent': `${level() * 16}px` }}>
+				<div class={styles['group-loading']} style={{ '--s-kit-grid-indent': `${indentOf(level())}px` }}>
 					{grid.groupingLabels().loadingRows}
 				</div>
 			</td>
