@@ -18,11 +18,11 @@
 
 ## Часть 1: хелперы времени (`src/utils/time/`)
 
-- [ ] Тесты и реализация: `time-parts`, `parse-iso-time` (`'09:05'` да; `'9:05'`, `'24:00'`, `'12:60'`, `'12:5'`, `'09:05:00'`, `''`, `' 09:05'` нет), `format-iso-time` (круг с парсером), `compare-times`, `is-time-allowed` (границы включительно, предикат получает `HH:mm`), `read-time-prop` (предупреждение в dev, `undefined` для пустого и недопустимого), `now-time` (`vi.setSystemTime(new Date(2026, 10, 3, 23, 59))` даёт 23:59 локальных), `minute-options(step)`, `floor-to-step`.
-- [ ] `time-pattern(locale, hour12?)` с кэшем по паре: `ru` 24ч `:`, `en-US` 12ч, `de`, `ja`, явный `hour12` перекрывает локаль, названия AM и PM, `periodFirst`, зазор между периодом и временем, запасной образец при недопустимой локали (`'!!'`).
-- [ ] `format-time-text`: `ru` `09:05` и `14:30`; `en-US` `9:05 AM`, `2:30 PM`, `12:00 AM` для `00:00`, `12:00 PM` для `12:00`; `ru` с `hour12: true`; `en-US` с `hour12: false`.
-- [ ] `parse-time-text`: таблицы раздела 3 спеки (цифры подряд, разделители, 12 часов с суффиксами, отказы), обратимость с `formatTimeText`.
-- [ ] `pnpm check`, коммит `feat(time): хелперы времени для TimePicker`.
+- [x] Тесты и реализация: `time-parts`, `parse-iso-time` (`'09:05'` да; `'9:05'`, `'24:00'`, `'12:60'`, `'12:5'`, `'09:05:00'`, `''`, `' 09:05'` нет), `format-iso-time` (круг с парсером), `compare-times`, `is-time-allowed` (границы включительно, предикат получает `HH:mm`), `read-time-prop` (предупреждение в dev, `undefined` для пустого и недопустимого), `now-time` (`vi.setSystemTime(new Date(2026, 10, 3, 23, 59))` даёт 23:59 локальных), `minute-options(step)`, `floor-to-step`.
+- [x] `time-pattern(locale, hour12?)` с кэшем по паре: `ru` 24ч `:`, `en-US` 12ч, `de`, `ja`, явный `hour12` перекрывает локаль, названия AM и PM, `periodFirst`, зазор между периодом и временем, запасной образец при недопустимой локали (`'!!'`).
+- [x] `format-time-text`: `ru` `09:05` и `14:30`; `en-US` `9:05 AM`, `2:30 PM`, `12:00 AM` для `00:00`, `12:00 PM` для `12:00`; `ru` с `hour12: true`; `en-US` с `hour12: false`.
+- [x] `parse-time-text`: таблицы раздела 3 спеки (цифры подряд, разделители, 12 часов с суффиксами, отказы), обратимость с `formatTimeText`.
+- [x] `pnpm check`, коммит `feat(time): хелперы времени для TimePicker`.
 
 ## Часть 2: `TimeColumns`
 
