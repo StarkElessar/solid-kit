@@ -96,10 +96,14 @@ export async function runTimePickerChecks(page: HTMLElement): Promise<CheckResul
 		check('TimePicker: после клика курсор остаётся в поле', document.activeElement === input, `активен ${activeTag()}`);
 		const field = (input.parentElement ?? input).getBoundingClientRect();
 		const box = panel?.getBoundingClientRect();
-		const under = box !== undefined && box.top >= field.bottom - 1 && Math.abs(box.left - field.left) <= 1;
+		const aligned = box !== undefined && Math.abs(box.left - field.left) <= 1;
+		// под полем; над ним только если снизу не хватает места (окно низкое)
+		const below = box !== undefined && box.top >= field.bottom - 1;
+		const flipped = box !== undefined && box.bottom <= field.top + 1 && innerHeight - field.bottom < box.height;
+		const under = aligned && (below || flipped);
 		const dy = box ? (box.top - field.bottom).toFixed(1) : '?';
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
-		check('TimePicker: панель стоит под полем у его левого края', under, `сверху ${dy}px, слева ${dx}px`);
+		check('TimePicker: панель стоит у поля и его левого края', under, `сверху ${dy}px, слева ${dx}px`);
 		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
 		check('TimePicker: прокрутка над панелью не передаётся странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
@@ -331,6 +335,24 @@ export async function runTimePickerChecks(page: HTMLElement): Promise<CheckResul
 		const detail = box ? `низ панели ${box.bottom.toFixed(0)}, под указателем ${hit?.tagName ?? 'ничего'}` : 'нет панели';
 		check(`TimePicker: предок с ${name}, панель не обрезана и принимает указатель`, ok, detail);
 		await dismiss();
+	}
+
+	// маска ввода
+	{
+		const input = inputOf(page, 'controlled');
+		typeText(input, '1430');
+		check('TimePicker: цифры превращаются во время с разделителем', input.value === '14:30', `текст ${input.value}`);
+		typeText(input, '9');
+		check('TimePicker: одиночная цифра часа закрывается нулём и разделителем', input.value === '09:', `текст ${input.value}`);
+		typeText(input, '14:30x');
+		check('TimePicker: буквы не попадают в поле', input.value === '14:30', `текст ${input.value}`);
+		keyDown(input, 'Enter');
+		await frames();
+		const english = inputOf(page, 'english');
+		typeText(english, '230pmq');
+		check('TimePicker en-US: период через пробел, лишние буквы отброшены', english.value === '2:30 pm', `текст ${english.value}`);
+		keyDown(english, 'Enter');
+		await frames();
 	}
 
 	return results;

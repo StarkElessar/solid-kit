@@ -9,6 +9,16 @@ const MAX_SUFFIX = 4;
  * Значения не проверяются. Удаление (новый текст это начало прежнего) не добавляет разделители обратно.
  */
 export function maskText(raw: string, previous: string, spec: MaskSpec): string {
+	// набор одних отвергнутых символов текст не меняет (иначе автоформат дописал бы разделитель)
+	let kept = '';
+	for (const char of raw) {
+		if (DIGIT.test(char) || SEPARATOR.test(char) || spec.suffixLetters.includes(char.toLowerCase())) {
+			kept += char;
+		}
+	}
+	if (kept === previous) {
+		return previous;
+	}
 	const last = spec.fields.length - 1;
 	const deleting = raw.length < previous.length && previous.startsWith(raw);
 	const buffers = spec.fields.map(() => '');

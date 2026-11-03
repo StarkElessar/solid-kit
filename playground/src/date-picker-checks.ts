@@ -87,11 +87,15 @@ export async function runDatePickerChecks(page: HTMLElement): Promise<CheckResul
 		check('DatePicker: после клика курсор остаётся в поле', document.activeElement === input, `активен ${activeTag()}`);
 		const field = (input.parentElement ?? input).getBoundingClientRect();
 		const box = panel?.getBoundingClientRect();
-		const under = box !== undefined && box.top >= field.bottom - 1 && Math.abs(box.left - field.left) <= 1;
+		const aligned = box !== undefined && Math.abs(box.left - field.left) <= 1;
+		// под полем; над ним только если снизу не хватает места (окно низкое)
+		const below = box !== undefined && box.top >= field.bottom - 1;
+		const flipped = box !== undefined && box.bottom <= field.top + 1 && innerHeight - field.bottom < box.height;
+		const under = aligned && (below || flipped);
 		const dy = box ? (box.top - field.bottom).toFixed(1) : '?';
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
 		const offsets = `сверху ${dy}px, слева ${dx}px`;
-		check('DatePicker: панель стоит под полем у его левого края', under, offsets);
+		check('DatePicker: панель стоит у поля и его левого края', under, offsets);
 		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
 		check('DatePicker: прокрутка над панелью не передаётся странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
@@ -266,6 +270,20 @@ export async function runDatePickerChecks(page: HTMLElement): Promise<CheckResul
 		const detail = box ? `низ панели ${box.bottom.toFixed(0)}, под указателем ${hit?.tagName ?? 'ничего'}` : 'нет панели';
 		check(`DatePicker: предок с ${name}, календарь не обрезан и принимает указатель`, ok, detail);
 		await dismiss();
+	}
+
+	// маска ввода
+	{
+		const input = inputOf(page, 'controlled');
+		typeText(input, '28112026');
+		check('DatePicker: цифры превращаются в дату с разделителями', input.value === '28.11.2026', `текст ${input.value}`);
+		typeText(input, '28.11.2026x');
+		check('DatePicker: буквы не попадают в поле', input.value === '28.11.2026', `текст ${input.value}`);
+		typeText(input, '2811');
+		check('DatePicker: разделители ставятся по мере набора', input.value === '28.11.', `текст ${input.value}`);
+		typeText(input, '28.11.2026');
+		keyDown(input, 'Enter');
+		await frames();
 	}
 
 	return results;

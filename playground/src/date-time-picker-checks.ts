@@ -107,10 +107,14 @@ export async function runDateTimePickerChecks(page: HTMLElement): Promise<CheckR
 		check('DateTimePicker: после клика курсор остаётся в поле', document.activeElement === input, `активен ${activeTag()}`);
 		const field = (input.parentElement ?? input).getBoundingClientRect();
 		const box = panel?.getBoundingClientRect();
-		const under = box !== undefined && box.top >= field.bottom - 1 && Math.abs(box.left - field.left) <= 1;
+		const aligned = box !== undefined && Math.abs(box.left - field.left) <= 1;
+		// под полем; над ним только если снизу не хватает места (окно низкое)
+		const below = box !== undefined && box.top >= field.bottom - 1;
+		const flipped = box !== undefined && box.bottom <= field.top + 1 && innerHeight - field.bottom < box.height;
+		const under = aligned && (below || flipped);
 		const dy = box ? (box.top - field.bottom).toFixed(1) : '?';
 		const dx = box ? (box.left - field.left).toFixed(1) : '?';
-		check('DateTimePicker: панель стоит под полем у его левого края', under, `сверху ${dy}px, слева ${dx}px`);
+		check('DateTimePicker: панель стоит у поля и его левого края', under, `сверху ${dy}px, слева ${dx}px`);
 		const overscroll = panel ? getComputedStyle(panel).overscrollBehaviorY : '?';
 		check('DateTimePicker: прокрутка над панелью не уходит странице', overscroll === 'contain', `overscroll-behavior ${overscroll}`);
 		input.click();
@@ -408,6 +412,25 @@ export async function runDateTimePickerChecks(page: HTMLElement): Promise<CheckR
 		const detail = box ? `низ панели ${box.bottom.toFixed(0)}, под указателем ${hit?.tagName ?? 'ничего'}` : 'нет панели';
 		check(`DateTimePicker: предок с ${name}, панель не обрезана и принимает указатель`, ok, detail);
 		await dismiss();
+	}
+
+	// маска ввода
+	{
+		const input = inputOf(page, 'controlled');
+		typeText(input, '031120301430');
+		check('DateTimePicker: цифры превращаются в дату и время', input.value === '03.11.2030 14:30', `текст ${input.value}`);
+		typeText(input, '03112030');
+		check('DateTimePicker: после года ставится пробел', input.value === '03.11.2030 ', `текст «${input.value}»`);
+		typeText(input, 'мусор');
+		check('DateTimePicker: буквы не попадают в поле', input.value === '', `текст «${input.value}»`);
+		typeText(input, '03.11.2030 14:30');
+		keyDown(input, 'Enter');
+		await frames();
+		const english = inputOf(page, 'english');
+		typeText(english, '110320302 30pm');
+		check('DateTimePicker en-US: дата, время и период по маске', english.value === '11/03/2030 2:30 pm', `текст ${english.value}`);
+		keyDown(english, 'Enter');
+		await frames();
 	}
 
 	return results;

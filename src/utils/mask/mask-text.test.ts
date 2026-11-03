@@ -71,6 +71,15 @@ describe('maskText: дата (ru)', () => {
 		expect(maskText('03', '0', date)).toBe('03.');
 	});
 
+	it('набор одних отвергнутых символов текст не меняет, где бы они ни стояли', () => {
+		expect(maskText('03x.11.2026', '03.11.2026', date)).toBe('03.11.2026');
+		expect(maskText('x03.11.2026', '03.11.2026', date)).toBe('03.11.2026');
+		expect(maskText('03.11.2026x', '03.11.2026', date)).toBe('03.11.2026');
+		expect(maskText('03x.11.2026', '03.11.2026', dateTime)).toBe('03.11.2026');
+		expect(maskText('03.11.2026 x', '03.11.2026 ', dateTime)).toBe('03.11.2026 ');
+		expect(maskText('2:30 pmx', '2:30 pm', time12)).toBe('2:30 pm');
+	});
+
 	it('замена выделенного одним символом считается набором, а не удалением', () => {
 		expect(maskText('4', '03.11.2026', date)).toBe('04.');
 	});
