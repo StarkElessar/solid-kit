@@ -25,8 +25,8 @@
 
 ## Часть 2: хелперы дата-время (`src/utils/date-time/`)
 
-- [ ] Тесты и реализация: `date-time-parts`, `date-time-rules`, `parse-iso-date-time` (+ отказы: без `T`, секунды, пробел, неверная дата, неверное время), `format-iso-date-time` (круг), `compare-date-times`, `read-date-time-prop`, `is-date-time-allowed`, `time-bounds-for-date`, `fit-time-to-date`, `format-date-time-text`, `parse-date-time-text` (`ru`, `en-US`, `ja`, `de`; дата без времени; время без даты и мусор дают `null`; круг с форматом).
-- [ ] `pnpm check`, коммит `feat(date-time): хелперы даты и времени для DateTimePicker`.
+- [x] Тесты и реализация: `date-time-parts`, `date-time-rules`, `parse-iso-date-time` (+ отказы: без `T`, секунды, пробел, неверная дата, неверное время), `format-iso-date-time` (круг), `compare-date-times`, `read-date-time-prop`, `is-date-time-allowed`, `time-bounds-for-date`, `fit-time-to-date`, `format-date-time-text`, `parse-date-time-text` (`ru`, `en-US`, `ja`, `de`; дата без времени; время без даты и мусор дают `null`; круг с форматом).
+- [x] `pnpm check`, коммит `feat(date-time): хелперы даты и времени для DateTimePicker`.
 
 ## Часть 3: DateTimePicker
 
