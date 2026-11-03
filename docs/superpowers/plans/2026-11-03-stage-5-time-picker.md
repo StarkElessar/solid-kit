@@ -33,9 +33,9 @@
 
 ## Часть 3: TimePicker
 
-- [ ] `time-picker-props`, `time-picker-labels`, `default-time-picker-labels`, `time-picker-icon`, `time-placeholder`, `time-picker.tsx`, `time-picker.module.css`, `index.ts`: текст отдельно от значения (`dirty`), ввод, принятие по Enter и уходу, откат, `clearable`, `name`, `min`/`max`/`isTimeDisabled`/`minuteStep`, `locale`/`hour12`, подсветка набранного времени в колонках, `showNow`.
-- [ ] Тесты: критерии а–е, ж спеки (в jsdom без геометрии), dev-предупреждения для недопустимых пропсов.
-- [ ] `pnpm check`, коммит `feat(time-picker): TimePicker`.
+- [x] `time-picker-props`, `time-picker-labels`, `default-time-picker-labels`, `time-picker-icon`, `time-placeholder`, `time-picker.tsx`, `time-picker.module.css`, `index.ts`: текст отдельно от значения (`dirty`), ввод, принятие по Enter и уходу, откат, `clearable`, `name`, `min`/`max`/`isTimeDisabled`/`minuteStep`, `locale`/`hour12`, подсветка набранного времени в колонках, `showNow`.
+- [x] Тесты: критерии а–е, ж спеки (в jsdom без геометрии), dev-предупреждения для недопустимых пропсов.
+- [x] `pnpm check`, коммит `feat(time-picker): TimePicker`.
 
 ## Часть 4: playground и приёмка
 

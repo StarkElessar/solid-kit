@@ -1,0 +1,13 @@
+/*
+ * Токены TimePicker (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-time-picker-width (ширина поля: 7.5rem для 24 часов, 9rem для 12 часов; помещается «14:30» и «12:30 PM»).
+ * Поле, значок и панель это PickerField (src/internal/picker-field), колонки это TimeColumns (time-columns.module.css).
+ */
+
+.root {
+    --s-kit-picker-field-width: var(--s-kit-time-picker-width, 7.5rem);
+
+    &.hour12 {
+        --s-kit-picker-field-width: var(--s-kit-time-picker-width, 9rem);
+    }
+}
