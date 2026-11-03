@@ -6,7 +6,7 @@ import type { TreeDoc } from './demo-tree-data';
 export const TREE_COLUMNS: readonly GridColumn<TreeDoc>[] = [
 	{ id: 'title', title: 'Название документа', value: (row) => row.title, width: 280, locked: true },
 	{ id: 'type', title: 'Тип', value: (row) => row.type, width: 140 },
-	{ id: 'owner', title: 'Владелец', value: (row) => row.owner, width: 220 },
-	{ id: 'comment', title: 'Комментарий', value: (row) => row.comment, width: 320 },
+	{ id: 'owner', title: 'Владелец', value: (row) => row.owner, width: 260 },
+	{ id: 'comment', title: 'Комментарий', value: (row) => row.comment, width: 420 },
 	{ id: 'time', title: 'Время', value: (row) => row.time, width: 90, align: 'end' }
 ];

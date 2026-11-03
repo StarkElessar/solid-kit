@@ -147,6 +147,8 @@ export async function runTreeListChecks(page: HTMLElement): Promise<CheckResult[
 	await click(row?.querySelectorAll('td')[1] as HTMLElement);
 	check('клик по строке выбирает её', bodyRows(frame)[1]?.getAttribute('aria-selected') === 'true', 'строка выбрана');
 	await click(bodyRows(frame)[1]?.querySelectorAll('td')[1] as HTMLElement);
+	const stillSelected = bodyRows(frame).filter((item) => item.getAttribute('aria-selected') === 'true').length;
+	check('повторный клик снимает выбор', stillSelected === 0, `выбрано ${stillSelected}`);
 
 	// загрузка и пустое состояние
 	await toggle(page, '[data-tree-loading]', true);
@@ -167,7 +169,8 @@ export async function runTreeListChecks(page: HTMLElement): Promise<CheckResult[
 		`запросов ${calls.textContent}`);
 	await sleep(LAZY_DELAY_MS + 300);
 	await frames();
-	check('после ответа показаны дети', !lazy.textContent.includes('Загрузка…') && itemCount(lazy) === 3 + 6, `строк ${itemCount(lazy)}`);
+	const settled = !lazy.textContent.includes('Загрузка…') && itemCount(lazy) === TREE_ROOTS + 6;
+	check('после ответа показаны дети', settled, `строк ${itemCount(lazy)}`);
 	await click(expander(bodyRows(lazy)[0] as HTMLElement));
 	await click(expander(bodyRows(lazy)[0] as HTMLElement));
 	check('повторное раскрытие не просит дети снова', calls.textContent === '1', `запросов ${calls.textContent}`);
