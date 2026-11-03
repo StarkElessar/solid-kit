@@ -1,0 +1,92 @@
+/*
+ * Токены PickerField (публичный API кастомизации, читаются с фолбэком на глобальные):
+ *   --s-kit-picker-field-width (ширина поля, 10rem), --s-kit-picker-panel-bg (фон панели), --s-kit-picker-panel-padding (0).
+ * Поле это Input этапа 1; значок и «Очистить» лежат внутри рамки справа квадратами высотой в контрол.
+ */
+
+.field {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+
+    inline-size: var(--s-kit-picker-field-width, 10rem);
+    min-inline-size: 0;
+
+    & .input {
+        inline-size: 100%;
+
+        /* место под значок: он занимает квадрат высотой в контрол */
+        padding-inline-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    }
+
+    &[data-has-clear] .input {
+        padding-inline-end: calc(2 * var(--s-kit-control-height, var(--s-kit-control-height-md)));
+    }
+}
+
+.toggle,
+.clear {
+    cursor: pointer;
+
+    position: absolute;
+    inset-block: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+    inline-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
+    padding: 0;
+    border: 0;
+    border-radius: var(--s-kit-radius);
+
+    color: var(--s-kit-color-muted);
+
+    background: transparent;
+
+    &:hover:not(:disabled) {
+        color: var(--s-kit-color-text);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: var(--s-kit-disabled-opacity);
+    }
+}
+
+.toggle {
+    inset-inline-end: 0;
+
+    & svg {
+        inline-size: 1.15em;
+        block-size: 1.15em;
+    }
+}
+
+.clear {
+    inset-inline-end: var(--s-kit-control-height, var(--s-kit-control-height-md));
+}
+
+.panel {
+    composes: panel material from "../floating-panel/panel-base.module.css";
+
+    user-select: none;
+
+    padding: var(--s-kit-picker-panel-padding, 0);
+    border-radius: calc(var(--s-kit-radius) * 1.5);
+
+    /* запасной сплошной фон, затем полупрозрачный материал (зонтичный, раздел 4.3) */
+    background: var(--s-kit-picker-panel-bg, var(--s-kit-color-surface));
+
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        @media not (prefers-reduced-transparency: reduce) {
+            background: var(--s-kit-picker-panel-bg, var(--s-kit-color-panel));
+        }
+    }
+}
+
+.body {
+    display: contents;
+}
