@@ -298,6 +298,57 @@ describe('PickerField: клавиатура и фокус', () => {
 	});
 });
 
+describe('PickerField: подпись', () => {
+	it('клик по подписи (for) не открывает панель', () => {
+		render(() => (
+			<>
+				<label for='when-field'>Когда</label>
+				<Harness id='when-field'/>
+			</>
+		));
+		fireEvent.click(screen.getByText('Когда'));
+		expect(panel()).toBeNull();
+	});
+
+	it('клик по подписи, внутри которой лежит поле, не открывает панель', () => {
+		render(() => (
+			<label>
+				Когда
+				<Harness/>
+			</label>
+		));
+		fireEvent.click(screen.getByText('Когда'));
+		expect(panel()).toBeNull();
+	});
+
+	it('клик по подписи при открытой панели её не закрывает и не переоткрывает', () => {
+		render(() => (
+			<>
+				<label for='when-field'>Когда</label>
+				<Harness id='when-field' defaultOpen/>
+			</>
+		));
+		expect(panel()).toBeTruthy();
+		fireEvent.click(screen.getByText('Когда'));
+		expect(panel()).toBeTruthy();
+	});
+
+	it('после клика по подписи клик по полю в следующей задаче снова открывает', async () => {
+		render(() => (
+			<>
+				<label for='when-field'>Когда</label>
+				<Harness id='when-field'/>
+			</>
+		));
+		fireEvent.click(screen.getByText('Когда'));
+		await new Promise<void>((resolve) => {
+			setTimeout(resolve, 0);
+		});
+		clickField();
+		expect(panel()).toBeTruthy();
+	});
+});
+
 describe('PickerField: «Очистить»', () => {
 	it('показывается при clearable и непустом тексте; клик очищает и оставляет фокус в поле', () => {
 		const onClear = vi.fn();

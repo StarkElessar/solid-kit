@@ -1,6 +1,6 @@
 import styles from './picker-field.module.css';
 
-import { createSignal, createUniqueId, type JSX, Show, splitProps } from 'solid-js';
+import { createSignal, createUniqueId, type JSX, onCleanup, onMount, Show, splitProps } from 'solid-js';
 
 import { Input } from '../../components/input';
 import { createControllableSignal } from '../../utils/create-controllable-signal';
@@ -99,10 +99,29 @@ export function PickerField(props: PickerFieldProps): JSX.Element {
 		setOpen(false);
 	};
 
+	// клик по подписи браузер пересылает полю синтетическим кликом: это не клик по полю и панель не открывает
+	let labelClick = false;
+	onMount(() => {
+		const markLabelClick = (event: MouseEvent): void => {
+			const label = event.target instanceof Element ? event.target.closest('label') : null;
+			if (label && input()?.labels && [...(input()?.labels ?? [])].includes(label)) {
+				labelClick = true;
+				// пересылка идёт синхронно после этого события, сброс в следующей задаче
+				setTimeout(() => {
+					labelClick = false;
+				}, 0);
+			}
+		};
+		document.addEventListener('click', markLabelClick, true);
+		onCleanup(() => {
+			document.removeEventListener('click', markLabelClick, true);
+		});
+	});
+
 	// клик по полю открывает закрытую панель; при открытой клик только ставит курсор
 	const handleClick: JSX.EventHandler<HTMLInputElement, MouseEvent> = (event) => {
 		local.onClick?.(event);
-		if (!event.defaultPrevented && !inactive() && !open()) {
+		if (!event.defaultPrevented && !labelClick && !inactive() && !open()) {
 			setOpen(true);
 		}
 	};

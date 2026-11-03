@@ -8,8 +8,9 @@ import { GridPage } from './grid-page';
 import { ListsPage } from './lists-page';
 import { PanelsPage } from './panels-page';
 import { ThemesPage } from './themes-page';
+import { TimePickerPage } from './time-picker-page';
 
-const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker'] as const;
+const PAGE_IDS = ['themes', 'controls-row', 'panels', 'lists', 'grid', 'calendar', 'date-picker', 'time-picker'] as const;
 
 type PageId = (typeof PAGE_IDS)[number];
 
@@ -20,7 +21,8 @@ const PAGES: Record<PageId, { readonly title: string; readonly component: () => 
 	lists: { title: 'Списки', component: ListsPage },
 	grid: { title: 'Грид', component: GridPage },
 	calendar: { title: 'Календарь', component: CalendarPage },
-	'date-picker': { title: 'Выбор даты', component: DatePickerPage }
+	'date-picker': { title: 'Выбор даты', component: DatePickerPage },
+	'time-picker': { title: 'Выбор времени', component: TimePickerPage }
 };
 
 function readHash(): PageId {

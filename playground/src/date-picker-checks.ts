@@ -195,6 +195,20 @@ export async function runDatePickerChecks(page: HTMLElement): Promise<CheckResul
 		);
 	}
 
+	// подпись Field: клик фокусирует поле и не открывает календарь
+	{
+		const input = inputOf(page, 'field');
+		input.scrollIntoView({ behavior: 'instant', block: 'center' });
+		required(page, '[data-date-demo="field"] label').click();
+		await frames();
+		check(
+			'DatePicker: клик по подписи Field фокусирует поле и не открывает календарь',
+			document.activeElement === input && panelOf(input) === null,
+			`активен ${activeTag()}, панель ${exists(panelOf(input))}`
+		);
+		input.blur();
+	}
+
 	// readOnly, disabled, ограничения
 	{
 		const readonly = inputOf(page, 'readonly');
