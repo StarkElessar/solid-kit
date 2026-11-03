@@ -1,7 +1,8 @@
 /*
  * Токены Calendar (публичный API кастомизации, читаются с фолбэком на глобальные):
  *   --s-kit-calendar-cell (сторона ячейки, по умолчанию высота контрола), --s-kit-calendar-gap (2px),
- *   --s-kit-calendar-padding (8px), --s-kit-calendar-bg (прозрачный).
+ *   --s-kit-calendar-padding (8px, внешний отступ), --s-kit-calendar-block-gap (8px, зазор между шапкой, телом и подвалом),
+ *   --s-kit-calendar-bg (прозрачный).
  * Три блока: шапка, тело, подвал. Тело всегда занимает строку дней недели и 6 строк по 7 ячеек, поэтому высота не зависит от месяца.
  */
 
@@ -9,10 +10,11 @@
     --calendar-cell: var(--s-kit-calendar-cell, var(--s-kit-control-height, var(--s-kit-control-height-md)));
     --calendar-gap: var(--s-kit-calendar-gap, 2px);
     --calendar-padding: var(--s-kit-calendar-padding, 8px);
+    --calendar-block-gap: var(--s-kit-calendar-block-gap, 8px);
 
     display: inline-flex;
     flex-direction: column;
-    gap: var(--calendar-padding);
+    gap: var(--calendar-block-gap);
 
     box-sizing: border-box;
     padding: var(--calendar-padding);
