@@ -119,3 +119,54 @@ describe('TreeList: плоский список с parentKey', () => {
 		expect(screen.getByText('Ничего не найдено')).toBeTruthy();
 	});
 });
+
+describe('TreeList: кнопки уровней', () => {
+	const button = (name: string): HTMLButtonElement => screen.getByRole<HTMLButtonElement>('button', { name });
+
+	it('полоса с четырьмя кнопками в нужном порядке, панели группировки нет', () => {
+		const { container } = renderTree();
+		const buttons = container.querySelectorAll<HTMLButtonElement>('[class*="toolbar"] button');
+		const names = [...buttons].map((item) => item.getAttribute('aria-label'));
+		expect(names).toEqual(['Свернуть уровень', 'Свернуть все', 'Развернуть уровень', 'Развернуть все']);
+		expect(container.querySelector('[data-grouping-panel]')).toBeNull();
+	});
+
+	it('«Развернуть уровень» раскрывает уровень за уровнем, на краю колбэк не вызывается', () => {
+		const onExpandedKeysChange = vi.fn();
+		renderTree({ onExpandedKeysChange });
+		fireEvent.click(button('Развернуть уровень'));
+		expect(onExpandedKeysChange).toHaveBeenLastCalledWith(new Set([1]));
+		fireEvent.click(button('Развернуть уровень'));
+		expect(onExpandedKeysChange).toHaveBeenLastCalledWith(new Set([1, 2]));
+		onExpandedKeysChange.mockClear();
+		fireEvent.click(button('Развернуть уровень'));
+		expect(onExpandedKeysChange).not.toHaveBeenCalled();
+	});
+
+	it('«Развернуть все», «Свернуть уровень» и «Свернуть все»', () => {
+		const onExpandedKeysChange = vi.fn();
+		renderTree({ onExpandedKeysChange });
+		fireEvent.click(button('Развернуть все'));
+		expect(onExpandedKeysChange).toHaveBeenLastCalledWith(new Set([1, 2]));
+		expect(titles()).toEqual(['Регламенты', 'Продажи', 'Скидки', 'Возвраты', 'Архив']);
+		fireEvent.click(button('Свернуть уровень'));
+		expect(onExpandedKeysChange).toHaveBeenLastCalledWith(new Set([1]));
+		fireEvent.click(button('Свернуть все'));
+		expect(onExpandedKeysChange).toHaveBeenLastCalledWith(new Set());
+		expect(titles()).toEqual(['Регламенты', 'Архив']);
+	});
+
+	it('при загрузке и при пустом списке кнопки отключены', () => {
+		renderTree({ loading: true });
+		expect(button('Развернуть все').disabled).toBe(true);
+		cleanup();
+		renderTree({ rows: [] });
+		expect(button('Развернуть все').disabled).toBe(true);
+	});
+
+	it('levelLabels переопределяет подписи', () => {
+		renderTree({ levelLabels: { expandAll: 'Раскрыть всё', expand: (title) => `Раскрыть ${title}` } });
+		expect(button('Раскрыть всё')).toBeTruthy();
+		expect(button('Раскрыть Регламенты')).toBeTruthy();
+	});
+});
