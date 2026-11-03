@@ -24,8 +24,8 @@
 
 ## Часть 2: хелперы текста даты (`src/utils/date/`)
 
-- [ ] `datePattern(locale)`, `formatDateText(parts, locale)`, `parseDateText(text, locale)` и тесты для `ru`, `en-US`, `de`, `ja` (порядок, разделитель, ведущие нули, разбор с любыми разделителями и слитно, год ровно из 4 цифр, несуществующие даты, пустая строка, запасной образец при сбое `Intl`).
-- [ ] Коммит `feat(date): текст даты по локали`.
+- [x] `datePattern(locale)`, `formatDateText(parts, locale)`, `parseDateText(text, locale)` и тесты для `ru`, `en-US`, `de`, `ja` (порядок, разделитель, ведущие нули, разбор с любыми разделителями и слитно, год ровно из 4 цифр, несуществующие даты, пустая строка, запасной образец при сбое `Intl`).
+- [x] Коммит `feat(date): текст даты по локали`.
 
 ## Часть 3: `PickerField` (`src/internal/picker-field/`)
 
