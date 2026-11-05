@@ -41,6 +41,11 @@ export interface GridProps<T> extends GridPagerProps {
 	 * `--s-kit-grid-height`.
 	 */
 	fill?: boolean | undefined;
+	/**
+	 * Перенос текста: ячейки тела и заголовки колонок переносят длинный текст на следующие строки, строка и шапка растут по
+	 * содержимому (по умолчанию `false`: одна строка с многоточием, высота строк фиксирована). Группы и итоги всегда в одну строку.
+	 */
+	wrap?: boolean | undefined;
 	/** Уникальный и стабильный между загрузками ключ строки. */
 	getRowKey: (row: T) => RowKey;
 	columns: readonly GridColumn<T>[];

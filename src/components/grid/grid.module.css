@@ -55,6 +55,42 @@
     &[data-bar] {
         --s-kit-grid-bar-h: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) + 9px);
     }
+
+    /*
+     * wrap: текст ячеек и заголовков переносится, строка и шапка растут по содержимому (высота ячейки таблицы это минимум).
+     * Минимум остаётся прежним: однострочная строка не меняет высоту, добавляется только вертикальный отступ.
+     */
+    &[data-wrap] {
+        & .cell {
+            padding-block: 6px;
+            text-overflow: clip;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+
+        & .head-cell {
+            text-overflow: clip;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+
+        & .head-inner,
+        & .sort-button {
+            block-size: auto;
+            min-block-size: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) - 1px);
+        }
+
+        & .head-title,
+        & .sort-title {
+            overflow: visible;
+
+            padding-block: 4px;
+
+            text-overflow: clip;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+    }
 }
 
 .scroller {

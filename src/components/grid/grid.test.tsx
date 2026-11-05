@@ -2354,6 +2354,14 @@ describe('Grid: высота', () => {
 		expect(table().hasAttribute('data-stretch')).toBe(false);
 	});
 
+	it('wrap ставит data-wrap на корень, без него атрибута нет', () => {
+		const { unmount } = renderGrid({ rows: [] });
+		expect(root().hasAttribute('data-wrap')).toBe(false);
+		unmount();
+		renderGrid({ wrap: true, rows: [] });
+		expect(root().hasAttribute('data-wrap')).toBe(true);
+	});
+
 	it('fill ставит data-fill на корень; пустой грид с fill получает data-stretch, с данными нет', () => {
 		const { unmount } = renderGrid({ fill: true, rows: [] });
 		expect(root().hasAttribute('data-fill')).toBe(true);

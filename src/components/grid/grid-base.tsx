@@ -481,6 +481,7 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 					aria-busy={loading() ? 'true' : undefined}
 					data-bar={hasBar() ? '' : undefined}
 					data-fill={props.fill === true ? '' : undefined}
+					data-wrap={props.wrap === true ? '' : undefined}
 					data-dragging={groupingDrag.state() === undefined ? undefined : ''}
 					style={{
 						...props.style,
