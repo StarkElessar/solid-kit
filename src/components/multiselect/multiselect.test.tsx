@@ -428,6 +428,23 @@ describe('MultiSelect: чипы и счётчик', () => {
 		expect(screen.queryByRole('listbox')).toBeNull();
 	});
 
+	it('клик по тексту чипа и счётчику ничего не убирает, даже внутри <label> без for', () => {
+		const onValueChange = vi.fn();
+		render(() => (
+			<label>
+				Сотрудники
+				<Basic defaultValue={[anna, boris, vera]} onValueChange={onValueChange}/>
+			</label>
+		));
+		fireEvent.click(screen.getByText('Борис'));
+		fireEvent.click(document.querySelector('[data-multiselect-chip]') as HTMLElement);
+		expect(onValueChange).not.toHaveBeenCalled();
+		expect(chipLabels()).toEqual(['Анна', 'Борис', 'Вера']);
+		// кнопка × по-прежнему убирает ровно свой чип
+		fireEvent.click(screen.getByRole('button', { name: 'Убрать: Борис' }));
+		expect(chipLabels()).toEqual(['Анна', 'Вера']);
+	});
+
 	it('имя кнопки × задаётся функцией', () => {
 		render(() => <Basic defaultValue={[anna]} removeChipLabel={(label) => `Удалить ${label}`}/>);
 		expect(screen.getByRole('button', { name: 'Удалить Анна' })).toBeTruthy();

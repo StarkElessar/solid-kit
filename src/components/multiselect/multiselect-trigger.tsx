@@ -163,6 +163,10 @@ export function MultiSelectTrigger<T>(props: MultiSelectTriggerProps<T>): JSX.El
 			style={local.style}
 			// клик по пустому месту оболочки открывает список; клики по кнопкам обрабатывают сами кнопки
 			onClick={(event) => {
+				// внутри <label> без for браузер пересылает клик первому вложенному элементу формы, то есть × первого чипа
+				if (!event.target.closest('button, input')) {
+					event.preventDefault();
+				}
 				if (event.target === event.currentTarget && !context.disabled()) {
 					context.setOpen(!context.open(), 'pointer');
 					context.input()?.focus();
