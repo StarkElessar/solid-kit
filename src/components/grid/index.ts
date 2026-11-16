@@ -1,4 +1,5 @@
 export { Grid } from './grid';
+export type { GridCellAttributes } from './grid-cell-attributes';
 export type { GridColumn } from './grid-column';
 export type { GridColumnMenuLabels } from './grid-column-menu-labels';
 export type { GridGroup } from './grid-group';

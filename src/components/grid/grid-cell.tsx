@@ -2,8 +2,10 @@ import styles from './grid.module.css';
 
 import { createMemo, type JSX } from 'solid-js';
 
+import { cellDataAttributes } from './cell-data-attributes';
 import { leftVar } from './column-css-vars';
 import { formatCellValue } from './format-cell-value';
+import type { GridCellAttributes } from './grid-cell-attributes';
 import type { GridColumn } from './grid-column';
 import { useGrid } from './grid-context';
 import type { GridNode } from './grid-node';
@@ -31,15 +33,20 @@ export function GridCell(props: GridCellProps): JSX.Element {
 	const content = (): JSX.Element => (props.column.cell === undefined ? text() : props.column.cell(props.row));
 	// подпись шеврона называет узел текстом значения, даже если ячейка нарисована своим `cell`
 	const nodeTitle = (): string => formatCellValue(props.column.value(props.row));
+	// атрибуты потребителя: data-* идут первыми, класс и стиль сливаются с китовыми, служебное кита остаётся за китом
+	const attributes = createMemo((): GridCellAttributes => props.column.cellAttributes?.(props.row) ?? {});
+	const dataAttributes = (): Record<string, string | undefined> => cellDataAttributes(attributes());
 	return (
 		<td
-			class={styles['cell']}
+			{...dataAttributes()}
+			class={attributes().class === undefined ? styles['cell'] : `${styles['cell']} ${attributes().class}`}
 			title={props.column.cell === undefined ? text() : undefined}
 			data-sticky={sticky() ? '' : undefined}
 			data-sticky-last={props.index === grid.lastStickyIndex() ? '' : undefined}
 			data-align={props.column.align}
 			data-indent={props.index === 0 ? '' : undefined}
 			style={{
+				...attributes().style,
 				'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined,
 				'--s-kit-grid-cell-h': cellHeight(props.column)
 			}}

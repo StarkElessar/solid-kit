@@ -166,6 +166,48 @@ describe('Grid: строки', () => {
 		expect(first[1]?.textContent).toBe('');
 	});
 
+	it('cellAttributes: класс добавляется к китовому, стиль сливается, data-* ложатся на td, служебное кита не перебивается', () => {
+		renderGrid({
+			columns: COLUMNS.map((column) => (column.id === 'name'
+				? {
+					...column,
+					cellAttributes: (row: Person) => ({
+						'class': 'mine',
+						'style': { 'background': 'red', 'inset-inline-start': '999px' },
+						'data-tone': row.age > 40 ? 'old' : undefined,
+						'data-sticky': undefined
+					})
+				}
+				: column))
+		});
+		const [first, , third] = bodyRows().map((row) => row.cells[0] as HTMLTableCellElement);
+		expect(first?.classList.contains('mine')).toBe(true);
+		expect(first?.classList.length).toBe(2);
+		expect(first?.style.background).toBe('red');
+		expect(first?.style.insetInlineStart).not.toBe('999px');
+		expect(first?.hasAttribute('data-sticky')).toBe(true);
+		expect(first?.hasAttribute('data-tone')).toBe(false);
+		expect(third?.getAttribute('data-tone')).toBe('old');
+	});
+
+	it('cellAttributes пересчитываются при смене данных строки', () => {
+		const [rows, setRows] = createSignal<readonly Person[]>(ROWS);
+		render(() => (
+			<Grid
+				rows={rows()}
+				getRowKey={(row) => row.id}
+				columns={[
+					{ id: 'age', title: 'Возраст', value: (row) => row.age, cellAttributes: (row) => ({ 'data-age': String(row.age) }) }
+				]}
+				virtualized={false}
+				aria-label='Люди'
+			/>
+		));
+		expect(bodyRows()[0]?.cells[0]?.getAttribute('data-age')).toBe('31');
+		setRows(ROWS.map((row) => (row.id === 1 ? { ...row, age: 32 } : row)));
+		expect(bodyRows()[0]?.cells[0]?.getAttribute('data-age')).toBe('32');
+	});
+
 	it('строка имеет data-index, data-row-key и aria-rowindex, таблица aria-rowcount', () => {
 		renderGrid();
 		expect(table().getAttribute('aria-rowcount')).toBe('4');

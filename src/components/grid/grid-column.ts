@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 
+import type { GridCellAttributes } from './grid-cell-attributes';
 import type { GridGroupDirection } from './grid-group-sort';
 
 export interface GridColumn<T> {
@@ -9,6 +10,8 @@ export interface GridColumn<T> {
 	/** Значение ячейки; без `cell` показывается `String(value(row))`. */
 	value: (row: T) => unknown;
 	cell?: ((row: T) => JSX.Element) | undefined;
+	/** Атрибуты самой ячейки `<td>` по строке: свой класс, стиль, `data-*` (например, заливка ячейки просроченного срока). */
+	cellAttributes?: ((row: T) => GridCellAttributes) | undefined;
 	/** Ширина по умолчанию, px (160, если не задана). */
 	width?: number | undefined;
 	/** Нижняя граница ширины при ресайзе, px (60, если не задана). */
