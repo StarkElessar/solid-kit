@@ -9,7 +9,7 @@ import { startColumnResize } from './start-column-resize';
 type ColumnWidths = Readonly<Record<string, number>>;
 
 export interface GridResizeOptions<T> {
-	/** Все колонки из пропсов, включая скрытые. */
+	/** Все колонки, включая скрытые, с флагами `hidden` и `locked` из состояния грида: та же основа, по которой строится `layout`. */
 	columns: Accessor<readonly GridColumn<T>[]>;
 	widths: Accessor<ColumnWidths>;
 	/** Пишет ширины в состояние и сообщает наружу; вызывается по окончании перетаскивания и по двойному клику. */

@@ -276,7 +276,8 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 	let header: HTMLTableSectionElement | undefined;
 
 	const resize = createGridResize({
-		columns: () => props.columns,
+		// колонки с учётом скрытия и закрепления из состояния: та же основа, что у layout, иначе индексы переменных разъедутся
+		columns: stateColumns,
 		widths,
 		setWidths,
 		layout,

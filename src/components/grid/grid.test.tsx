@@ -415,6 +415,30 @@ describe('Grid: ресайз колонок', () => {
 		handle.dispatchEvent(pointer('pointerup', -500));
 	});
 
+	it('скрытые через hiddenColumns колонки не возвращаются в раскладку при перетаскивании', () => {
+		// видимы Имя, Номер, Секрет и Заметка: Возраст скрыт состоянием, а не полем hidden
+		renderGrid({ hiddenColumns: new Set(['age']) });
+		const handle = handleOf('Заметка');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 140));
+		expect(tableVar('--s-kit-grid-w-2')).toBe('160px');
+		expect(tableVar('--s-kit-grid-w-3')).toBe('200px');
+		expect(tableVar('--s-kit-grid-table-w')).toBe('590px');
+		handle.dispatchEvent(pointer('pointerup', 140));
+	});
+
+	it('закрепление через lockedColumns сохраняет порядок колонок при перетаскивании', () => {
+		// закреплён только Возраст и идёт первым, Имя вторым
+		renderGrid({ lockedColumns: new Set(['age']) });
+		const handle = handleOf('Имя');
+		handle.dispatchEvent(pointer('pointerdown', 100));
+		handle.dispatchEvent(pointer('pointermove', 130));
+		expect(tableVar('--s-kit-grid-w-0')).toBe('100px');
+		expect(tableVar('--s-kit-grid-w-1')).toBe('180px');
+		expect((table().parentElement as HTMLElement).style.getPropertyValue('scroll-padding-inline-start')).toBe('100px');
+		handle.dispatchEvent(pointer('pointerup', 130));
+	});
+
 	it('ресайз закреплённой колонки сдвигает смещения закреплённых правее и scroll-padding', () => {
 		renderGrid();
 		const handle = handleOf('Имя');
