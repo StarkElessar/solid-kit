@@ -76,7 +76,7 @@ export function GridBody(): JSX.Element {
 			}}
 		>
 			<Switch>
-				<Match when={grid.loading()}>
+				<Match when={grid.skeleton()}>
 					<GridSkeleton/>
 				</Match>
 				<Match when={grid.isEmpty()}>

@@ -91,7 +91,12 @@ export interface GridContextValue<T> {
 	beginResize: (index: number, event: PointerEvent) => void;
 	/** Двойной клик по ручке: возврат к `GridColumn.width`. */
 	resetWidth: (columnId: string) => void;
+	/** Идёт загрузка (проп `loading`): полоса прогресса и вращение «Обновить»; строки при этом остаются, если они есть. */
 	loading: Accessor<boolean>;
+	/** Загрузка без данных: тело занято заглушками. */
+	skeleton: Accessor<boolean>;
+	/** Загрузка поверх имеющихся данных: строки приглушены и не отзываются, фокус и позиция не теряются. */
+	refreshing: Accessor<boolean>;
 	loadingLabel: Accessor<string>;
 	/** Строк нет и загрузки нет. */
 	isEmpty: Accessor<boolean>;

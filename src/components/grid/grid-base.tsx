@@ -195,10 +195,13 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 	const [viewWidth, setViewWidth] = createSignal(0);
 	const loading = (): boolean => props.loading === true;
 	const isEmpty = (): boolean => !loading() && itemCount() === 0;
+	// скелетон только когда показывать нечего; при обновлении с данными строки остаются на месте, идут лишь полоса и вращение кнопки
+	const skeleton = (): boolean => loading() && itemCount() === 0;
+	const refreshing = (): boolean => loading() && itemCount() > 0;
 	const emptyText = (): string => props.emptyText ?? 'Ничего не найдено';
 	// число заглушек считается в момент начала загрузки: строки, помещающиеся в скроллер, но не меньше 5 и не больше 20
 	const skeletonCount = createMemo(() => {
-		if (!loading()) {
+		if (!skeleton()) {
 			return 0;
 		}
 		const element = scroller();
@@ -296,6 +299,9 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 		rowIndexOfItem,
 		expandedGroupKeys: expandedGroups,
 		toggleGroup: (key) => {
+			if (refreshing()) {
+				return;
+			}
 			setExpandedGroups(toggleId(expandedGroups(), key));
 		},
 		loadItem: (key) => {
@@ -306,7 +312,9 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 		},
 		isTree: () => props.tree !== undefined,
 		toggleNode: (key) => {
-			props.tree?.toggleNode(key);
+			if (!refreshing()) {
+				props.tree?.toggleNode(key);
+			}
 		},
 		groupingLabels,
 		levelLabels: () => props.tree?.levelLabels() ?? groupingLabels(),
@@ -368,13 +376,13 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 			return key !== undefined && selected().has(key);
 		},
 		activateRow: (index) => {
-			if (index < leafRows().length) {
+			if (!refreshing() && index < leafRows().length) {
 				props.onRowDoubleClick?.(leafRows()[index] as T);
 			}
 		},
 		toggleRow: (index) => {
 			const key = rowIndex().keys[index];
-			if (key !== undefined) {
+			if (key !== undefined && !refreshing()) {
 				setSelected(toggleKey(selected(), key));
 			}
 		},
@@ -383,6 +391,8 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 		},
 		selectionState,
 		loading,
+		skeleton,
+		refreshing,
 		loadingLabel: () => props.loadingLabel ?? 'Загрузка',
 		isEmpty,
 		emptyText,
@@ -396,7 +406,7 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 		hasRowMenu: () => props.rowContextMenu !== undefined,
 		rowMenu,
 		openRowMenu: (index: number, point: ContextMenuPoint, source: MenuOpenSource) => {
-			if (index < leafRows().length) {
+			if (!refreshing() && index < leafRows().length) {
 				setRowMenu({ point, source, row: leafRows()[index] });
 			}
 		},
@@ -479,6 +489,7 @@ export function GridBase<T>(props: GridBaseProps<T>): JSX.Element {
 					tabindex='-1'
 					class={props.class ? `${styles['root']} ${props.class}` : styles['root']}
 					aria-busy={loading() ? 'true' : undefined}
+					data-refreshing={refreshing() ? '' : undefined}
 					data-bar={hasBar() ? '' : undefined}
 					data-fill={props.fill === true ? '' : undefined}
 					data-wrap={props.wrap === true ? '' : undefined}

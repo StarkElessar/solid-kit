@@ -26,7 +26,7 @@ export function GridTotalsCell(props: GridTotalsCellProps): JSX.Element {
 			data-align={props.column.align}
 			style={{ 'inset-inline-start': sticky() ? `var(${leftVar(props.index)})` : undefined }}
 		>
-			<Show when={!grid.loading()} fallback={<span aria-hidden='true' class={styles['skeleton-bar']}/>}>
+			<Show when={!grid.skeleton()} fallback={<span aria-hidden='true' class={styles['skeleton-bar']}/>}>
 				{totalsCellContent(props.column, props.values)}
 			</Show>
 		</td>

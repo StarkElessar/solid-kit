@@ -394,22 +394,31 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 	await frames(4);
 
 	await toggle('[data-grid-loading]');
-	const skeletonRows = table.querySelectorAll('tbody > tr[aria-hidden="true"]').length;
-	const loadingOk = gridRoot.getAttribute('aria-busy') === 'true' && bodyRows(table).length === 0
-		&& skeletonRows >= 5 && skeletonRows <= 20 && gridRoot.querySelector('[role="progressbar"][aria-label]') !== null;
+	const refreshSkeleton = table.querySelectorAll('tbody > tr[aria-hidden="true"]:not([role="presentation"])').length;
+	const refreshRows = bodyRows(table).length;
+	const refreshOk = gridRoot.getAttribute('aria-busy') === 'true' && gridRoot.hasAttribute('data-refreshing')
+		&& refreshSkeleton === 0 && refreshRows > 0 && gridRoot.querySelector('[role="progressbar"][aria-label]') !== null;
 	const busy = gridRoot.getAttribute('aria-busy') ?? '—';
-	const loadingDetail = `aria-busy ${busy}, заглушек ${skeletonRows}, строк данных ${bodyRows(table).length}`;
+	const refreshDetail = `aria-busy ${busy}, заглушек ${refreshSkeleton}, строк данных ${refreshRows}`;
 	await toggle('[data-grid-loading]');
 	const liveText = required(page, '[aria-live="polite"]').textContent;
 	check(
-		'Grid: загрузка: заглушки, progressbar, aria-busy; после загрузки строки на месте и объявлено число записей',
-		loadingOk && bodyRows(table).length > 0 && gridRoot.getAttribute('aria-busy') === null && liveText === 'Найдено 100000 записей',
-		`${loadingDetail}; после: строк ${bodyRows(table).length}, объявлено «${liveText}»`
+		'Grid: загрузка поверх данных: строки на месте без заглушек, progressbar, aria-busy; после загрузки объявлено число записей',
+		refreshOk && bodyRows(table).length > 0 && gridRoot.getAttribute('aria-busy') === null
+			&& !gridRoot.hasAttribute('data-refreshing') && liveText === 'Найдено 100000 записей',
+		`${refreshDetail}; после: строк ${bodyRows(table).length}, объявлено «${liveText}»`
 	);
 
 	await toggle('[data-grid-empty]');
 	const emptyShown = required(table, 'tbody').textContent.includes('Ничего не найдено') && bodyRows(table).length === 0;
 	await toggle('[data-grid-loading]');
+	const skeletonRows = table.querySelectorAll('tbody > tr[aria-hidden="true"]:not([role="presentation"])').length;
+	check(
+		'Grid: загрузка без данных: заглушки (5–20), строк данных нет, progressbar и aria-busy, data-refreshing нет',
+		gridRoot.getAttribute('aria-busy') === 'true' && bodyRows(table).length === 0 && skeletonRows >= 5 && skeletonRows <= 20
+			&& !gridRoot.hasAttribute('data-refreshing') && gridRoot.querySelector('[role="progressbar"][aria-label]') !== null,
+		`заглушек ${skeletonRows}, строк данных ${bodyRows(table).length}`
+	);
 	await toggle('[data-grid-loading]');
 	const emptyAnnounced = required(page, '[aria-live="polite"]').textContent;
 	const resetButton = [...table.querySelectorAll<HTMLButtonElement>('tbody button')].find(

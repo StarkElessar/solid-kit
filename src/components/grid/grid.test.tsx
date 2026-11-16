@@ -1145,7 +1145,7 @@ describe('Grid: состояния', () => {
 	}
 
 	it('заглушки закреплены так же, как строки: чекбокс и locked-колонки sticky со смещением', () => {
-		renderGrid({ loading: true, selectable: true });
+		renderGrid({ rows: [], loading: true, selectable: true });
 		const row = table().querySelector('tbody > tr') as HTMLTableRowElement;
 		const sticky = [...row.cells].map((cell) => cell.hasAttribute('data-sticky'));
 		// порядок: чекбокс, затем locked-колонки name и id, затем обычные age и note
@@ -1158,11 +1158,12 @@ describe('Grid: состояния', () => {
 		expect(row.cells[1]?.hasAttribute('data-sticky-last')).toBe(false);
 	});
 
-	it('загрузка: вместо строк заглушки, progressbar с именем, aria-busy только на время загрузки', () => {
+	it('загрузка без данных: заглушки, progressbar с именем, aria-busy только на время загрузки', () => {
+		const [rows, setRows] = createSignal<readonly Person[]>([]);
 		const [loading, setLoading] = createSignal(true);
 		const { container } = render(() => (
 			<Grid
-				rows={ROWS}
+				rows={rows()}
 				getRowKey={(row) => row.id}
 				columns={COLUMNS}
 				virtualized={false}
@@ -1180,10 +1181,77 @@ describe('Grid: состояния', () => {
 		const bar = screen.getByRole('progressbar', { name: 'Идёт загрузка' });
 		expect(bar.hasAttribute('aria-valuenow')).toBe(false);
 		expect(root(container).getAttribute('aria-busy')).toBe('true');
+		expect(root(container).hasAttribute('data-refreshing')).toBe(false);
+		setRows(ROWS);
 		setLoading(false);
 		expect(screen.queryByRole('progressbar')).toBeNull();
 		expect(root(container).hasAttribute('aria-busy')).toBe(false);
 		expect(bodyRows()).toHaveLength(3);
+	});
+
+	it('загрузка поверх данных: строки на месте, без заглушек, но полоса, aria-busy и data-refreshing есть', () => {
+		const [loading, setLoading] = createSignal(true);
+		const { container } = render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} loading={loading()} aria-label='Люди'/>
+		));
+		expect(bodyRows()).toHaveLength(3);
+		expect(table().querySelectorAll('tbody > tr[aria-hidden="true"]')).toHaveLength(0);
+		expect(screen.getByRole('progressbar', { name: 'Загрузка' })).toBeTruthy();
+		expect(root(container).getAttribute('aria-busy')).toBe('true');
+		expect(root(container).hasAttribute('data-refreshing')).toBe(true);
+		setLoading(false);
+		expect(root(container).hasAttribute('data-refreshing')).toBe(false);
+		expect(bodyRows()).toHaveLength(3);
+	});
+
+	it('начало загрузки не пересоздаёт строки: DOM строки тот же, фокус в ней остаётся', async () => {
+		const [loading, setLoading] = createSignal(false);
+		render(() => (
+			<Grid rows={ROWS} getRowKey={(row) => row.id} columns={COLUMNS} virtualized={false} loading={loading()} aria-label='Люди'/>
+		));
+		const before = bodyRows()[1] as HTMLTableRowElement;
+		before.tabIndex = 0;
+		before.focus();
+		setLoading(true);
+		await Promise.resolve();
+		expect(bodyRows()[1]).toBe(before);
+		expect(document.activeElement).toBe(before);
+	});
+
+	it('загрузка поверх данных: клик по строке, двойной клик, меню строки и чекбокс строки не работают', () => {
+		const onSelectedKeysChange = vi.fn();
+		const onRowDoubleClick = vi.fn();
+		const rowContextMenu = (): JSX.Element => <ContextMenu.Item>Пункт</ContextMenu.Item>;
+		renderGrid({ loading: true, selectable: true, onSelectedKeysChange, onRowDoubleClick, rowContextMenu });
+		const row = bodyRows()[0] as HTMLTableRowElement;
+		expect((row.querySelector('input[type="checkbox"]') as HTMLInputElement).disabled).toBe(true);
+		fireEvent.click(row.cells[1] as HTMLElement);
+		fireEvent.dblClick(row.cells[1] as HTMLElement);
+		fireEvent.contextMenu(row.cells[1] as HTMLElement);
+		expect(onSelectedKeysChange).not.toHaveBeenCalled();
+		expect(onRowDoubleClick).not.toHaveBeenCalled();
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('после загрузки поверх данных строки снова отзываются', () => {
+		const onRowDoubleClick = vi.fn();
+		const [loading, setLoading] = createSignal(true);
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				loading={loading()}
+				onRowDoubleClick={onRowDoubleClick}
+				aria-label='Люди'
+			/>
+		));
+		fireEvent.dblClick((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		expect(onRowDoubleClick).not.toHaveBeenCalled();
+		setLoading(false);
+		fireEvent.dblClick((bodyRows()[0] as HTMLTableRowElement).cells[0] as HTMLElement);
+		expect(onRowDoubleClick).toHaveBeenCalledTimes(1);
 	});
 
 	it('подпись progressbar по умолчанию «Загрузка»', () => {
@@ -1206,25 +1274,6 @@ describe('Grid: состояния', () => {
 		handle.dispatchEvent(pointer('pointerdown', 100));
 		handle.dispatchEvent(pointer('pointermove', 160));
 		expect(tableVar('--s-kit-grid-w-1')).toBe('100px');
-	});
-
-	it('загрузка началась, пока фокус был в строке: после микрозадачи фокус на корне', async () => {
-		const [loading, setLoading] = createSignal(false);
-		const { container } = render(() => (
-			<Grid
-				rows={ROWS}
-				getRowKey={(row) => row.id}
-				columns={COLUMNS}
-				virtualized={false}
-				loading={loading()}
-				selectable
-				aria-label='Люди'
-			/>
-		));
-		(bodyRows()[1]?.querySelector('input[type="checkbox"]') as HTMLInputElement).focus();
-		setLoading(true);
-		await Promise.resolve();
-		expect(document.activeElement).toBe(root(container));
 	});
 
 	it('пусто: текст по умолчанию, подсказка, шапка на месте, кнопки нет без onEmptyReset', () => {
@@ -1755,8 +1804,15 @@ describe('Grid: автосуммы', () => {
 		expect(texts(foot()[0])[1]).toBe('всего');
 	});
 
-	it('загрузка: значения заменены заглушками', () => {
+	it('загрузка поверх данных: значения остаются', () => {
 		renderGrid({ totals: TOTALS, loading: true });
+		const row = foot()[0];
+		expect(texts(row)).toEqual(['всего', '100', '1200', '']);
+		expect(row?.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0);
+	});
+
+	it('загрузка без данных: значения заменены заглушками', () => {
+		renderGrid({ rows: [], totals: TOTALS, loading: true });
 		const row = foot()[0];
 		expect(texts(row)).toEqual(['', '', '', '']);
 		expect(row?.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
@@ -1823,6 +1879,27 @@ describe('Grid: группировка', () => {
 		expect(kindsOf()).toEqual(['group', 'footer', 'group']);
 		const toggle = trs()[0]?.querySelector('button[aria-expanded]');
 		expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('загрузка поверх групп: заголовки остаются, раскрытие группы заблокировано до конца загрузки', () => {
+		const [loading, setLoading] = createSignal(true);
+		render(() => (
+			<Grid
+				rows={ROWS}
+				getRowKey={(row) => row.id}
+				columns={COLUMNS}
+				virtualized={false}
+				groups={[G1, G2]}
+				loading={loading()}
+				aria-label='Люди'
+			/>
+		));
+		expect(kindsOf()).toEqual(['group', 'footer', 'group']);
+		fireEvent.click(trs()[0]?.querySelector('button[aria-expanded]') as HTMLElement);
+		expect(kindsOf()).toEqual(['group', 'footer', 'group']);
+		setLoading(false);
+		fireEvent.click(trs()[0]?.querySelector('button[aria-expanded]') as HTMLElement);
+		expect(kindsOf()).toEqual(['group', 'row', 'row', 'footer', 'group']);
 	});
 
 	it('развёрнутая группа: заголовок, строки, подвал (при агрегатах), затем следующий заголовок', () => {

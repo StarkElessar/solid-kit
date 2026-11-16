@@ -25,6 +25,7 @@ export function GridSelectCell(props: GridSelectCellProps): JSX.Element {
 			<Checkbox
 				aria-label={grid.selectRowLabel()}
 				checked={grid.isRowSelected(props.index)}
+				disabled={grid.refreshing()}
 				onCheckedChange={() => {
 					grid.toggleRow(props.index);
 				}}

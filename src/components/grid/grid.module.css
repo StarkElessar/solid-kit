@@ -56,6 +56,17 @@
         --s-kit-grid-bar-h: calc(var(--s-kit-control-height, var(--s-kit-control-height-md)) + 9px);
     }
 
+    /* обновление поверх данных: строки приглушены и не ловят указатель; задержка не даёт мигать быстрым загрузкам */
+    &[data-refreshing] tbody {
+        pointer-events: none;
+        opacity: 0.6;
+        transition: opacity 0.15s 0.2s;
+
+        @media (prefers-reduced-motion: reduce) {
+            transition: none;
+        }
+    }
+
     /*
      * wrap: текст ячеек и заголовков переносится, строка и шапка растут по содержимому (высота ячейки таблицы это минимум).
      * Минимум остаётся прежним: однострочная строка не меняет высоту, добавляется только вертикальный отступ.
