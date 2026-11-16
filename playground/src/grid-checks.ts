@@ -81,13 +81,12 @@ export async function runGridChecks(page: HTMLElement): Promise<CheckResult[]> {
 	frame.style.inlineSize = '3000px';
 	await frames();
 	const wideHeaders = headers(table);
-	const last = wideHeaders[wideHeaders.length - 1] as HTMLElement;
-	const others = wideHeaders.slice(0, -1).reduce((total, th) => total + widthOf(th), 0);
-	const expectedLast = scroller.clientWidth - others;
+	const wideSum = wideHeaders.reduce((total, th) => total + widthOf(th), 0);
+	const wideTable = table.getBoundingClientRect().width;
 	check(
-		'Grid: когда таблица уже контейнера, последняя колонка занимает остаток',
-		Math.abs(widthOf(last) - expectedLast) <= 1 && expectedLast > 110,
-		`последняя ${widthOf(last).toFixed(1)}, остаток ${expectedLast.toFixed(1)}`
+		'Grid: когда таблица уже контейнера, последняя колонка своей ширины, таблица ровно суммой ширин, справа пусто',
+		Math.abs(wideSum - wideTable) <= 1 && wideTable < scroller.clientWidth - 110,
+		`сумма ${wideSum.toFixed(1)}, таблица ${wideTable.toFixed(1)}, контейнер ${scroller.clientWidth}`
 	);
 	frame.style.inlineSize = '';
 	await frames();

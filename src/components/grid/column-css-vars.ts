@@ -1,6 +1,6 @@
 import type { ColumnLayout } from './column-layout';
 
-/** Сумма ширин колонок: `min-inline-size` таблицы. */
+/** Сумма ширин колонок: ширина таблицы. */
 export const TABLE_WIDTH_VAR = '--s-kit-grid-table-w';
 
 /** Ширина колонки чекбоксов (читает её `<col>`); есть только при `selectable`. */

@@ -80,7 +80,7 @@ describe('Grid: корпус', () => {
 });
 
 describe('Grid: колонки', () => {
-	it('число col равно числу видимых колонок, у последней нет ширины, у остальных переменная', () => {
+	it('число col равно числу видимых колонок, у каждой, включая последнюю, своя переменная ширины', () => {
 		renderGrid();
 		const cols = [...table().querySelectorAll<HTMLTableColElement>('colgroup > col')];
 		expect(cols).toHaveLength(4);
@@ -88,7 +88,7 @@ describe('Grid: колонки', () => {
 			'var(--s-kit-grid-w-0)',
 			'var(--s-kit-grid-w-1)',
 			'var(--s-kit-grid-w-2)',
-			''
+			'var(--s-kit-grid-w-3)'
 		]);
 	});
 

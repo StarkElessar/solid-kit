@@ -124,8 +124,8 @@
     border-spacing: 0;
     border-collapse: separate;
 
-    inline-size: 100%;
-    min-inline-size: var(--s-kit-grid-table-w, 0);
+    /* ровно сумма ширин колонок: когда таблица уже контейнера, справа пусто, последняя колонка не растягивается */
+    inline-size: var(--s-kit-grid-table-w, 100%);
 
     /* с футером таблица не ниже скроллера: свободную высоту забирает строка totals-fill, футер остаётся у нижнего края */
     &[data-totals] {
@@ -444,7 +444,7 @@
     inset-inline-start: 0;
 
     box-sizing: border-box;
-    inline-size: var(--s-kit-grid-view-w, 100%);
+    inline-size: min(var(--s-kit-grid-view-w, 100%), var(--s-kit-grid-table-w, 100%));
     block-size: var(--s-kit-control-height, var(--s-kit-control-height-md));
     padding-inline-start: calc(10px + var(--s-kit-grid-indent, 0px));
 
@@ -854,7 +854,7 @@
     justify-content: center;
 
     box-sizing: border-box;
-    inline-size: var(--s-kit-grid-view-w, 100%);
+    inline-size: min(var(--s-kit-grid-view-w, 100%), var(--s-kit-grid-table-w, 100%));
     padding: 24px 16px;
 
     text-align: center;
